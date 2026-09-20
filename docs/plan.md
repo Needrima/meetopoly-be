@@ -25,6 +25,7 @@ Meetopoly is a **mobile-first**, worldwide social property game:
 
 | Area | Decision |
 |------|----------|
+| HTTP router | **chi** (`github.com/go-chi/chi/v5`) |
 | Backend module | `meetopoly-be` |
 | Architecture | Hexagonal: adapters → services → repository |
 | Adapters | HTTP, WebSocket, WebRTC (Pion) |
@@ -48,15 +49,15 @@ Create in this order as phases unlock. Do not invent extra top-level packages wi
 
 ```
 meetopoly-be/
+  main.go                         # process entry
   go.mod                          # module meetopoly-be
-  cmd/server/main.go
   api/openapi.yaml
   docs/plan.md                    # this file
   seeds/locations.json            # Worlds (`africa-1` first)
   configs/                        # optional env samples — ask before adding
   internal/
     adapters/
-      http/                       # chi/echo/fiber — ask which router when scaffolding
+      http/                       # chi (locked)
       websocket/
       webrtc/
     services/
@@ -157,7 +158,7 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 **Backend**
 
 1. `go.mod` (`module meetopoly-be`)
-2. `cmd/server/main.go` — wires config, mongo, redis, HTTP health only
+2. `main.go` (repo root) — wires config, mongo, redis, HTTP health only
 3. `internal/adapters/http` — health handler
 4. `internal/services/health` — interface + impl
 5. `api/openapi.yaml` — `/health` only to start
@@ -171,9 +172,9 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 **Exit criteria**
 
-- [ ] `GET /health` returns OK against local server
-- [ ] Mobile app launches and can call health via TanStack Query
-- [ ] No Docker; README notes local Mongo/Redis required
+- [x] `GET /health` returns OK against local server
+- [x] Mobile app launches and can call health via TanStack Query (Phase 0 scaffold)
+- [x] No Docker; README notes local Mongo/Redis required
 
 ---
 
@@ -515,3 +516,4 @@ Only when the user asks:
 | 2026-09-20 | Worlds + SVGCities billboards; `locations.json` / `africa-1` replaces Nigeria districts |
 | 2026-09-20 | Expanded `locations.json` with all SVGCities Worlds (Europe×5, Asia×2, NA, SA, ME, Oceania, Central America) |
 | 2026-09-20 | Linked all 304 city properties to `city-icons/icons/{cc}-*.svg` + About/attribution from SVGCities metadata |
+| 2026-09-20 | Phase 0: chi HTTP `/health`, Mongo+Redis wiring, Expo Router + NativeWind + TanStack health screen |

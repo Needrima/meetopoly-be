@@ -1,0 +1,10 @@
+/bin/
+/tmp/
+*.exe
+*.test
+.DS_Store
+.env
+.env.*
+!.env.example
+build-errors.log
+app.log

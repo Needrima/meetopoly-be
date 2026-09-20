@@ -1,0 +1,49 @@
+openapi: 3.0.3
+info:
+  title: Meetopoly API
+  version: 0.0.1
+  description: Meetopoly HTTP API. Phase 0 — health only.
+servers:
+  - url: http://localhost:8080
+    description: Local development
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Liveness and dependency ping
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "503":
+          description: Service up but a dependency failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - mongo
+        - redis
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        mongo:
+          type: string
+          enum: [ok, error]
+        redis:
+          type: string
+          enum: [ok, error]
+        version:
+          type: string
+          description: Optional build/version label

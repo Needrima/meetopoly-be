@@ -1,0 +1,91 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	httpadapter "meetopoly-be/internal/adapters/http"
+	"meetopoly-be/internal/platform/config"
+	"meetopoly-be/internal/platform/logging"
+	mongoplatform "meetopoly-be/internal/platform/mongo"
+	redisplatform "meetopoly-be/internal/platform/redis"
+	"meetopoly-be/internal/services/health"
+)
+
+func main() {
+	cfg := config.Load()
+
+	closeLog, err := logging.Setup(logging.Options{
+		File:   cfg.LogFile,
+		Level:  cfg.LogLevel,
+		Format: cfg.LogFormat,
+	})
+	if err != nil {
+		// Logger not ready yet — fall back to stderr.
+		slog.Error("logging setup failed", "err", err)
+		os.Exit(1)
+	}
+	defer func() { _ = closeLog() }()
+
+	ctx := context.Background()
+
+	mongoClient, err := mongoplatform.Connect(ctx, cfg.MongoURI, cfg.PingTimeout)
+	if err != nil {
+		slog.Error("mongo connect failed", "err", err)
+		os.Exit(1)
+	}
+	defer func() {
+		disconnectCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = mongoClient.Disconnect(disconnectCtx)
+	}()
+
+	redisClient, err := redisplatform.Connect(ctx, cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB, cfg.PingTimeout)
+	if err != nil {
+		slog.Error("redis connect failed", "err", err)
+		os.Exit(1)
+	}
+	defer func() { _ = redisClient.Close() }()
+
+	healthSvc := health.New(
+		health.NewMongoPinger(mongoClient),
+		health.NewRedisPinger(redisClient),
+		cfg.Version,
+	)
+
+	srv := &http.Server{
+		Addr:              cfg.HTTPAddr,
+		Handler:           httpadapter.NewRouter(healthSvc),
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	go func() {
+		slog.Info("meetopoly-be listening",
+			"addr", cfg.HTTPAddr,
+			"mongo", cfg.MongoURI,
+			"redis", cfg.RedisAddr,
+			"log_file", cfg.LogFile,
+		)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("http server failed", "err", err)
+			os.Exit(1)
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	<-stop
+
+	slog.Info("shutting down")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		slog.Error("shutdown error", "err", err)
+	}
+}
