@@ -32,6 +32,9 @@ Meetopoly is a **mobile-first**, worldwide social property game:
 | DB / cache | MongoDB (local → Atlas later), Redis (local → Contabo later) |
 | Deploy | Contabo VPS, **no Docker** |
 | Mobile | Expo + Expo Router + NativeWind + `@expo/ui` + Moti + TanStack Query |
+| Orientation | **Landscape** (GoG-style) |
+| Theme | `meetopoly-mobile/theme/` — forest brand, gold accent, warm paper bg |
+| Fonts | **Fraunces** (display) + **Figtree** (UI/body) — `assets/fonts/` |
 | 3D | expo-gl + plain Three.js |
 | API contract | OpenAPI → codegen into `meetopoly-mobile/api/` |
 | Auth | Email → Google SMTP verify → password → username/country; login email/password |
@@ -94,7 +97,7 @@ meetopoly-mobile/
   hooks/
   components/
   scenes/                         # Three.js / expo-gl (overworld, hub)
-  theme/
+  theme/                          # color tokens (colors.js) — locked
   assets/
 ```
 
@@ -517,3 +520,6 @@ Only when the user asks:
 | 2026-09-20 | Expanded `locations.json` with all SVGCities Worlds (Europe×5, Asia×2, NA, SA, ME, Oceania, Central America) |
 | 2026-09-20 | Linked all 304 city properties to `city-icons/icons/{cc}-*.svg` + About/attribution from SVGCities metadata |
 | 2026-09-20 | Phase 0: chi HTTP `/health`, Mongo+Redis wiring, Expo Router + NativeWind + TanStack health screen |
+| 2026-09-20 | Locked landscape orientation + theme tokens (forest/gold/warm paper) |
+| 2026-09-21 | Locked fonts: Fraunces (display) + Figtree (UI/body); wired via expo-font |
+| 2026-09-21 | Frontend perf rule: Compiler-first; selective memo only (skill `frontend.md`) |
