@@ -58,6 +58,6 @@ tail -f app.log
 curl -s http://127.0.0.1:8080/health
 ```
 
-OpenAPI: `api/openapi.yaml` (Phase 0: `/health` only).
+OpenAPI: `api/openapi.yaml` (Phase 1: `/health` + shared schemas). Mobile codegen: **orval** → `meetopoly-mobile` (`npm run api:generate`).
 
 HTTP router: **chi**. Seeds: `seeds/locations.json`. Plan: `docs/plan.md`.

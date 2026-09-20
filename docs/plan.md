@@ -36,7 +36,7 @@ Meetopoly is a **mobile-first**, worldwide social property game:
 | Theme | `meetopoly-mobile/theme/` — forest brand, gold accent, warm paper bg |
 | Fonts | **Fraunces** (display) + **Figtree** (UI/body) — `assets/fonts/` |
 | 3D | expo-gl + plain Three.js |
-| API contract | OpenAPI → codegen into `meetopoly-mobile/api/` |
+| API contract | OpenAPI → **orval** → `meetopoly-mobile/api/` |
 | Auth | Email → Google SMTP verify → password → username/country; login email/password |
 | Overworld art | SVGCities icons as billboards; tilted camera; GLB optional later |
 | Movement sync | Positions @ ~10–20 Hz; bounce-back corrections |
@@ -188,18 +188,20 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 **Backend**
 
 1. Expand `api/openapi.yaml` structure (info, servers, components/schemas)
-2. Document codegen command in `docs/` or README (e.g. openapi-generator / orval — **ask which tool** when implementing)
+2. Document codegen command — **orval** (locked)
 
 **Mobile**
 
-1. `api/types.ts`, `api/services.ts` generated
+1. `api/types.ts`, `api/services.ts` (re-exports of orval `api/generated/`)
 2. `api/queryKeys.ts`
 3. Hook `useHealth` as pattern sample
+4. Config: `orval.config.ts`; script: `npm run api:generate`
 
 **Exit criteria**
 
-- [ ] Regenerating client after OpenAPI change updates `api/types.ts` + `services.ts`
-- [ ] No hand-written duplicate DTOs for HTTP
+- [x] Regenerating client after OpenAPI change updates generated types + endpoints
+- [x] No hand-written duplicate DTOs for HTTP
+- [x] Codegen tool: **orval** (MIT)
 
 ---
 
@@ -523,3 +525,4 @@ Only when the user asks:
 | 2026-09-20 | Locked landscape orientation + theme tokens (forest/gold/warm paper) |
 | 2026-09-21 | Locked fonts: Fraunces (display) + Figtree (UI/body); wired via expo-font |
 | 2026-09-21 | Frontend perf rule: Compiler-first; selective memo only (skill `frontend.md`) |
+| 2026-09-21 | Phase 1: orval OpenAPI codegen → `meetopoly-mobile/api/generated`; `useHealth` on generated client |

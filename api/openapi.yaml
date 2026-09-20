@@ -1,21 +1,31 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.0.1
-  description: Meetopoly HTTP API. Phase 0 — health only.
+  version: 0.1.0
+  description: |
+    Meetopoly HTTP API contract.
+    Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
+  contact:
+    name: Meetopoly
 servers:
   - url: http://localhost:8080
     description: Local development
+tags:
+  - name: Health
+    description: Liveness and dependency checks
 paths:
   /health:
     get:
       operationId: getHealth
       summary: Liveness and dependency ping
+      description: |
+        Returns dependency status. HTTP 200 when status is `ok`;
+        HTTP 503 when status is `degraded` (body still a HealthResponse).
       tags:
         - Health
       responses:
         "200":
-          description: Service is up
+          description: Service and dependencies are healthy
           content:
             application/json:
               schema:
@@ -30,6 +40,7 @@ components:
   schemas:
     HealthResponse:
       type: object
+      additionalProperties: false
       required:
         - status
         - mongo
@@ -38,12 +49,33 @@ components:
         status:
           type: string
           enum: [ok, degraded]
+          description: Overall health
         mongo:
           type: string
           enum: [ok, error]
+          description: MongoDB ping result
         redis:
           type: string
           enum: [ok, error]
+          description: Redis ping result
         version:
           type: string
           description: Optional build/version label
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code
+        message:
+          type: string
+          description: Human-readable detail
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Reserved for Phase 2+ authenticated routes
