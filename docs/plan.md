@@ -11,11 +11,12 @@
 
 Meetopoly is a **mobile-first**, worldwide social property game:
 
-- **Guns of Glory–style** overworld: avatar walks 360°, camera follows; approach a building → Enter hub.
-- **Dual presence:** **game pin** (board slot for Monopoly rules) vs **social avatar** (roam / hub). Rolling moves the pin immediately even if the avatar stays in a hub.
+- **Guns of Glory–style** overworld: tilted camera, avatar walks 360°, **city billboards**; approach → Enter hub.
+- **Dual presence:** **game pin** (board slot) vs **social avatar** (roam / hub). Rolling moves the pin immediately even if the avatar stays in a hub.
+- **Worlds:** board packs (`africa-1` first). Cities from [svgcities.com](https://svgcities.com/); more Worlds later (Europe packs, Asia, etc.).
 - **Tables:** 2–6 players; **5-minute** turn timer or lose turn; notify players in hubs with a compact turn sheet.
-- **Content:** locations from Mongo via JSON seed (Nigeria first) — properties, stations, utilities.
-- **Realtime:** Pion SFU; **positions** on DataChannels first; **voice later** on the same room model.
+- **Content:** `seeds/locations.json` → Mongo; `worldId` filter.
+- **Realtime:** Pion SFU; **positions** on DataChannels first; **voice later**.
 - **Rules:** ship **M1** first, then M2–M5 (see skill `product.md`).
 
 ---
@@ -33,6 +34,7 @@ Meetopoly is a **mobile-first**, worldwide social property game:
 | 3D | expo-gl + plain Three.js |
 | API contract | OpenAPI → codegen into `meetopoly-mobile/api/` |
 | Auth | Email → Google SMTP verify → password → username/country; login email/password |
+| Overworld art | SVGCities icons as billboards; tilted camera; GLB optional later |
 | Movement sync | Positions @ ~10–20 Hz; bounce-back corrections |
 | Voice | Phase after positions; same room model |
 
@@ -50,7 +52,7 @@ meetopoly-be/
   cmd/server/main.go
   api/openapi.yaml
   docs/plan.md                    # this file
-  seeds/nigeria-locations.json
+  seeds/locations.json            # Worlds (`africa-1` first)
   configs/                        # optional env samples — ask before adding
   internal/
     adapters/
@@ -113,16 +115,19 @@ Exact indexes: confirm when implementing. Collections below are the planned base
 
 ### 3.2 Location document shape (seed-aligned)
 
-See `seeds/nigeria-locations.json`. Core fields:
+See `seeds/locations.json`. Core fields:
 
+- `worldId` — e.g. `africa-1`
 - `slug`, `name`, `countryCode`, `region`
 - `kind`: `property` | `railroad` | `utility` | `special`
 - `boardIndex` — order on the logical track
 - `price`, `rents[]`, `colorGroup` (properties)
 - `map`: `{ x, z, scale }` — overworld placement
-- `assets`: `{ thumbnail, model }` — URLs or asset keys
+- `assets.icon` — billboard path; cities: `city-icons/icons/{cc}-{slug}.svg` (under `meetopoly-mobile/`)
 - `hubId` — hub room key when entered
 - `enterRadius` — approach distance for Enter prompt
+- `svgcities` / `svgcitiesUrl` / `svgcitiesPath` — SVGCities source
+- `symbol`, `about`, `aboutShort`, `attribution` — landmark About + CC BY credit
 
 ### 3.3 Dual presence in game state
 
@@ -228,28 +233,29 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 ---
 
-### Phase 3 — Locations API + Nigeria seed
+### Phase 3 — Locations API + `africa-1` seed
 
-**Goal:** Configurable board content from Mongo.
+**Goal:** Configurable World board content from Mongo.
 
 **Backend**
 
-1. Import / seed `seeds/nigeria-locations.json` into `locations`
+1. Import / seed `seeds/locations.json` into `locations` (all Worlds; gameplay filters `worldId: africa-1`)
 2. `services/location` + `repository/location`
-3. OpenAPI: list locations (by country), get by id/slug
+3. OpenAPI: list locations by `worldId`, get by id/slug
+4. List Worlds endpoint (derive distinct `worldId`s from seed or static table)
 
 **Mobile**
 
-1. `hooks/useLocations`
-2. Dev screen listing Nigeria locations (name, kind, price) — NativeWind list
+1. `hooks/useLocations(worldId)`
+2. Dev screen listing Africa cities (name, kind, price)
 
 **Seed / Compass**
 
-- Import `seeds/nigeria-locations.json` into collection `locations` (see seed file header comments)
+- Import `seeds/locations.json` into collection `locations` (see `seeds/README.md`)
 
 **Exit criteria**
 
-- [ ] API returns seeded Nigeria locations
+- [ ] API returns seeded `africa-1` locations
 - [ ] Mobile list matches Compass data
 - [ ] Adding a document in Mongo appears in API without app rebuild
 
@@ -257,14 +263,14 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 ### Phase 4 — Overworld scene (single player, no net)
 
-**Goal:** Guns of Glory feel on device.
+**Goal:** Guns of Glory feel — tilted camera + city billboards.
 
 **Mobile**
 
 1. `scenes/overworld/` — expo-gl + Three.js
-2. Load location markers from API (map x/z)
-3. Joystick movement; camera follows avatar; pinch zoom + pan
-4. Approach `enterRadius` → Enter prompt (Moti / `@expo/ui`)
+2. World ground map + load city **billboards** from `assets.icon`
+3. Joystick movement; camera follows at **isometric tilt**; pinch zoom + pan
+4. Approach `enterRadius` → Enter prompt
 5. Placeholder hub scene on Enter (local only; no SFU yet)
 6. Optional: render static **pins** at `boardIndex` slots for debug
 
@@ -272,7 +278,7 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 **Exit criteria**
 
-- [ ] Walk around Nigeria layout; camera follows
+- [ ] Walk `africa-1` layout; billboards read as standing cities
 - [ ] Enter prompt on approach; hub placeholder loads
 - [ ] Stable ~30 FPS target on a mid-range phone for this sparse scene
 
@@ -506,3 +512,6 @@ Only when the user asks:
 | Date | Change |
 |------|--------|
 | 2026-09-20 | Initial comprehensive plan from locked product/tech decisions |
+| 2026-09-20 | Worlds + SVGCities billboards; `locations.json` / `africa-1` replaces Nigeria districts |
+| 2026-09-20 | Expanded `locations.json` with all SVGCities Worlds (Europe×5, Asia×2, NA, SA, ME, Oceania, Central America) |
+| 2026-09-20 | Linked all 304 city properties to `city-icons/icons/{cc}-*.svg` + About/attribution from SVGCities metadata |

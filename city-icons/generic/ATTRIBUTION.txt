@@ -1,0 +1,4 @@
+Tabler Icons (MIT)
+plane-tilt.svg, bolt.svg, droplet.svg
+https://tabler.io/icons
+https://github.com/tabler/tabler-icons/blob/main/LICENSE
