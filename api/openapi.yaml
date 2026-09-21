@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.2.0
+  version: 0.3.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -17,6 +17,10 @@ tags:
     description: Email signup, verification, login, session
   - name: User
     description: Authenticated profile
+  - name: Locations
+    description: World board content (seeded locations)
+  - name: Worlds
+    description: Distinct world packs derived from locations
 paths:
   /health:
     get:
@@ -378,6 +382,148 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /worlds:
+    get:
+      operationId: listWorlds
+      summary: List world packs
+      description: Distinct `worldId` values with location counts from the `locations` collection.
+      tags:
+        - Worlds
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Worlds
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorldsResponse"
+        "401":
+          description: Missing or invalid session token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /locations:
+    get:
+      operationId: listLocations
+      summary: List locations for a world
+      description: Returns board spaces for `worldId`, sorted by `boardIndex`.
+      tags:
+        - Locations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: worldId
+          in: query
+          required: true
+          schema:
+            type: string
+            example: africa-1
+          description: World pack id (e.g. africa-1)
+      responses:
+        "200":
+          description: Locations for the world
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocationsResponse"
+        "400":
+          description: Missing worldId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid session token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /locations/by-slug:
+    get:
+      operationId: getLocationBySlug
+      summary: Get location by world and slug
+      tags:
+        - Locations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: worldId
+          in: query
+          required: true
+          schema:
+            type: string
+            example: africa-1
+        - name: slug
+          in: query
+          required: true
+          schema:
+            type: string
+            example: accra
+      responses:
+        "200":
+          description: Location
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Location"
+        "400":
+          description: Missing worldId or slug
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid session token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Location not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /locations/{locationId}:
+    get:
+      operationId: getLocationById
+      summary: Get location by Mongo id
+      tags:
+        - Locations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: locationId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: MongoDB ObjectId hex string
+      responses:
+        "200":
+          description: Location
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Location"
+        "401":
+          description: Missing or invalid session token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Location not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -620,3 +766,154 @@ components:
         profileComplete:
           type: boolean
           description: True when username and country are set
+    WorldSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - worldId
+        - count
+      properties:
+        worldId:
+          type: string
+          example: africa-1
+        count:
+          type: integer
+          description: Number of location documents in this world
+    WorldsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - worlds
+      properties:
+        worlds:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorldSummary"
+    LocationsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - locations
+      properties:
+        locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Location"
+    LocationMap:
+      type: object
+      additionalProperties: false
+      required:
+        - x
+        - z
+        - scale
+      properties:
+        x:
+          type: number
+          format: double
+        z:
+          type: number
+          format: double
+        scale:
+          type: number
+          format: double
+    LocationAssets:
+      type: object
+      additionalProperties: false
+      required:
+        - icon
+      properties:
+        icon:
+          type: string
+          description: Billboard art path relative to meetopoly-mobile/
+    Location:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - worldId
+        - slug
+        - name
+        - kind
+        - boardIndex
+        - price
+        - map
+        - assets
+        - hubId
+        - enterRadius
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectId hex
+        worldId:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        countryCode:
+          type: string
+        region:
+          type: string
+        kind:
+          type: string
+          enum: [property, railroad, utility, special]
+        boardIndex:
+          type: integer
+        price:
+          type: integer
+        rents:
+          type: array
+          items:
+            type: integer
+        houseCost:
+          type: integer
+          nullable: true
+        colorGroup:
+          type: string
+          nullable: true
+        specialType:
+          type: string
+          nullable: true
+        utilityMultiplier:
+          type: array
+          items:
+            type: integer
+        taxAmount:
+          type: integer
+          nullable: true
+        passBonus:
+          type: integer
+          nullable: true
+        map:
+          $ref: "#/components/schemas/LocationMap"
+        assets:
+          $ref: "#/components/schemas/LocationAssets"
+        hubId:
+          type: string
+        enterRadius:
+          type: number
+          format: double
+        description:
+          type: string
+        svgcities:
+          type: string
+        svgcitiesPath:
+          type: string
+        svgcitiesUrl:
+          type: string
+        attribution:
+          type: string
+        symbol:
+          type: string
+        symbolStory:
+          type: string
+        about:
+          type: string
+        aboutShort:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        landmarkCategory:
+          type: string

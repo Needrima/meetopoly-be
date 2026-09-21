@@ -12,14 +12,16 @@ import (
 
 	"meetopoly-be/internal/services/auth"
 	"meetopoly-be/internal/services/health"
+	locationsvc "meetopoly-be/internal/services/location"
 	usersvc "meetopoly-be/internal/services/user"
 )
 
 // Deps are HTTP adapter dependencies.
 type Deps struct {
-	Health health.Service
-	Auth   auth.Service
-	Users  usersvc.Service
+	Health    health.Service
+	Auth      auth.Service
+	Users     usersvc.Service
+	Locations locationsvc.Service
 }
 
 // NewRouter builds the chi router for HTTP adapters.
@@ -46,7 +48,14 @@ func NewRouter(deps Deps) http.Handler {
 		r.Post("/password-reset/confirm", handlePasswordResetConfirm(deps.Auth))
 	})
 
-	r.Get("/me", handleMe(deps.Auth, deps.Users))
+	r.Group(func(r chi.Router) {
+		r.Use(requireSession(deps.Auth))
+		r.Get("/me", handleMe(deps.Users))
+		r.Get("/worlds", handleListWorlds(deps.Locations))
+		r.Get("/locations", handleListLocations(deps.Locations))
+		r.Get("/locations/by-slug", handleGetLocationBySlug(deps.Locations))
+		r.Get("/locations/{locationId}", handleGetLocationByID(deps.Locations))
+	})
 
 	return r
 }
@@ -298,12 +307,11 @@ func handlePasswordResetConfirm(svc auth.Service) http.HandlerFunc {
 	}
 }
 
-func handleMe(authSvc auth.Service, users usersvc.Service) http.HandlerFunc {
+func handleMe(users usersvc.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		token := bearerToken(r)
-		userID, err := authSvc.ResolveSession(r.Context(), token)
-		if err != nil {
-			mapAuthError(w, err)
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
 			return
 		}
 		profile, err := users.GetByID(r.Context(), userID)

@@ -14,11 +14,13 @@ import (
 	"meetopoly-be/internal/platform/config"
 	mongoplatform "meetopoly-be/internal/platform/mongo"
 	redisplatform "meetopoly-be/internal/platform/redis"
+	locationrepo "meetopoly-be/internal/repository/location"
 	sessionrepo "meetopoly-be/internal/repository/session"
 	userrepo "meetopoly-be/internal/repository/user"
 	verificationrepo "meetopoly-be/internal/repository/verification"
 	"meetopoly-be/internal/services/auth"
 	"meetopoly-be/internal/services/health"
+	locationsvc "meetopoly-be/internal/services/location"
 	"meetopoly-be/internal/services/mail"
 	usersvc "meetopoly-be/internal/services/user"
 )
@@ -56,6 +58,7 @@ func main() {
 	db := mongoClient.Database(cfg.MongoDatabase)
 	users := userrepo.NewMongoRepository(db)
 	codes := verificationrepo.NewMongoRepository(db)
+	locations := locationrepo.NewMongoRepository(db)
 	sessions := sessionrepo.NewRedisRepository(redisClient)
 
 	indexCtx, indexCancel := context.WithTimeout(ctx, 10*time.Second)
@@ -66,6 +69,10 @@ func main() {
 	}
 	if err := codes.EnsureIndexes(indexCtx); err != nil {
 		slog.Error("verification indexes failed", "err", err)
+		os.Exit(1)
+	}
+	if err := locations.EnsureIndexes(indexCtx); err != nil {
+		slog.Error("location indexes failed", "err", err)
 		os.Exit(1)
 	}
 
@@ -82,6 +89,7 @@ func main() {
 		VerificationCodeTTL: cfg.VerificationCodeTTL,
 	})
 	userSvc := usersvc.New(users)
+	locationSvc := locationsvc.New(locations)
 	healthSvc := health.New(
 		health.NewMongoPinger(mongoClient),
 		health.NewRedisPinger(redisClient),
@@ -91,9 +99,10 @@ func main() {
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,
 		Handler: httpadapter.NewRouter(httpadapter.Deps{
-			Health: healthSvc,
-			Auth:   authSvc,
-			Users:  userSvc,
+			Health:    healthSvc,
+			Auth:      authSvc,
+			Users:     userSvc,
+			Locations: locationSvc,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 	}

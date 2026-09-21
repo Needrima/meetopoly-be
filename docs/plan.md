@@ -273,9 +273,11 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 **Exit criteria**
 
-- [ ] API returns seeded `africa-1` locations
-- [ ] Mobile list matches Compass data
-- [ ] Adding a document in Mongo appears in API without app rebuild
+- [x] API returns seeded `africa-1` locations (`GET /locations?worldId=africa-1`, Bearer)
+- [x] Mobile list matches seed data (`(app)/locations` via `useLocations`)
+- [x] Adding a document in Mongo appears in API without app rebuild
+- [x] Seed CLI: `go run ./cmd/seed-locations -file seeds/locations.json`
+- [x] `GET /worlds`, `GET /locations/{id}`, `GET /locations/by-slug?worldId=&slug=`
 
 ---
 
@@ -543,3 +545,4 @@ Only when the user asks:
 | 2026-09-21 | Auth UI: RN inputs + Moti city drift + Lottie sun; sunny paper afternoon vibe |
 | 2026-09-21 | Password reset (OTP) + session revoke-all; branded toasts via `notify()` |
 | 2026-09-21 | Signup resume after password: `/auth/signup/status` + login `needsProfile` |
+| 2026-09-21 | Phase 3: locations Mongo + seed CLI; Bearer `/worlds` + `/locations` (+ by id/slug); mobile `(app)/locations` |

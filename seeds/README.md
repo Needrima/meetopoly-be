@@ -4,6 +4,16 @@
 
 Worlds board content for MongoDB collection `locations`.
 
+### Import (CLI)
+
+From `meetopoly-be/`:
+
+```bash
+go run ./cmd/seed-locations -file seeds/locations.json
+```
+
+Uses `MONGO_URI` / `MONGO_DATABASE` from env (defaults: `mongodb://127.0.0.1:27017`, `meetopoly`). Replaces all documents in `locations`, then ensures indexes on `(worldId, boardIndex)` and unique `(worldId, slug)`.
+
 ### Import (Compass)
 
 1. Create database (e.g. `meetopoly`) and collection `locations`.

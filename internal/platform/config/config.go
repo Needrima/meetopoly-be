@@ -42,7 +42,7 @@ func Load() Config {
 		RedisPassword: getenv("REDIS_PASSWORD", ""),
 		RedisDB:       getenvInt("REDIS_DB", 0),
 		PingTimeout:   time.Duration(getenvInt("PING_TIMEOUT_MS", 2000)) * time.Millisecond,
-		Version:       getenv("APP_VERSION", "0.2.0-phase2"),
+		Version:       getenv("APP_VERSION", "0.3.0-phase3"),
 		LogFile:       getenv("LOG_FILE", "app.log"),
 		LogFormat:     getenv("LOG_FORMAT", "text"),
 
