@@ -178,12 +178,38 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /auth/signup/status:
+    get:
+      operationId: signupStatus
+      summary: Signup progress for a signup Bearer token
+      description: |
+        Used to resume onboarding. Only `passwordSet: true` is durable progress;
+        OTP-only accounts should discard the draft and stay on login.
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current signup progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignupStatusResponse"
+        "401":
+          description: Missing or invalid signup token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /auth/login:
     post:
       operationId: login
       summary: Login with email and password
       description: |
-        Requires verified email and completed profile. Returns an opaque Redis-backed session token.
+        Requires verified email and a password. When the profile is incomplete,
+        returns `needsProfile: true` plus a reissued signup token instead of a session.
       tags:
         - Auth
       requestBody:
@@ -194,11 +220,11 @@ paths:
               $ref: "#/components/schemas/LoginRequest"
       responses:
         "200":
-          description: Authenticated
+          description: Authenticated, or resume profile step
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthSessionResponse"
+                $ref: "#/components/schemas/LoginResponse"
         "400":
           description: Invalid request
           content:
@@ -206,7 +232,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "401":
-          description: Invalid credentials or incomplete signup
+          description: Invalid credentials or incomplete signup (no password yet)
           content:
             application/json:
               schema:
@@ -225,6 +251,106 @@ paths:
           description: Session revoked (idempotent if already gone)
         "401":
           description: Missing or invalid session token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/password-reset/start:
+    post:
+      operationId: passwordResetStart
+      summary: Start password reset by email
+      description: |
+        Sends a 6-digit code only when the email belongs to a fully registered user.
+        Response `sent` is false when no mail was sent (unknown or incomplete account).
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetStartRequest"
+      responses:
+        "200":
+          description: Whether a reset email was sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordResetStartResponse"
+        "400":
+          description: Invalid email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Mail or persistence failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/password-reset/verify:
+    post:
+      operationId: passwordResetVerify
+      summary: Verify password-reset code
+      description: On success returns a short-lived reset token for setting a new password.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetVerifyRequest"
+      responses:
+        "200":
+          description: Code verified; reset token issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordResetVerifyResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Wrong or expired code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/password-reset/confirm:
+    post:
+      operationId: passwordResetConfirm
+      summary: Set a new password after reset verify
+      description: |
+        Requires Bearer reset token. Updates the password and revokes all existing login sessions.
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetConfirmRequest"
+      responses:
+        "204":
+          description: Password updated; sessions revoked
+        "400":
+          description: Weak or invalid password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid reset token
           content:
             application/json:
               schema:
@@ -368,6 +494,92 @@ components:
           format: email
         password:
           type: string
+          format: password
+    LoginResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - needsProfile
+        - user
+      properties:
+        needsProfile:
+          type: boolean
+          description: True when password is set but username/country are missing
+        token:
+          type: string
+          nullable: true
+          description: Opaque session token when needsProfile is false
+        signupToken:
+          type: string
+          nullable: true
+          description: Reissued signup Bearer token when needsProfile is true
+        user:
+          $ref: "#/components/schemas/UserProfile"
+    SignupStatusResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - passwordSet
+        - profileComplete
+      properties:
+        email:
+          type: string
+          format: email
+        passwordSet:
+          type: boolean
+        profileComplete:
+          type: boolean
+    PasswordResetStartRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+    PasswordResetStartResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - sent
+      properties:
+        sent:
+          type: boolean
+          description: True when a reset code email was sent
+    PasswordResetVerifyRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - code
+      properties:
+        email:
+          type: string
+          format: email
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+    PasswordResetVerifyResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - resetToken
+      properties:
+        resetToken:
+          type: string
+          description: Short-lived Bearer token for password reset confirm
+    PasswordResetConfirmRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - password
+      properties:
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
           format: password
     AuthSessionResponse:
       type: object

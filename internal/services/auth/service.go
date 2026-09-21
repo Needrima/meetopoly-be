@@ -185,16 +185,9 @@ func (s *service) VerifyEmail(ctx context.Context, email, code string) (string, 
 		return "", fmt.Errorf("verify delete code: %w", err)
 	}
 
-	token, err := randomToken()
+	token, err := s.issueSignupToken(ctx, u)
 	if err != nil {
 		return "", fmt.Errorf("verify token: %w", err)
-	}
-	if err := s.sessions.Create(ctx, token, sessionrepo.TokenData{
-		UserID: u.ID,
-		Email:  u.Email,
-		Kind:   sessionrepo.KindSignup,
-	}, s.cfg.SignupTokenTTL); err != nil {
-		return "", fmt.Errorf("verify store signup token: %w", err)
 	}
 	return token, nil
 }
@@ -284,40 +277,87 @@ func (s *service) CompleteProfile(
 	return sessionToken, usersvc.ToProfile(u), nil
 }
 
-func (s *service) Login(ctx context.Context, email, password string) (string, *usersvc.Profile, error) {
+func (s *service) Login(ctx context.Context, email, password string) (*LoginResult, error) {
 	email, err := normalizeEmail(email)
 	if err != nil {
-		return "", nil, ErrInvalidEmail
+		return nil, ErrInvalidEmail
 	}
 	u, err := s.users.FindByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, userrepo.ErrNotFound) {
-			return "", nil, ErrUnauthorized
+			return nil, ErrUnauthorized
 		}
-		return "", nil, fmt.Errorf("login find: %w", err)
+		return nil, fmt.Errorf("login find: %w", err)
 	}
 	if !u.EmailVerified {
-		return "", nil, ErrEmailUnverified
+		return nil, ErrEmailUnverified
 	}
-	if u.PasswordHash == "" || !u.ProfileComplete() {
-		return "", nil, ErrIncompleteSignup
+	if u.PasswordHash == "" {
+		// OTP-only progress is not durable — they must restart signup.
+		return nil, ErrIncompleteSignup
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)); err != nil {
-		return "", nil, ErrUnauthorized
+		return nil, ErrUnauthorized
+	}
+
+	if !u.ProfileComplete() {
+		signupToken, err := s.issueSignupToken(ctx, u)
+		if err != nil {
+			return nil, fmt.Errorf("login reissue signup token: %w", err)
+		}
+		return &LoginResult{
+			NeedsProfile: true,
+			SignupToken:  signupToken,
+			Profile:      usersvc.ToProfile(u),
+		}, nil
 	}
 
 	token, err := randomToken()
 	if err != nil {
-		return "", nil, fmt.Errorf("login token: %w", err)
+		return nil, fmt.Errorf("login token: %w", err)
 	}
 	if err := s.sessions.Create(ctx, token, sessionrepo.TokenData{
 		UserID: u.ID,
 		Email:  u.Email,
 		Kind:   sessionrepo.KindSession,
 	}, 0); err != nil {
-		return "", nil, fmt.Errorf("login store session: %w", err)
+		return nil, fmt.Errorf("login store session: %w", err)
 	}
-	return token, usersvc.ToProfile(u), nil
+	return &LoginResult{
+		SessionToken: token,
+		Profile:      usersvc.ToProfile(u),
+	}, nil
+}
+
+func (s *service) SignupStatus(ctx context.Context, signupToken string) (*SignupStatus, error) {
+	data, err := s.requireSignup(ctx, signupToken)
+	if err != nil {
+		return nil, err
+	}
+	u, err := s.users.FindByID(ctx, data.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("signup status find: %w", err)
+	}
+	return &SignupStatus{
+		Email:           u.Email,
+		PasswordSet:     u.PasswordHash != "",
+		ProfileComplete: u.ProfileComplete(),
+	}, nil
+}
+
+func (s *service) issueSignupToken(ctx context.Context, u *userrepo.User) (string, error) {
+	token, err := randomToken()
+	if err != nil {
+		return "", err
+	}
+	if err := s.sessions.Create(ctx, token, sessionrepo.TokenData{
+		UserID: u.ID,
+		Email:  u.Email,
+		Kind:   sessionrepo.KindSignup,
+	}, s.cfg.SignupTokenTTL); err != nil {
+		return "", fmt.Errorf("store signup token: %w", err)
+	}
+	return token, nil
 }
 
 func (s *service) Logout(ctx context.Context, sessionToken string) error {
@@ -339,6 +379,154 @@ func (s *service) Logout(ctx context.Context, sessionToken string) error {
 		return fmt.Errorf("logout delete: %w", err)
 	}
 	return nil
+}
+
+func (s *service) StartPasswordReset(ctx context.Context, email string) (bool, error) {
+	email, err := normalizeEmail(email)
+	if err != nil {
+		return false, ErrInvalidEmail
+	}
+
+	u, err := s.users.FindByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, userrepo.ErrNotFound) {
+			return false, nil
+		}
+		return false, fmt.Errorf("password reset find user: %w", err)
+	}
+	// Only fully registered accounts may reset.
+	if !u.EmailVerified || u.PasswordHash == "" || !u.ProfileComplete() {
+		return false, nil
+	}
+
+	code, err := randomDigits(6)
+	if err != nil {
+		return false, fmt.Errorf("password reset code: %w", err)
+	}
+	codeHash := hashCode(code)
+	expires := time.Now().UTC().Add(s.cfg.VerificationCodeTTL)
+	if err := s.codes.Upsert(ctx, email, codeHash, expires); err != nil {
+		return false, fmt.Errorf("password reset store code: %w", err)
+	}
+
+	body := fmt.Sprintf(
+		"Your Meetopoly password reset code is: %s\n\nIt expires in %d minutes.\n",
+		code,
+		int(s.cfg.VerificationCodeTTL.Minutes()),
+	)
+	if err := s.mailer.Send(ctx, mailsvc.Message{
+		To:      email,
+		Subject: "Meetopoly password reset",
+		Body:    body,
+	}); err != nil {
+		return false, fmt.Errorf("password reset mail: %w", err)
+	}
+	return true, nil
+}
+
+func (s *service) VerifyPasswordReset(ctx context.Context, email, code string) (string, error) {
+	email, err := normalizeEmail(email)
+	if err != nil {
+		return "", ErrInvalidEmail
+	}
+	code = strings.TrimSpace(code)
+	if len(code) != 6 || !allDigits(code) {
+		return "", ErrInvalidCode
+	}
+
+	u, err := s.users.FindByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, userrepo.ErrNotFound) {
+			return "", ErrInvalidCode
+		}
+		return "", fmt.Errorf("password reset verify find user: %w", err)
+	}
+	if !u.EmailVerified || u.PasswordHash == "" || !u.ProfileComplete() {
+		return "", ErrInvalidCode
+	}
+
+	rec, err := s.codes.FindByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, verificationrepo.ErrNotFound) {
+			return "", ErrInvalidCode
+		}
+		return "", fmt.Errorf("password reset verify find code: %w", err)
+	}
+	if rec.Attempts >= maxVerifyAttempts {
+		return "", ErrTooManyAttempts
+	}
+	if time.Now().UTC().After(rec.ExpiresAt) {
+		return "", ErrInvalidCode
+	}
+	if subtle.ConstantTimeCompare([]byte(rec.CodeHash), []byte(hashCode(code))) != 1 {
+		_ = s.codes.IncrementAttempts(ctx, email)
+		return "", ErrInvalidCode
+	}
+
+	if err := s.codes.DeleteByEmail(ctx, email); err != nil {
+		return "", fmt.Errorf("password reset verify delete code: %w", err)
+	}
+
+	token, err := randomToken()
+	if err != nil {
+		return "", fmt.Errorf("password reset token: %w", err)
+	}
+	if err := s.sessions.Create(ctx, token, sessionrepo.TokenData{
+		UserID: u.ID,
+		Email:  u.Email,
+		Kind:   sessionrepo.KindPasswordReset,
+	}, s.cfg.SignupTokenTTL); err != nil {
+		return "", fmt.Errorf("password reset store token: %w", err)
+	}
+	return token, nil
+}
+
+func (s *service) ResetPassword(ctx context.Context, resetToken, password string) error {
+	data, err := s.requirePasswordReset(ctx, resetToken)
+	if err != nil {
+		return err
+	}
+	if err := validatePassword(password); err != nil {
+		return err
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
+	if err != nil {
+		return fmt.Errorf("reset password hash: %w", err)
+	}
+	u, err := s.users.FindByID(ctx, data.UserID)
+	if err != nil {
+		return fmt.Errorf("reset password find user: %w", err)
+	}
+	if !u.ProfileComplete() || u.PasswordHash == "" {
+		return ErrIncompleteSignup
+	}
+	u.PasswordHash = string(hash)
+	if err := s.users.Update(ctx, u); err != nil {
+		return fmt.Errorf("reset password update: %w", err)
+	}
+	_ = s.sessions.Delete(ctx, resetToken)
+	if err := s.sessions.DeleteAllForUser(ctx, u.ID); err != nil {
+		return fmt.Errorf("reset password revoke sessions: %w", err)
+	}
+	return nil
+}
+
+func (s *service) requirePasswordReset(ctx context.Context, token string) (*sessionrepo.TokenData, error) {
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return nil, ErrUnauthorized
+	}
+	data, err := s.sessions.Get(ctx, token)
+	if err != nil {
+		if errors.Is(err, sessionrepo.ErrNotFound) {
+			return nil, ErrUnauthorized
+		}
+		return nil, fmt.Errorf("password reset token: %w", err)
+	}
+	if data.Kind != sessionrepo.KindPasswordReset {
+		return nil, ErrUnauthorized
+	}
+	return data, nil
 }
 
 func (s *service) ResolveSession(ctx context.Context, token string) (string, error) {

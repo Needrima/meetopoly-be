@@ -217,6 +217,7 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 4. Finish profile: username, country
 5. Login with email + password
 6. Authenticated session (JWT or opaque token in Redis — **ask which** when implementing)
+7. Password reset: email → OTP → new password; revokes all sessions; returns to login
 
 **Decisions (locked for Phase 2)**
 
@@ -225,6 +226,9 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 - Password hash: **bcrypt**
 - Device storage: **expo-secure-store**
 - Env: `joho/godotenv` + `.env` SMTP placeholders
+- Password reset only for fully registered users; soft toast when email not eligible
+- Toasts: `react-native-toast-message` + branded `notify()`
+- Signup resume: durable only after password is set; app open + login reissue → profile
 
 **Backend packages**
 
@@ -537,3 +541,5 @@ Only when the user asks:
 | 2026-09-21 | Phase 2: email signup (6-digit SMTP) + bcrypt + opaque Redis sessions; Expo `(auth)` + secure-store |
 | 2026-09-21 | Locked forms: Formik `useFormik` + Yup in hooks (auth screens) |
 | 2026-09-21 | Auth UI: RN inputs + Moti city drift + Lottie sun; sunny paper afternoon vibe |
+| 2026-09-21 | Password reset (OTP) + session revoke-all; branded toasts via `notify()` |
+| 2026-09-21 | Signup resume after password: `/auth/signup/status` + login `needsProfile` |

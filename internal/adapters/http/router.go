@@ -40,6 +40,10 @@ func NewRouter(deps Deps) http.Handler {
 		r.Post("/signup/profile", handleSignupProfile(deps.Auth))
 		r.Post("/login", handleLogin(deps.Auth))
 		r.Post("/logout", handleLogout(deps.Auth))
+		r.Get("/signup/status", handleSignupStatus(deps.Auth))
+		r.Post("/password-reset/start", handlePasswordResetStart(deps.Auth))
+		r.Post("/password-reset/verify", handlePasswordResetVerify(deps.Auth))
+		r.Post("/password-reset/confirm", handlePasswordResetConfirm(deps.Auth))
 	})
 
 	r.Get("/me", handleMe(deps.Auth, deps.Users))
@@ -158,6 +162,13 @@ type authSessionResponse struct {
 	User  userProfile `json:"user"`
 }
 
+type loginResponse struct {
+	NeedsProfile bool        `json:"needsProfile"`
+	Token        *string     `json:"token"`
+	SignupToken  *string     `json:"signupToken"`
+	User         userProfile `json:"user"`
+}
+
 func handleLogin(svc auth.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req loginRequest
@@ -165,14 +176,44 @@ func handleLogin(svc auth.Service) http.HandlerFunc {
 			writeError(w, http.StatusBadRequest, "invalid_request", "Invalid JSON body")
 			return
 		}
-		token, profile, err := svc.Login(r.Context(), req.Email, req.Password)
+		result, err := svc.Login(r.Context(), req.Email, req.Password)
 		if err != nil {
 			mapAuthError(w, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, authSessionResponse{
-			Token: token,
-			User:  toUserProfile(profile),
+		out := loginResponse{
+			NeedsProfile: result.NeedsProfile,
+			User:         toUserProfile(result.Profile),
+		}
+		if result.NeedsProfile {
+			t := result.SignupToken
+			out.SignupToken = &t
+		} else {
+			t := result.SessionToken
+			out.Token = &t
+		}
+		writeJSON(w, http.StatusOK, out)
+	}
+}
+
+type signupStatusResponse struct {
+	Email           string `json:"email"`
+	PasswordSet     bool   `json:"passwordSet"`
+	ProfileComplete bool   `json:"profileComplete"`
+}
+
+func handleSignupStatus(svc auth.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := bearerToken(r)
+		status, err := svc.SignupStatus(r.Context(), token)
+		if err != nil {
+			mapAuthError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, signupStatusResponse{
+			Email:           status.Email,
+			PasswordSet:     status.PasswordSet,
+			ProfileComplete: status.ProfileComplete,
 		})
 	}
 }
@@ -181,6 +222,75 @@ func handleLogout(svc auth.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := bearerToken(r)
 		if err := svc.Logout(r.Context(), token); err != nil {
+			mapAuthError(w, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+type passwordResetStartRequest struct {
+	Email string `json:"email"`
+}
+
+type passwordResetStartResponse struct {
+	Sent bool `json:"sent"`
+}
+
+func handlePasswordResetStart(svc auth.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req passwordResetStartRequest
+		if err := decodeJSON(r, &req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_request", "Invalid JSON body")
+			return
+		}
+		sent, err := svc.StartPasswordReset(r.Context(), req.Email)
+		if err != nil {
+			mapAuthError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, passwordResetStartResponse{Sent: sent})
+	}
+}
+
+type passwordResetVerifyRequest struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+}
+
+type passwordResetVerifyResponse struct {
+	ResetToken string `json:"resetToken"`
+}
+
+func handlePasswordResetVerify(svc auth.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req passwordResetVerifyRequest
+		if err := decodeJSON(r, &req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_request", "Invalid JSON body")
+			return
+		}
+		token, err := svc.VerifyPasswordReset(r.Context(), req.Email, req.Code)
+		if err != nil {
+			mapAuthError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, passwordResetVerifyResponse{ResetToken: token})
+	}
+}
+
+type passwordResetConfirmRequest struct {
+	Password string `json:"password"`
+}
+
+func handlePasswordResetConfirm(svc auth.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := bearerToken(r)
+		var req passwordResetConfirmRequest
+		if err := decodeJSON(r, &req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_request", "Invalid JSON body")
+			return
+		}
+		if err := svc.ResetPassword(r.Context(), token, req.Password); err != nil {
 			mapAuthError(w, err)
 			return
 		}

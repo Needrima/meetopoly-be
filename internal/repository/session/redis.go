@@ -10,7 +10,10 @@ import (
 	goredis "github.com/redis/go-redis/v9"
 )
 
-const keyPrefix = "session:"
+const (
+	keyPrefix          = "session:"
+	userSessionsPrefix = "user_sessions:"
+)
 
 // ErrNotFound is returned when the token is missing or expired.
 var ErrNotFound = errors.New("session not found")
@@ -30,8 +33,13 @@ func (r *RedisRepository) Create(ctx context.Context, token string, data TokenDa
 	if err != nil {
 		return fmt.Errorf("session marshal: %w", err)
 	}
-	// ttl == 0 → no expiry (login sessions until logout).
-	if err := r.client.Set(ctx, keyPrefix+token, payload, ttl).Err(); err != nil {
+	pipe := r.client.TxPipeline()
+	pipe.Set(ctx, keyPrefix+token, payload, ttl)
+	// Index login sessions so we can revoke all for a user (password reset).
+	if data.Kind == KindSession && data.UserID != "" {
+		pipe.SAdd(ctx, userSessionsPrefix+data.UserID, token)
+	}
+	if _, err := pipe.Exec(ctx); err != nil {
 		return fmt.Errorf("session set: %w", err)
 	}
 	return nil
@@ -53,8 +61,41 @@ func (r *RedisRepository) Get(ctx context.Context, token string) (*TokenData, er
 }
 
 func (r *RedisRepository) Delete(ctx context.Context, token string) error {
-	if err := r.client.Del(ctx, keyPrefix+token).Err(); err != nil {
+	data, err := r.Get(ctx, token)
+	if err != nil && !errors.Is(err, ErrNotFound) {
+		return err
+	}
+	pipe := r.client.TxPipeline()
+	pipe.Del(ctx, keyPrefix+token)
+	if data != nil && data.Kind == KindSession && data.UserID != "" {
+		pipe.SRem(ctx, userSessionsPrefix+data.UserID, token)
+	}
+	if _, err := pipe.Exec(ctx); err != nil {
 		return fmt.Errorf("session delete: %w", err)
+	}
+	return nil
+}
+
+func (r *RedisRepository) DeleteAllForUser(ctx context.Context, userID string) error {
+	if userID == "" {
+		return nil
+	}
+	setKey := userSessionsPrefix + userID
+	tokens, err := r.client.SMembers(ctx, setKey).Result()
+	if err != nil {
+		return fmt.Errorf("session list user: %w", err)
+	}
+	if len(tokens) == 0 {
+		_ = r.client.Del(ctx, setKey).Err()
+		return nil
+	}
+	pipe := r.client.TxPipeline()
+	for _, t := range tokens {
+		pipe.Del(ctx, keyPrefix+t)
+	}
+	pipe.Del(ctx, setKey)
+	if _, err := pipe.Exec(ctx); err != nil {
+		return fmt.Errorf("session delete all: %w", err)
 	}
 	return nil
 }
