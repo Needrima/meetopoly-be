@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.1.0
+  version: 0.2.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -13,6 +13,10 @@ servers:
 tags:
   - name: Health
     description: Liveness and dependency checks
+  - name: Auth
+    description: Email signup, verification, login, session
+  - name: User
+    description: Authenticated profile
 paths:
   /health:
     get:
@@ -36,7 +40,225 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
+
+  /auth/signup/start:
+    post:
+      operationId: signupStart
+      summary: Start signup by email
+      description: |
+        Accepts an email and sends a 6-digit verification code via SMTP.
+        Always returns 204 when the request is well-formed (anti-enumeration).
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupStartRequest"
+      responses:
+        "204":
+          description: Verification email sent if the address is eligible
+        "400":
+          description: Invalid email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Mail or persistence failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/signup/verify:
+    post:
+      operationId: signupVerify
+      summary: Verify email with 6-digit code
+      description: On success returns a short-lived signup token for password + profile steps.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupVerifyRequest"
+      responses:
+        "200":
+          description: Email verified; signup token issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignupVerifyResponse"
+        "400":
+          description: Invalid request or code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Wrong or expired code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/signup/password:
+    post:
+      operationId: signupSetPassword
+      summary: Set password during signup
+      description: Requires Bearer signup token from `/auth/signup/verify`.
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupPasswordRequest"
+      responses:
+        "204":
+          description: Password set
+        "400":
+          description: Weak or invalid password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid signup token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/signup/profile:
+    post:
+      operationId: signupCompleteProfile
+      summary: Finish profile and start session
+      description: |
+        Requires Bearer signup token. Sets username + country and returns an opaque session token.
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupProfileRequest"
+      responses:
+        "200":
+          description: Profile complete; session issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSessionResponse"
+        "400":
+          description: Invalid username or country
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid signup token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Username already taken
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      summary: Login with email and password
+      description: |
+        Requires verified email and completed profile. Returns an opaque Redis-backed session token.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSessionResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Invalid credentials or incomplete signup
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      summary: Revoke current session
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Session revoked (idempotent if already gone)
+        "401":
+          description: Missing or invalid session token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /me:
+    get:
+      operationId: getMe
+      summary: Current user profile
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Missing or invalid session token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: Opaque session token (or short-lived signup token) stored in Redis
   schemas:
     HealthResponse:
       type: object
@@ -73,9 +295,116 @@ components:
         message:
           type: string
           description: Human-readable detail
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: Reserved for Phase 2+ authenticated routes
+    SignupStartRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: Account email address
+    SignupVerifyRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - code
+      properties:
+        email:
+          type: string
+          format: email
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+          description: 6-digit verification code from email
+    SignupVerifyResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - signupToken
+      properties:
+        signupToken:
+          type: string
+          description: Short-lived Bearer token for password + profile steps
+    SignupPasswordRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - password
+      properties:
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+          format: password
+    SignupProfileRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - username
+        - country
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 20
+          pattern: '^[A-Za-z0-9_]{3,20}$'
+          description: Unique username (letters, digits, underscore)
+        country:
+          type: string
+          pattern: '^[A-Z]{2}$'
+          description: ISO 3166-1 alpha-2 country code (uppercase)
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    AuthSessionResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - token
+        - user
+      properties:
+        token:
+          type: string
+          description: Opaque session token (store in expo-secure-store)
+        user:
+          $ref: "#/components/schemas/UserProfile"
+    UserProfile:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - email
+        - emailVerified
+        - profileComplete
+      properties:
+        id:
+          type: string
+          description: User id
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+          nullable: true
+        country:
+          type: string
+          nullable: true
+          description: ISO 3166-1 alpha-2 when set
+        emailVerified:
+          type: boolean
+        profileComplete:
+          type: boolean
+          description: True when username and country are set

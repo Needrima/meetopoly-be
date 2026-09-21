@@ -218,6 +218,14 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 5. Login with email + password
 6. Authenticated session (JWT or opaque token in Redis — **ask which** when implementing)
 
+**Decisions (locked for Phase 2)**
+
+- Opaque Redis session tokens (`session:{token}`)
+- 6-digit email verification codes
+- Password hash: **bcrypt**
+- Device storage: **expo-secure-store**
+- Env: `joho/godotenv` + `.env` SMTP placeholders
+
 **Backend packages**
 
 - `services/auth`, `services/mail`, `services/user`
@@ -228,14 +236,14 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 - Expo Router `(auth)/` screens: email, verify, password, profile, login
 - Forms: `@expo/ui` where suitable; Moti for transitions
-- Hooks: `useSignup`, `useLogin`, `useMe`
+- Hooks: `useSignup*`, `useLogin`, `useMe`, `useSession`
 - Secure token storage — ask before picking library (expo-secure-store expected)
 
 **Exit criteria**
 
-- [ ] Can register with real SMTP in a configured env
-- [ ] Unverified users cannot complete login into app
-- [ ] `/me` returns profile; mobile stores session and restores on launch
+- [x] Can register with real SMTP in a configured env
+- [x] Unverified users cannot complete login into app
+- [x] `/me` returns profile; mobile stores session and restores on launch
 
 ---
 
@@ -526,3 +534,6 @@ Only when the user asks:
 | 2026-09-21 | Locked fonts: Fraunces (display) + Figtree (UI/body); wired via expo-font |
 | 2026-09-21 | Frontend perf rule: Compiler-first; selective memo only (skill `frontend.md`) |
 | 2026-09-21 | Phase 1: orval OpenAPI codegen → `meetopoly-mobile/api/generated`; `useHealth` on generated client |
+| 2026-09-21 | Phase 2: email signup (6-digit SMTP) + bcrypt + opaque Redis sessions; Expo `(auth)` + secure-store |
+| 2026-09-21 | Locked forms: Formik `useFormik` + Yup in hooks (auth screens) |
+| 2026-09-21 | Auth UI: RN inputs + Moti city drift + Lottie sun; sunny paper afternoon vibe |

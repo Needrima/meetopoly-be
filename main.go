@@ -12,22 +12,22 @@ import (
 
 	httpadapter "meetopoly-be/internal/adapters/http"
 	"meetopoly-be/internal/platform/config"
-	"meetopoly-be/internal/platform/logging"
 	mongoplatform "meetopoly-be/internal/platform/mongo"
 	redisplatform "meetopoly-be/internal/platform/redis"
+	sessionrepo "meetopoly-be/internal/repository/session"
+	userrepo "meetopoly-be/internal/repository/user"
+	verificationrepo "meetopoly-be/internal/repository/verification"
+	"meetopoly-be/internal/services/auth"
 	"meetopoly-be/internal/services/health"
+	"meetopoly-be/internal/services/mail"
+	usersvc "meetopoly-be/internal/services/user"
 )
 
 func main() {
 	cfg := config.Load()
 
-	closeLog, err := logging.Setup(logging.Options{
-		File:   cfg.LogFile,
-		Level:  cfg.LogLevel,
-		Format: cfg.LogFormat,
-	})
+	closeLog, err := cfg.SetupLogger()
 	if err != nil {
-		// Logger not ready yet — fall back to stderr.
 		slog.Error("logging setup failed", "err", err)
 		os.Exit(1)
 	}
@@ -53,6 +53,35 @@ func main() {
 	}
 	defer func() { _ = redisClient.Close() }()
 
+	db := mongoClient.Database(cfg.MongoDatabase)
+	users := userrepo.NewMongoRepository(db)
+	codes := verificationrepo.NewMongoRepository(db)
+	sessions := sessionrepo.NewRedisRepository(redisClient)
+
+	indexCtx, indexCancel := context.WithTimeout(ctx, 10*time.Second)
+	defer indexCancel()
+	if err := users.EnsureIndexes(indexCtx); err != nil {
+		slog.Error("user indexes failed", "err", err)
+		os.Exit(1)
+	}
+	if err := codes.EnsureIndexes(indexCtx); err != nil {
+		slog.Error("verification indexes failed", "err", err)
+		os.Exit(1)
+	}
+
+	mailer := mail.New(mail.Config{
+		Host: cfg.SMTPHost,
+		Port: cfg.SMTPPort,
+		User: cfg.SMTPUser,
+		Pass: cfg.SMTPPass,
+		From: cfg.SMTPFrom,
+	})
+
+	authSvc := auth.New(users, codes, sessions, mailer, auth.Config{
+		SignupTokenTTL:      cfg.SignupTokenTTL,
+		VerificationCodeTTL: cfg.VerificationCodeTTL,
+	})
+	userSvc := usersvc.New(users)
 	healthSvc := health.New(
 		health.NewMongoPinger(mongoClient),
 		health.NewRedisPinger(redisClient),
@@ -60,8 +89,12 @@ func main() {
 	)
 
 	srv := &http.Server{
-		Addr:              cfg.HTTPAddr,
-		Handler:           httpadapter.NewRouter(healthSvc),
+		Addr: cfg.HTTPAddr,
+		Handler: httpadapter.NewRouter(httpadapter.Deps{
+			Health: healthSvc,
+			Auth:   authSvc,
+			Users:  userSvc,
+		}),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
