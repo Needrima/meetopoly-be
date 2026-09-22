@@ -12,12 +12,12 @@
     "colorGroup": null,
     "specialType": "go",
     "map": {
-      "x": 0.0,
-      "z": 0.0,
+      "x": 24.0,
+      "z": 24,
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/africa-1-go.svg"
+      "icon": "city-icons/generic/arrow-narrow-right.svg"
     },
     "hubId": "hub:africa-1:go",
     "enterRadius": 1.8,
@@ -44,8 +44,8 @@
     "houseCost": 50,
     "colorGroup": "brown",
     "map": {
-      "x": 2.34,
-      "z": 0.0,
+      "x": 21.6,
+      "z": 24,
       "scale": 1
     },
     "assets": {
@@ -72,12 +72,36 @@
   },
   {
     "worldId": "africa-1",
+    "slug": "community-chest",
+    "name": "Community Chest",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "special",
+    "boardIndex": 2,
+    "price": 0,
+    "rents": [],
+    "colorGroup": null,
+    "specialType": "community_chest",
+    "map": {
+      "x": 19.2,
+      "z": 24,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/treasure-chest.svg"
+    },
+    "hubId": "hub:africa-1:community-chest",
+    "enterRadius": 1.8,
+    "description": "Special space: community_chest."
+  },
+  {
+    "worldId": "africa-1",
     "slug": "antananarivo",
     "name": "Antananarivo",
     "countryCode": "MG",
     "region": "East Africa",
     "kind": "property",
-    "boardIndex": 2,
+    "boardIndex": 3,
     "price": 60,
     "rents": [
       4,
@@ -90,8 +114,8 @@
     "houseCost": 50,
     "colorGroup": "brown",
     "map": {
-      "x": 4.68,
-      "z": 0.0,
+      "x": 16.8,
+      "z": 24,
       "scale": 1
     },
     "assets": {
@@ -116,12 +140,66 @@
   },
   {
     "worldId": "africa-1",
+    "slug": "tax-income",
+    "name": "Income Tax",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "special",
+    "boardIndex": 4,
+    "price": 0,
+    "rents": [],
+    "colorGroup": null,
+    "specialType": "tax",
+    "map": {
+      "x": 14.399999999999999,
+      "z": 24,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/receipt-tax.svg"
+    },
+    "hubId": "hub:africa-1:tax-income",
+    "enterRadius": 1.8,
+    "description": "Special space: tax.",
+    "taxAmount": 200
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "rail-1",
+    "name": "Africa Air North",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "railroad",
+    "boardIndex": 5,
+    "price": 200,
+    "rents": [
+      25,
+      50,
+      100,
+      200
+    ],
+    "colorGroup": null,
+    "map": {
+      "x": 12.0,
+      "z": 24,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/plane-tilt.svg"
+    },
+    "hubId": "hub:africa-1:rail-1",
+    "enterRadius": 2.5,
+    "description": "Airport hub — rent scales with airports owned.",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+  },
+  {
+    "worldId": "africa-1",
     "slug": "asmara",
     "name": "Asmara",
     "countryCode": "ER",
     "region": "East Africa",
     "kind": "property",
-    "boardIndex": 3,
+    "boardIndex": 6,
     "price": 100,
     "rents": [
       6,
@@ -134,8 +212,8 @@
     "houseCost": 50,
     "colorGroup": "lightblue",
     "map": {
-      "x": 7.02,
-      "z": 0.0,
+      "x": 9.600000000000001,
+      "z": 24,
       "scale": 1
     },
     "assets": {
@@ -163,27 +241,27 @@
   },
   {
     "worldId": "africa-1",
-    "slug": "community-chest",
-    "name": "Community Chest",
+    "slug": "chance",
+    "name": "Chance",
     "countryCode": "XX",
     "region": "Africa",
     "kind": "special",
-    "boardIndex": 4,
+    "boardIndex": 7,
     "price": 0,
     "rents": [],
     "colorGroup": null,
-    "specialType": "community_chest",
+    "specialType": "chance",
     "map": {
-      "x": 9.37,
-      "z": 0.0,
+      "x": 7.200000000000003,
+      "z": 24,
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/africa-1-community-chest.svg"
+      "icon": "city-icons/generic/question-mark.svg"
     },
-    "hubId": "hub:africa-1:community-chest",
+    "hubId": "hub:africa-1:chance",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: chance."
   },
   {
     "worldId": "africa-1",
@@ -192,7 +270,7 @@
     "countryCode": "LY",
     "region": "North Africa",
     "kind": "property",
-    "boardIndex": 5,
+    "boardIndex": 8,
     "price": 100,
     "rents": [
       6,
@@ -205,8 +283,8 @@
     "houseCost": 50,
     "colorGroup": "lightblue",
     "map": {
-      "x": 11.71,
-      "z": 0.0,
+      "x": 4.799999999999997,
+      "z": 24,
       "scale": 1
     },
     "assets": {
@@ -232,37 +310,12 @@
   },
   {
     "worldId": "africa-1",
-    "slug": "tax-income",
-    "name": "Income Tax",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "special",
-    "boardIndex": 6,
-    "price": 0,
-    "rents": [],
-    "colorGroup": null,
-    "specialType": "tax",
-    "map": {
-      "x": 14.05,
-      "z": 0.0,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "icons/generic/africa-1-tax-income.svg"
-    },
-    "hubId": "hub:africa-1:tax-income",
-    "enterRadius": 1.8,
-    "description": "Special space: tax.",
-    "taxAmount": 200
-  },
-  {
-    "worldId": "africa-1",
     "slug": "cairo",
     "name": "Cairo",
     "countryCode": "EG",
     "region": "North Africa",
     "kind": "property",
-    "boardIndex": 7,
+    "boardIndex": 9,
     "price": 120,
     "rents": [
       8,
@@ -275,8 +328,8 @@
     "houseCost": 50,
     "colorGroup": "lightblue",
     "map": {
-      "x": 16.39,
-      "z": 0.0,
+      "x": 2.3999999999999986,
+      "z": 24,
       "scale": 1
     },
     "assets": {
@@ -302,32 +355,27 @@
   },
   {
     "worldId": "africa-1",
-    "slug": "rail-1",
-    "name": "Africa Air North",
+    "slug": "jail",
+    "name": "Jail — Just Visiting",
     "countryCode": "XX",
     "region": "Africa",
-    "kind": "railroad",
-    "boardIndex": 8,
-    "price": 200,
-    "rents": [
-      25,
-      50,
-      100,
-      200
-    ],
+    "kind": "special",
+    "boardIndex": 10,
+    "price": 0,
+    "rents": [],
     "colorGroup": null,
+    "specialType": "jail",
     "map": {
-      "x": 18.73,
-      "z": 0.0,
-      "scale": 1.1
+      "x": 0.0,
+      "z": 24,
+      "scale": 1
     },
     "assets": {
-      "icon": "city-icons/generic/plane-tilt.svg"
+      "icon": "city-icons/generic/building-castle.svg"
     },
-    "hubId": "hub:africa-1:rail-1",
-    "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "hubId": "hub:africa-1:jail",
+    "enterRadius": 1.8,
+    "description": "Special space: jail."
   },
   {
     "worldId": "africa-1",
@@ -336,7 +384,7 @@
     "countryCode": "ZA",
     "region": "Southern Africa",
     "kind": "property",
-    "boardIndex": 9,
+    "boardIndex": 11,
     "price": 140,
     "rents": [
       10,
@@ -349,8 +397,8 @@
     "houseCost": 100,
     "colorGroup": "pink",
     "map": {
-      "x": 21.07,
-      "z": 0.0,
+      "x": 0,
+      "z": 21.6,
       "scale": 1
     },
     "assets": {
@@ -375,27 +423,31 @@
   },
   {
     "worldId": "africa-1",
-    "slug": "chance",
-    "name": "Chance",
+    "slug": "utility-power",
+    "name": "Africa Power Grid",
     "countryCode": "XX",
     "region": "Africa",
-    "kind": "special",
-    "boardIndex": 10,
-    "price": 0,
+    "kind": "utility",
+    "boardIndex": 12,
+    "price": 150,
     "rents": [],
+    "utilityMultiplier": [
+      4,
+      10
+    ],
     "colorGroup": null,
-    "specialType": "chance",
     "map": {
-      "x": 23.41,
-      "z": 0.0,
+      "x": 0,
+      "z": 19.2,
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/africa-1-chance.svg"
+      "icon": "city-icons/generic/bolt.svg"
     },
-    "hubId": "hub:africa-1:chance",
-    "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "hubId": "hub:africa-1:utility-power",
+    "enterRadius": 2.0,
+    "description": "Electric utility — rent is dice × multiplier.",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
   },
   {
     "worldId": "africa-1",
@@ -404,7 +456,7 @@
     "countryCode": "MA",
     "region": "North Africa",
     "kind": "property",
-    "boardIndex": 11,
+    "boardIndex": 13,
     "price": 140,
     "rents": [
       10,
@@ -417,8 +469,8 @@
     "houseCost": 100,
     "colorGroup": "pink",
     "map": {
-      "x": 24.0,
-      "z": 1.76,
+      "x": 0,
+      "z": 16.8,
       "scale": 1
     },
     "assets": {
@@ -448,7 +500,7 @@
     "countryCode": "SN",
     "region": "West Africa",
     "kind": "property",
-    "boardIndex": 12,
+    "boardIndex": 14,
     "price": 160,
     "rents": [
       12,
@@ -461,8 +513,8 @@
     "houseCost": 100,
     "colorGroup": "pink",
     "map": {
-      "x": 24.0,
-      "z": 4.1,
+      "x": 0,
+      "z": 14.399999999999999,
       "scale": 1
     },
     "assets": {
@@ -489,27 +541,32 @@
   },
   {
     "worldId": "africa-1",
-    "slug": "jail",
-    "name": "Jail — Just Visiting",
+    "slug": "rail-2",
+    "name": "Africa Air East",
     "countryCode": "XX",
     "region": "Africa",
-    "kind": "special",
-    "boardIndex": 13,
-    "price": 0,
-    "rents": [],
+    "kind": "railroad",
+    "boardIndex": 15,
+    "price": 200,
+    "rents": [
+      25,
+      50,
+      100,
+      200
+    ],
     "colorGroup": null,
-    "specialType": "jail",
     "map": {
-      "x": 24.0,
-      "z": 6.44,
+      "x": 0,
+      "z": 12.0,
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/africa-1-jail.svg"
+      "icon": "city-icons/generic/plane-tilt.svg"
     },
-    "hubId": "hub:africa-1:jail",
-    "enterRadius": 1.8,
-    "description": "Special space: jail."
+    "hubId": "hub:africa-1:rail-2",
+    "enterRadius": 2.5,
+    "description": "Airport hub — rent scales with airports owned.",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
   },
   {
     "worldId": "africa-1",
@@ -518,7 +575,7 @@
     "countryCode": "MA",
     "region": "North Africa",
     "kind": "property",
-    "boardIndex": 14,
+    "boardIndex": 16,
     "price": 180,
     "rents": [
       14,
@@ -531,8 +588,8 @@
     "houseCost": 100,
     "colorGroup": "orange",
     "map": {
-      "x": 24.0,
-      "z": 8.78,
+      "x": 0,
+      "z": 9.600000000000001,
       "scale": 1
     },
     "assets": {
@@ -560,31 +617,27 @@
   },
   {
     "worldId": "africa-1",
-    "slug": "utility-power",
-    "name": "Africa Power Grid",
+    "slug": "community-chest-2",
+    "name": "Community Chest",
     "countryCode": "XX",
     "region": "Africa",
-    "kind": "utility",
-    "boardIndex": 15,
-    "price": 150,
+    "kind": "special",
+    "boardIndex": 17,
+    "price": 0,
     "rents": [],
-    "utilityMultiplier": [
-      4,
-      10
-    ],
     "colorGroup": null,
+    "specialType": "community_chest",
     "map": {
-      "x": 24.0,
-      "z": 11.12,
+      "x": 0,
+      "z": 7.200000000000003,
       "scale": 1
     },
     "assets": {
-      "icon": "city-icons/generic/bolt.svg"
+      "icon": "city-icons/generic/treasure-chest.svg"
     },
-    "hubId": "hub:africa-1:utility-power",
-    "enterRadius": 2.0,
-    "description": "Electric utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "hubId": "hub:africa-1:community-chest-2",
+    "enterRadius": 1.8,
+    "description": "Special space: community_chest."
   },
   {
     "worldId": "africa-1",
@@ -593,7 +646,7 @@
     "countryCode": "RW",
     "region": "East Africa",
     "kind": "property",
-    "boardIndex": 16,
+    "boardIndex": 18,
     "price": 180,
     "rents": [
       14,
@@ -606,8 +659,8 @@
     "houseCost": 100,
     "colorGroup": "orange",
     "map": {
-      "x": 24.0,
-      "z": 13.46,
+      "x": 0,
+      "z": 4.799999999999997,
       "scale": 1
     },
     "assets": {
@@ -639,7 +692,7 @@
     "countryCode": "NG",
     "region": "West Africa",
     "kind": "property",
-    "boardIndex": 17,
+    "boardIndex": 19,
     "price": 200,
     "rents": [
       16,
@@ -652,8 +705,8 @@
     "houseCost": 100,
     "colorGroup": "orange",
     "map": {
-      "x": 24.0,
-      "z": 15.8,
+      "x": 0,
+      "z": 2.3999999999999986,
       "scale": 1
     },
     "assets": {
@@ -678,32 +731,27 @@
   },
   {
     "worldId": "africa-1",
-    "slug": "rail-2",
-    "name": "Africa Air East",
+    "slug": "free-parking",
+    "name": "Free Parking — Plaza",
     "countryCode": "XX",
     "region": "Africa",
-    "kind": "railroad",
-    "boardIndex": 18,
-    "price": 200,
-    "rents": [
-      25,
-      50,
-      100,
-      200
-    ],
+    "kind": "special",
+    "boardIndex": 20,
+    "price": 0,
+    "rents": [],
     "colorGroup": null,
+    "specialType": "free_parking",
     "map": {
-      "x": 24.0,
-      "z": 18.15,
-      "scale": 1.1
+      "x": 0,
+      "z": 0.0,
+      "scale": 1
     },
     "assets": {
-      "icon": "city-icons/generic/plane-tilt.svg"
+      "icon": "city-icons/generic/parking.svg"
     },
-    "hubId": "hub:africa-1:rail-2",
-    "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "hubId": "hub:africa-1:free-parking",
+    "enterRadius": 1.8,
+    "description": "Special space: free_parking."
   },
   {
     "worldId": "africa-1",
@@ -712,7 +760,7 @@
     "countryCode": "ET",
     "region": "East Africa",
     "kind": "property",
-    "boardIndex": 19,
+    "boardIndex": 21,
     "price": 220,
     "rents": [
       18,
@@ -725,8 +773,8 @@
     "houseCost": 150,
     "colorGroup": "red",
     "map": {
-      "x": 24.0,
-      "z": 20.49,
+      "x": 2.4000000000000004,
+      "z": 0,
       "scale": 1
     },
     "assets": {
@@ -754,27 +802,27 @@
   },
   {
     "worldId": "africa-1",
-    "slug": "free-parking",
-    "name": "Free Parking — Plaza",
+    "slug": "chance-2",
+    "name": "Chance",
     "countryCode": "XX",
     "region": "Africa",
     "kind": "special",
-    "boardIndex": 20,
+    "boardIndex": 22,
     "price": 0,
     "rents": [],
     "colorGroup": null,
-    "specialType": "free_parking",
+    "specialType": "chance",
     "map": {
-      "x": 24.0,
-      "z": 22.83,
+      "x": 4.800000000000001,
+      "z": 0,
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/africa-1-free-parking.svg"
+      "icon": "city-icons/generic/question-mark.svg"
     },
-    "hubId": "hub:africa-1:free-parking",
+    "hubId": "hub:africa-1:chance-2",
     "enterRadius": 1.8,
-    "description": "Special space: free_parking."
+    "description": "Special space: chance."
   },
   {
     "worldId": "africa-1",
@@ -783,7 +831,7 @@
     "countryCode": "MZ",
     "region": "Southern Africa",
     "kind": "property",
-    "boardIndex": 21,
+    "boardIndex": 23,
     "price": 220,
     "rents": [
       18,
@@ -796,8 +844,8 @@
     "houseCost": 150,
     "colorGroup": "red",
     "map": {
-      "x": 22.83,
-      "z": 24.0,
+      "x": 7.199999999999999,
+      "z": 0,
       "scale": 1
     },
     "assets": {
@@ -830,7 +878,7 @@
     "countryCode": "MA",
     "region": "North Africa",
     "kind": "property",
-    "boardIndex": 22,
+    "boardIndex": 24,
     "price": 240,
     "rents": [
       20,
@@ -843,8 +891,8 @@
     "houseCost": 150,
     "colorGroup": "red",
     "map": {
-      "x": 20.49,
-      "z": 24.0,
+      "x": 9.600000000000001,
+      "z": 0,
       "scale": 1
     },
     "assets": {
@@ -869,27 +917,32 @@
   },
   {
     "worldId": "africa-1",
-    "slug": "chance-2",
-    "name": "Chance",
+    "slug": "rail-3",
+    "name": "Africa Air South",
     "countryCode": "XX",
     "region": "Africa",
-    "kind": "special",
-    "boardIndex": 23,
-    "price": 0,
-    "rents": [],
+    "kind": "railroad",
+    "boardIndex": 25,
+    "price": 200,
+    "rents": [
+      25,
+      50,
+      100,
+      200
+    ],
     "colorGroup": null,
-    "specialType": "chance",
     "map": {
-      "x": 18.15,
-      "z": 24.0,
+      "x": 12.0,
+      "z": 0,
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/africa-1-chance-2.svg"
+      "icon": "city-icons/generic/plane-tilt.svg"
     },
-    "hubId": "hub:africa-1:chance-2",
-    "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "hubId": "hub:africa-1:rail-3",
+    "enterRadius": 2.5,
+    "description": "Airport hub — rent scales with airports owned.",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
   },
   {
     "worldId": "africa-1",
@@ -898,7 +951,7 @@
     "countryCode": "LS",
     "region": "Southern Africa",
     "kind": "property",
-    "boardIndex": 24,
+    "boardIndex": 26,
     "price": 260,
     "rents": [
       22,
@@ -911,8 +964,8 @@
     "houseCost": 150,
     "colorGroup": "yellow",
     "map": {
-      "x": 15.8,
-      "z": 24.0,
+      "x": 14.399999999999999,
+      "z": 0,
       "scale": 1
     },
     "assets": {
@@ -944,7 +997,7 @@
     "countryCode": "SD",
     "region": "North Africa",
     "kind": "property",
-    "boardIndex": 25,
+    "boardIndex": 27,
     "price": 260,
     "rents": [
       22,
@@ -957,8 +1010,8 @@
     "houseCost": 150,
     "colorGroup": "yellow",
     "map": {
-      "x": 13.46,
-      "z": 24.0,
+      "x": 16.799999999999997,
+      "z": 0,
       "scale": 1
     },
     "assets": {
@@ -985,31 +1038,30 @@
   },
   {
     "worldId": "africa-1",
-    "slug": "rail-3",
-    "name": "Africa Air South",
+    "slug": "utility-water",
+    "name": "Africa Water Works",
     "countryCode": "XX",
     "region": "Africa",
-    "kind": "railroad",
-    "boardIndex": 26,
-    "price": 200,
-    "rents": [
-      25,
-      50,
-      100,
-      200
+    "kind": "utility",
+    "boardIndex": 28,
+    "price": 150,
+    "rents": [],
+    "utilityMultiplier": [
+      4,
+      10
     ],
     "colorGroup": null,
     "map": {
-      "x": 11.12,
-      "z": 24.0,
-      "scale": 1.1
+      "x": 19.200000000000003,
+      "z": 0,
+      "scale": 1
     },
     "assets": {
-      "icon": "city-icons/generic/plane-tilt.svg"
+      "icon": "city-icons/generic/droplet.svg"
     },
-    "hubId": "hub:africa-1:rail-3",
-    "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
+    "hubId": "hub:africa-1:utility-water",
+    "enterRadius": 2.0,
+    "description": "Water utility — rent is dice × multiplier.",
     "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
   },
   {
@@ -1019,7 +1071,7 @@
     "countryCode": "KE",
     "region": "East Africa",
     "kind": "property",
-    "boardIndex": 27,
+    "boardIndex": 29,
     "price": 280,
     "rents": [
       24,
@@ -1032,8 +1084,8 @@
     "houseCost": 150,
     "colorGroup": "yellow",
     "map": {
-      "x": 8.78,
-      "z": 24.0,
+      "x": 21.6,
+      "z": 0,
       "scale": 1
     },
     "assets": {
@@ -1060,31 +1112,27 @@
   },
   {
     "worldId": "africa-1",
-    "slug": "utility-water",
-    "name": "Africa Water Works",
+    "slug": "go-to-jail",
+    "name": "Go to Jail",
     "countryCode": "XX",
     "region": "Africa",
-    "kind": "utility",
-    "boardIndex": 28,
-    "price": 150,
+    "kind": "special",
+    "boardIndex": 30,
+    "price": 0,
     "rents": [],
-    "utilityMultiplier": [
-      4,
-      10
-    ],
     "colorGroup": null,
+    "specialType": "go_to_jail",
     "map": {
-      "x": 6.44,
-      "z": 24.0,
+      "x": 24.0,
+      "z": 0,
       "scale": 1
     },
     "assets": {
-      "icon": "city-icons/generic/droplet.svg"
+      "icon": "city-icons/generic/handcuffs.svg"
     },
-    "hubId": "hub:africa-1:utility-water",
-    "enterRadius": 2.0,
-    "description": "Water utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "hubId": "hub:africa-1:go-to-jail",
+    "enterRadius": 1.8,
+    "description": "Special space: go_to_jail."
   },
   {
     "worldId": "africa-1",
@@ -1093,7 +1141,7 @@
     "countryCode": "BF",
     "region": "West Africa",
     "kind": "property",
-    "boardIndex": 29,
+    "boardIndex": 31,
     "price": 300,
     "rents": [
       26,
@@ -1106,8 +1154,8 @@
     "houseCost": 200,
     "colorGroup": "green",
     "map": {
-      "x": 4.1,
-      "z": 24.0,
+      "x": 24,
+      "z": 2.4000000000000004,
       "scale": 1
     },
     "assets": {
@@ -1140,7 +1188,7 @@
     "countryCode": "MU",
     "region": "East Africa",
     "kind": "property",
-    "boardIndex": 30,
+    "boardIndex": 32,
     "price": 300,
     "rents": [
       26,
@@ -1153,8 +1201,8 @@
     "houseCost": 200,
     "colorGroup": "green",
     "map": {
-      "x": 1.76,
-      "z": 24.0,
+      "x": 24,
+      "z": 4.800000000000001,
       "scale": 1
     },
     "assets": {
@@ -1186,7 +1234,7 @@
     "countryCode": "ST",
     "region": "West Africa",
     "kind": "property",
-    "boardIndex": 31,
+    "boardIndex": 33,
     "price": 320,
     "rents": [
       28,
@@ -1199,8 +1247,8 @@
     "houseCost": 200,
     "colorGroup": "green",
     "map": {
-      "x": 0.0,
-      "z": 23.41,
+      "x": 24,
+      "z": 7.199999999999999,
       "scale": 1
     },
     "assets": {
@@ -1232,7 +1280,7 @@
     "countryCode": "XX",
     "region": "Africa",
     "kind": "railroad",
-    "boardIndex": 32,
+    "boardIndex": 34,
     "price": 200,
     "rents": [
       25,
@@ -1242,9 +1290,9 @@
     ],
     "colorGroup": null,
     "map": {
-      "x": 0.0,
-      "z": 21.07,
-      "scale": 1.1
+      "x": 24,
+      "z": 9.600000000000001,
+      "scale": 1
     },
     "assets": {
       "icon": "city-icons/generic/plane-tilt.svg"
@@ -1261,7 +1309,7 @@
     "countryCode": "ML",
     "region": "West Africa",
     "kind": "property",
-    "boardIndex": 33,
+    "boardIndex": 35,
     "price": 350,
     "rents": [
       35,
@@ -1274,8 +1322,8 @@
     "houseCost": 200,
     "colorGroup": "darkblue",
     "map": {
-      "x": 0.0,
-      "z": 18.73,
+      "x": 24,
+      "z": 12.0,
       "scale": 1
     },
     "assets": {
@@ -1302,27 +1350,28 @@
   },
   {
     "worldId": "africa-1",
-    "slug": "go-to-jail",
-    "name": "Go to Jail",
+    "slug": "tax-luxury",
+    "name": "Luxury Tax",
     "countryCode": "XX",
     "region": "Africa",
     "kind": "special",
-    "boardIndex": 34,
+    "boardIndex": 36,
     "price": 0,
     "rents": [],
     "colorGroup": null,
-    "specialType": "go_to_jail",
+    "specialType": "tax",
     "map": {
-      "x": 0.0,
-      "z": 16.39,
+      "x": 24,
+      "z": 14.399999999999999,
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/africa-1-go-to-jail.svg"
+      "icon": "city-icons/generic/receipt-tax.svg"
     },
-    "hubId": "hub:africa-1:go-to-jail",
+    "hubId": "hub:africa-1:tax-luxury",
     "enterRadius": 1.8,
-    "description": "Special space: go_to_jail."
+    "description": "Special space: tax.",
+    "taxAmount": 100
   },
   {
     "worldId": "africa-1",
@@ -1331,7 +1380,7 @@
     "countryCode": "TN",
     "region": "North Africa",
     "kind": "property",
-    "boardIndex": 35,
+    "boardIndex": 37,
     "price": 400,
     "rents": [
       50,
@@ -1344,8 +1393,8 @@
     "houseCost": 200,
     "colorGroup": "darkblue",
     "map": {
-      "x": 0.0,
-      "z": 14.05,
+      "x": 24,
+      "z": 16.799999999999997,
       "scale": 1
     },
     "assets": {
@@ -1373,36 +1422,12 @@
   },
   {
     "worldId": "africa-1",
-    "slug": "community-chest-2",
-    "name": "Community Chest",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "special",
-    "boardIndex": 36,
-    "price": 0,
-    "rents": [],
-    "colorGroup": null,
-    "specialType": "community_chest",
-    "map": {
-      "x": 0.0,
-      "z": 11.71,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "icons/generic/africa-1-community-chest-2.svg"
-    },
-    "hubId": "hub:africa-1:community-chest-2",
-    "enterRadius": 1.8,
-    "description": "Special space: community_chest."
-  },
-  {
-    "worldId": "africa-1",
     "slug": "windhoek",
     "name": "Windhoek",
     "countryCode": "NA",
     "region": "Southern Africa",
     "kind": "property",
-    "boardIndex": 37,
+    "boardIndex": 38,
     "price": 320,
     "rents": [
       26,
@@ -1415,8 +1440,8 @@
     "houseCost": 200,
     "colorGroup": "violet",
     "map": {
-      "x": 0.0,
-      "z": 9.37,
+      "x": 24,
+      "z": 19.200000000000003,
       "scale": 1
     },
     "assets": {
@@ -1444,31 +1469,6 @@
   },
   {
     "worldId": "africa-1",
-    "slug": "tax-luxury",
-    "name": "Luxury Tax",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "special",
-    "boardIndex": 38,
-    "price": 0,
-    "rents": [],
-    "colorGroup": null,
-    "specialType": "tax",
-    "map": {
-      "x": 0.0,
-      "z": 7.02,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "icons/generic/africa-1-tax-luxury.svg"
-    },
-    "hubId": "hub:africa-1:tax-luxury",
-    "enterRadius": 1.8,
-    "description": "Special space: tax.",
-    "taxAmount": 100
-  },
-  {
-    "worldId": "africa-1",
     "slug": "yamoussoukro",
     "name": "Yamoussoukro",
     "countryCode": "CI",
@@ -1487,8 +1487,8 @@
     "houseCost": 200,
     "colorGroup": "violet",
     "map": {
-      "x": 0.0,
-      "z": 4.68,
+      "x": 24,
+      "z": 21.6,
       "scale": 1
     },
     "assets": {
@@ -1512,53 +1512,6 @@
       "capital"
     ],
     "landmarkCategory": "Landmarks"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "zanzibar",
-    "name": "Zanzibar",
-    "countryCode": "TZ",
-    "region": "East Africa",
-    "kind": "property",
-    "boardIndex": 40,
-    "price": 360,
-    "rents": [
-      26,
-      130,
-      390,
-      900,
-      1100,
-      1275
-    ],
-    "houseCost": 200,
-    "colorGroup": "violet",
-    "map": {
-      "x": 0.0,
-      "z": 2.34,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/tz-zanzibar.svg"
-    },
-    "hubId": "hub:africa-1:zanzibar",
-    "enterRadius": 2.0,
-    "svgcities": "Zanzibar",
-    "description": "Zanzibar is Tanzania's legendary Spice Island, once the world's largest producer of cloves and the heart of the Indian Ocean spice trade. Introduced by Omani sultans in the early 19th century, clove…",
-    "svgcitiesPath": "public/icons/tz-zanzibar.svg",
-    "svgcitiesUrl": "https://svgcities.com/tz/zanzibar",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Zanzibar Cloves",
-    "about": "Zanzibar is Tanzania's legendary Spice Island, once the world's largest producer of cloves and the heart of the Indian Ocean spice trade. Introduced by Omani sultans in the early 19th century, clove trees transformed the archipelago's economy and identity. A bundle of dried cloves — aromatic, dark, and nail-shaped — remains Zanzibar's most recognizable symbol, evoking centuries of trade winds, spice plantations, and the intoxicating fragrance that still drifts through Stone Town's narrow alleyways.",
-    "aboutShort": "Zanzibar is Tanzania's legendary Spice Island, once the world's largest producer of cloves and the heart of the Indian Ocean spice trade. Introduced by Omani…",
-    "symbolStory": "Clove cultivation reached the islands in the early nineteenth century, commonly dated to around 1818, and expanded under the Omani ruler Said bin Sultan, who transferred his court from Muscat to Zanzibar Town in 1840 and promoted plantations worked by enslaved labour on Unguja and Pemba. By the later nineteenth century the sultanate supplied a large share of the world's cloves, though a hurricane in 1872 destroyed many trees on Unguja and shifted production toward Pemba. After the 1964 union with Tanganyika, state bodies controlled clove exports. Today the spice appears on Zanzibar's currency imagery, in guided spice-farm tours, and in the \"Spice Islands\" label applied to the archipelago.",
-    "tags": [
-      "cloves",
-      "spice",
-      "spice-island",
-      "agriculture",
-      "trade"
-    ],
-    "landmarkCategory": "Culture"
   },
   {
     "worldId": "europe-1",

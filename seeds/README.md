@@ -25,16 +25,16 @@ Filter in app/API by `worldId`. **Gameplay v1 ships `africa-1` first**; other Wo
 
 ### Worlds in this file
 
-| worldId | Cities (approx) | Board spaces | Notes |
-|---------|-----------------|--------------|--------|
-| `africa-1` | 25 | 41 | **Ship first** |
-| `europe-1` … `europe-5` | 26 each | 42 each | Alphabetical packs from SVGCities Europe |
-| `asia-1`, `asia-2` | 24 each | 38 each | Split Asia pool |
-| `north-america-1` | 30 | 46 | Full NA pool |
-| `south-america-1` | 18 | 33 | Slightly short |
-| `middle-east-1` | 25 | 41 | Jerusalem once (`il-jerusalem`) |
-| `oceania-1` | 14 | 24 | Short board |
-| `central-america-1` | 14 | 24 | Short board |
+| worldId                 | Cities (approx) | Board spaces | Notes                                    |
+| ----------------------- | --------------- | ------------ | ---------------------------------------- |
+| `africa-1`              | 24              | 40           | **Ship first** — classic even sides (corners 0/10/20/30) |
+| `europe-1` … `europe-5` | 26 each         | 42 each      | Alphabetical packs from SVGCities Europe |
+| `asia-1`, `asia-2`      | 24 each         | 38 each      | Split Asia pool                          |
+| `north-america-1`       | 30              | 46           | Full NA pool                             |
+| `south-america-1`       | 18              | 33           | Slightly short                           |
+| `middle-east-1`         | 25              | 41           | Jerusalem once (`il-jerusalem`)          |
+| `oceania-1`             | 14              | 24           | Short board                              |
+| `central-america-1`     | 14              | 24           | Short board                              |
 
 City icons: [svgcities.com](https://svgcities.com/) / [anto1/city-icons](https://github.com/anto1/city-icons) (CC BY 4.0). Duplicates in the site list (e.g. Hanoi×2, São Paulo×2) are deduped.
 

@@ -11,36 +11,46 @@
 
 Meetopoly is a **mobile-first**, worldwide social property game:
 
-- **Guns of Glory–style** overworld: tilted camera, avatar walks 360°, **city billboards**; approach → Enter hub.
-- **Dual presence:** **game pin** (board slot) vs **social avatar** (roam / hub). Rolling moves the pin immediately even if the avatar stays in a hub.
-- **Worlds:** board packs (`africa-1` first). Cities from [svgcities.com](https://svgcities.com/); more Worlds later (Europe packs, Asia, etc.).
+- **Landscape 2D Monopoly-style board** (primary play surface): left = **1:1 board square**; right = controls / joystick / turn UI / later WebRTC.
+- **City icons** on each square from SVGCities / generics (`assets.icon`).
+- **Dual presence on the same board:**
+  - **Game pin** — sits on a `boardIndex` slot (starts on GO; moves on dice).
+  - **Social avatar** — walks the **whole board** (ring + center); pod + face callout (initial now, photo later).
+- **Enter hub:** walk near a property / railroad / utility → Enter prompt (not tap-only).
+- **Worlds:** board packs (`africa-1` first, **40** spaces — classic equal sides). Cities from [svgcities.com](https://svgcities.com/); more Worlds later.
 - **Tables:** 2–6 players; **5-minute** turn timer or lose turn; notify players in hubs with a compact turn sheet.
 - **Content:** `seeds/locations.json` → Mongo; `worldId` filter.
-- **Realtime:** Pion SFU; **positions** on DataChannels first; **voice later**.
+- **Realtime:** Pion SFU; board + hub presence; **voice later**.
 - **Rules:** ship **M1** first, then M2–M5 (see skill `product.md`).
+- **No separate 3D overworld in v1** — roaming is on the 2D board surface.
 
 ---
 
 ## 1. Locked technical decisions
 
-| Area | Decision |
-|------|----------|
-| HTTP router | **chi** (`github.com/go-chi/chi/v5`) |
-| Backend module | `meetopoly-be` |
-| Architecture | Hexagonal: adapters → services → repository |
-| Adapters | HTTP, WebSocket, WebRTC (Pion) |
-| DB / cache | MongoDB (local → Atlas later), Redis (local → Contabo later) |
-| Deploy | Contabo VPS, **no Docker** |
-| Mobile | Expo + Expo Router + NativeWind + `@expo/ui` + Moti + TanStack Query |
-| Orientation | **Landscape** (GoG-style) |
-| Theme | `meetopoly-mobile/theme/` — forest brand, gold accent, warm paper bg |
-| Fonts | **Fraunces** (display) + **Figtree** (UI/body) — `assets/fonts/` |
-| 3D | expo-gl + plain Three.js |
-| API contract | OpenAPI → **orval** → `meetopoly-mobile/api/` |
-| Auth | Email → Google SMTP verify → password → username/country; login email/password |
-| Overworld art | SVGCities icons as billboards; tilted camera; GLB optional later |
-| Movement sync | Positions @ ~10–20 Hz; bounce-back corrections |
-| Voice | Phase after positions; same room model |
+| Area           | Decision                                                                       |
+| -------------- | ------------------------------------------------------------------------------ |
+| HTTP router    | **chi** (`github.com/go-chi/chi/v5`)                                           |
+| Backend module | `meetopoly-be`                                                                 |
+| Architecture   | Hexagonal: adapters → services → repository                                    |
+| Adapters       | HTTP, WebSocket, WebRTC (Pion)                                                 |
+| DB / cache     | MongoDB (local → Atlas later), Redis (local → Contabo later)                   |
+| Deploy         | Contabo VPS, **no Docker**                                                     |
+| Mobile         | Expo + Expo Router + NativeWind + `@expo/ui` + Moti + TanStack Query           |
+| Orientation    | **Landscape**                                                                  |
+| Theme          | `meetopoly-mobile/theme/` — forest brand, gold accent, warm paper bg           |
+| Fonts          | **Fraunces** (display) + **Figtree** (UI/body) — `assets/fonts/`               |
+| Board UI (v1)  | **2D** RN + `react-native-svg`; board square 1:1 height; panel takes remaining width |
+| API contract   | OpenAPI → **orval** → `meetopoly-mobile/api/`                                  |
+| Auth           | Email → Google SMTP verify → password → username/country; login email/password |
+| Board art      | Monopoly-like ring + center; SVGCities / generic icons; original chrome (not Hasbro art) |
+| Spaces         | **40** for `africa-1` (11 per side incl. corners; 9 between) — classic even ring |
+| Hub enter      | **Walk near** property / railroad / utility → Enter; specials not enterable    |
+| Board walk     | Avatar walks whole board; joystick in **panel bottom-right**                   |
+| Collisions     | Hard: board outer edge + **center** Chance/Chest decks; soft: pins. Ring Chance/Chest **tiles** walkable |
+| Avatar look    | Pod + Maps-style callout: colored circle + **initial** now; photo later (settings upload) |
+| Presence sync  | Pins via game WS; board + hub avatar positions later (~10–20 Hz)               |
+| Voice          | Phase after presence; same room model                                          |
 
 ---
 
@@ -96,8 +106,10 @@ meetopoly-mobile/
     queryKeys.ts
   hooks/
   components/
-  scenes/                         # Three.js / expo-gl (overworld, hub)
+    board/                        # 2D Monopoly ring, tiles, pins
+    game/                         # right-panel turn / actions (later phases)
   theme/                          # color tokens (colors.js) — locked
+  city-icons/                     # SVGCities + generic SVGs
   assets/
 ```
 
@@ -109,13 +121,13 @@ Exact indexes: confirm when implementing. Collections below are the planned base
 
 ### 3.1 MongoDB collections
 
-| Collection | Purpose |
-|------------|---------|
-| `users` | Account, profile, password hash, emailVerified |
-| `email_verifications` | Token, expiry for signup |
-| `locations` | Board + map content (from seed) |
-| `tables` | Lobby/session metadata |
-| `games` | Authoritative game state (pins, money, ownership, turn) |
+| Collection            | Purpose                                                 |
+| --------------------- | ------------------------------------------------------- |
+| `users`               | Account, profile, password hash, emailVerified          |
+| `email_verifications` | Token, expiry for signup                                |
+| `locations`           | Board + map content (from seed)                         |
+| `tables`              | Lobby/session metadata                                  |
+| `games`               | Authoritative game state (pins, money, ownership, turn) |
 
 ### 3.2 Location document shape (seed-aligned)
 
@@ -126,8 +138,8 @@ See `seeds/locations.json`. Core fields:
 - `kind`: `property` | `railroad` | `utility` | `special`
 - `boardIndex` — order on the logical track
 - `price`, `rents[]`, `colorGroup` (properties)
-- `map`: `{ x, z, scale }` — overworld placement
-- `assets.icon` — billboard path; cities: `city-icons/icons/{cc}-{slug}.svg` (under `meetopoly-mobile/`)
+- `map`: `{ x, z, scale }` — legacy / optional layout hints (v1 board uses `boardIndex`)
+- `assets.icon` — tile icon path; cities: `city-icons/icons/{cc}-{slug}.svg` (under `meetopoly-mobile/`)
 - `hubId` — hub room key when entered
 - `enterRadius` — approach distance for Enter prompt
 - `svgcities` / `svgcitiesUrl` / `svgcitiesPath` — SVGCities source
@@ -138,7 +150,7 @@ See `seeds/locations.json`. Core fields:
 Per player in `games`:
 
 - `pinLocationId` / `boardIndex` — rules position
-- `avatar`: `{ x, z, rot, hubId? }` — social position (`hubId` null = overworld)
+- `avatar`: `{ x, y, rot, hubId? }` — on board when `hubId` null; inside hub when set. Board coords in board-local space.
 
 ### 3.4 Redis (planned uses)
 
@@ -281,26 +293,91 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 ---
 
-### Phase 4 — Overworld scene (single player, no net)
+### Phase 4 — 2D board + walk + side panel (single player, no net)
 
-**Goal:** Guns of Glory feel — tilted camera + city billboards.
+**Goal:** Monopoly-style **2D board** (left, 1:1 square) with ring tiles + center; **right panel** for joystick / nearby Enter / later turn+WebRTC. Avatars **walk on the board**; pins mark game slots. No expo-gl / Three.js.
 
-**Mobile**
+**Layout (landscape)**
 
-1. `scenes/overworld/` — expo-gl + Three.js
-2. World ground map + load city **billboards** from `assets.icon`
-3. Joystick movement; camera follows at **isometric tilt**; pinch zoom + pan
-4. Approach `enterRadius` → Enter prompt
-5. Placeholder hub scene on Enter (local only; no SFU yet)
-6. Optional: render static **pins** at `boardIndex` slots for debug
+```text
+┌────────────────────────┬─────────────────────┐
+│  Board square (1:1)    │  Right panel        │
+│  ring + center decks   │  nearby / Enter     │
+│  pins on track         │  joystick (BR)      │
+│  avatars walk board    │  (later: turn/RTC)  │
+└────────────────────────┴─────────────────────┘
+```
 
-**Backend:** none required beyond locations.
+**Dual presence (on this board)**
+
+| Concept | Placement | Behavior |
+|---------|-----------|----------|
+| **Pin** | `boardIndex` slot (start **GO**) | Rules / dice; not the walk body |
+| **Avatar** | Anywhere on board surface | Walk with joystick; pod + initial callout |
+
+**Collisions (locked)**
+
+| Collider | Type | Notes |
+|----------|------|--------|
+| Outer board edge | Hard | Cannot leave the board square |
+| **Center** Chance + Community Chest decks (parallelograms) | Hard | Cannot walk through card decks |
+| Ring Chance / Chest / Tax / etc. **tiles** | Walkable | Part of the track; approachable |
+| Pins | Soft radius | Slide around; avoid hard stuck-at-GO |
+
+**Enter hub (locked)**
+
+- Walk within mapped `enterRadius` of a **property | railroad | utility** → show Enter on panel.
+- Specials (Jail, Tax, ring Chance/Chest, GO, etc.): no Enter.
+
+**Art direction**
+
+- Monopoly **layout language** (ring, corners, color bands, center decks) — **not** Hasbro copyrighted art.
+- Icons from `assets.icon` via `react-native-svg`.
+- Avatar: pod + Google-Maps-style callout (colored circle + username **initial**); photo when settings upload exists.
+
+**Other locks**
+
+1. **40** `africa-1` spaces; corners at boardIndex **0 / 10 / 20 / 30** (even sides like classic Monopoly).
+2. Joystick lives in **panel bottom-right** (not over the board art).
+3. Right panel in Phase 4 = nearby location + Enter (+ joystick); **no** turn/money chrome (Phase 6).
+4. Keep **health home** until **4.7**; board via “Open board”.
+5. Phase 4 is **local only** (one avatar); remote avatar sync = Phase 7.
+
+**Mobile — incremental slices (implement one at a time)**
+
+| Slice | Done when | Avoid |
+|-------|-----------|--------|
+| **4.0** | Landscape shell: 1:1 board placeholder + panel; reachable from home | Ring, walk |
+| **4.1** | Empty ring of slots from `boardIndex` (geometry only) | Colors, icons |
+| **4.2** | Color bands + kind styling | Icons, walk |
+| **4.3** | Icons + short names from `useLocations('africa-1')` | Walk, Enter |
+| **4.4** | Center brand + Chance/Chest deck shapes (obstacles reserved) | Movement |
+| **4.5** | Local avatar (pod + initial) + PanResponder joystick in panel BR + edge/deck/pin collision | Enter, net |
+| **4.6** | Walk-near Enter for property \| railroad \| utility → hub placeholder | SFU |
+| **4.7** | Local/debug **pins** on GO (and optional other indices) | Full game rules |
+| **4.8** | Board as home + ⋯ menu (Locations / logout; health `__DEV__`) | — |
+| **4.9** | Polish: attribution, side-length pass, feel; tick Phase 4 exit criteria | New features |
+
+**Suggested files**
+
+- `components/board/Board.tsx`, `BoardTile.tsx`, `boardLayout.ts` (index → rect/side/rotation)
+- `components/board/BoardPanel.tsx`, `BoardAvatar.tsx`, `BoardPin.tsx`
+- `components/board/Joystick.tsx` (PanResponder; panel BR)
+- `hooks/useBoardWalk.ts` (avatar pose, stick, collision, nearby enterable)
+- Route: `(app)/board` (+ later home); `(app)/hub/[slug]` for Enter
+
+**Backend:** none beyond locations API (already done).
 
 **Exit criteria**
 
-- [ ] Walk `africa-1` layout; billboards read as standing cities
-- [ ] Enter prompt on approach; hub placeholder loads
-- [ ] Stable ~30 FPS target on a mid-range phone for this sparse scene
+- [ ] `africa-1` readable 2D ring + center decks; icons + color groups
+- [ ] Local avatar walks board; blocked by outer edge + center Chance/Chest decks; soft vs pins
+- [ ] Ring Chance/Chest tiles remain walkable
+- [ ] Walk near city/air/utility → Enter → hub placeholder → Leave → board
+- [ ] Joystick usable from panel bottom-right; board stays 1:1 dominant
+- [ ] Smooth on a mid-range phone (2D Views/SVG; no GL requirement)
+
+**Note on later phases:** Phase 7 syncs **board** avatar positions (and hub poses). Pins stay authoritative via game WS. Rolling moves pins without forcing avatars.
 
 ---
 
@@ -355,29 +432,29 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 ---
 
-### Phase 7 — Dual presence + avatar position sync (DataChannels)
+### Phase 7 — Dual presence + board/hub avatar sync (DataChannels)
 
-**Goal:** Pin vs avatar; roam overworld during others’ turns; prediction + bounce-back.
+**Goal:** Pins on track vs avatars walking the **2D board** (and inside hubs); prediction + bounce-back.
 
 **Backend**
 
 1. Pion SFU adapter + signaling over WebSocket
-2. Table WebRTC room for in-session overworld presence
-3. `services/presence` validates avatar moves; broadcast accepted; correct invalid to sender only
-4. On dice: update pin for all; do not force avatar out of hub/overworld
+2. Table/board presence room + hub rooms
+3. `services/presence` validates board/hub avatar moves (respect collision rules); bounce-back invalid
+4. On dice: update pin for all; do not force avatar off the board or out of hub
 
 **Mobile**
 
 1. `hooks/useWebRTC` / `useRoom`
-2. Send local avatar position 10–20 Hz
+2. Send local board (or hub) avatar pose 10–20 Hz
 3. Interpolate remote avatars
 4. Pins driven by game WS; avatars by DataChannel
 
 **Exit criteria**
 
-- [ ] Two players see each other’s avatars move smoothly
+- [ ] Two players see each other’s board avatars move smoothly
 - [ ] Illegal teleport gets bounce-back only on offender
-- [ ] Roll updates pins while avatars stay put
+- [ ] Roll updates pins while avatars keep walking / stay in hub
 
 ---
 
@@ -393,7 +470,7 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 **Mobile**
 
-1. Hub scene load on Enter; leave returns to overworld
+1. Hub scene load on Enter; leave returns to **board**
 2. Turn BottomSheet in hub: timer + Roll / basic actions + Open board
 3. Pin still updates on roll while staying in hub
 
@@ -423,7 +500,7 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 ### Phase 10 — Voice (same rooms)
 
-**Goal:** Mic audio in table overworld room and/or hub rooms.
+**Goal:** Mic audio in hub rooms and/or table room.
 
 **Backend / mobile:** add media tracks to existing Pion rooms; mute/unmute UI; permissions.
 
@@ -501,9 +578,11 @@ Only when the user asks:
 - Auth on WS/WebRTC signaling.
 - Never trust client money/pin updates.
 
-### 5.4 Performance (mobile 3D)
+### 5.4 Performance (mobile board)
 
-- Instancing, low-poly, limit active meshes, simple materials (see prior research). Target stable 30 FPS mid-range.
+- Prefer Views + SVG tiles over heavy bitmaps; recycle/memo tile list only if needed.
+- Keep right-rail video (later) capped; don’t re-render full board on every RTC frame.
+- Target smooth 60 FPS UI on mid-range phones for the 2D board.
 
 ---
 
@@ -511,8 +590,8 @@ Only when the user asks:
 
 ```
 0 Bootstrap → 1 OpenAPI → 2 Auth → 3 Locations+seed
-→ 4 Overworld local → 5 Tables+WS → 6 Game M1
-→ 7 Presence WebRTC → 8 Hubs+turn sheet → 9 UX polish
+→ 4 2D board + walk + panel → 5 Tables+WS → 6 Game M1
+→ 7 Presence WebRTC (board+hub) → 8 Hubs+turn sheet → 9 UX polish
 → 10 Voice → 11–14 Rules M2–M5 → 15 Contabo → 16 Deferred
 ```
 
@@ -529,20 +608,22 @@ Only when the user asks:
 
 ## 8. Changelog
 
-| Date | Change |
-|------|--------|
-| 2026-09-20 | Initial comprehensive plan from locked product/tech decisions |
-| 2026-09-20 | Worlds + SVGCities billboards; `locations.json` / `africa-1` replaces Nigeria districts |
-| 2026-09-20 | Expanded `locations.json` with all SVGCities Worlds (Europe×5, Asia×2, NA, SA, ME, Oceania, Central America) |
-| 2026-09-20 | Linked all 304 city properties to `city-icons/icons/{cc}-*.svg` + About/attribution from SVGCities metadata |
-| 2026-09-20 | Phase 0: chi HTTP `/health`, Mongo+Redis wiring, Expo Router + NativeWind + TanStack health screen |
-| 2026-09-20 | Locked landscape orientation + theme tokens (forest/gold/warm paper) |
-| 2026-09-21 | Locked fonts: Fraunces (display) + Figtree (UI/body); wired via expo-font |
-| 2026-09-21 | Frontend perf rule: Compiler-first; selective memo only (skill `frontend.md`) |
-| 2026-09-21 | Phase 1: orval OpenAPI codegen → `meetopoly-mobile/api/generated`; `useHealth` on generated client |
-| 2026-09-21 | Phase 2: email signup (6-digit SMTP) + bcrypt + opaque Redis sessions; Expo `(auth)` + secure-store |
-| 2026-09-21 | Locked forms: Formik `useFormik` + Yup in hooks (auth screens) |
-| 2026-09-21 | Auth UI: RN inputs + Moti city drift + Lottie sun; sunny paper afternoon vibe |
-| 2026-09-21 | Password reset (OTP) + session revoke-all; branded toasts via `notify()` |
-| 2026-09-21 | Signup resume after password: `/auth/signup/status` + login `needsProfile` |
+| Date       | Change                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------- |
+| 2026-09-20 | Initial comprehensive plan from locked product/tech decisions                                                 |
+| 2026-09-20 | Worlds + SVGCities billboards; `locations.json` / `africa-1` replaces Nigeria districts                       |
+| 2026-09-20 | Expanded `locations.json` with all SVGCities Worlds (Europe×5, Asia×2, NA, SA, ME, Oceania, Central America)  |
+| 2026-09-20 | Linked all 304 city properties to `city-icons/icons/{cc}-*.svg` + About/attribution from SVGCities metadata   |
+| 2026-09-20 | Phase 0: chi HTTP `/health`, Mongo+Redis wiring, Expo Router + NativeWind + TanStack health screen            |
+| 2026-09-20 | Locked landscape orientation + theme tokens (forest/gold/warm paper)                                          |
+| 2026-09-21 | Locked fonts: Fraunces (display) + Figtree (UI/body); wired via expo-font                                     |
+| 2026-09-21 | Frontend perf rule: Compiler-first; selective memo only (skill `frontend.md`)                                 |
+| 2026-09-21 | Phase 1: orval OpenAPI codegen → `meetopoly-mobile/api/generated`; `useHealth` on generated client            |
+| 2026-09-21 | Phase 2: email signup (6-digit SMTP) + bcrypt + opaque Redis sessions; Expo `(auth)` + secure-store           |
+| 2026-09-21 | Locked forms: Formik `useFormik` + Yup in hooks (auth screens)                                                |
+| 2026-09-21 | Auth UI: RN inputs + Moti city drift + Lottie sun; sunny paper afternoon vibe                                 |
+| 2026-09-22 | **Phase 4 pivot:** 2D Monopoly-style board (left) + right panel; drop GoG 3D overworld for v1; sub-phases 4.0–4.8 |
+| 2026-09-22 | **africa-1 → 40 spaces:** classic even sides (corners 0/10/20/30); dropped Zanzibar; reseed required |
+| 2026-09-21 | Password reset (OTP) + session revoke-all; branded toasts via `notify()`                                      |
+| 2026-09-21 | Signup resume after password: `/auth/signup/status` + login `needsProfile`                                    |
 | 2026-09-21 | Phase 3: locations Mongo + seed CLI; Bearer `/worlds` + `/locations` (+ by id/slug); mobile `(app)/locations` |
