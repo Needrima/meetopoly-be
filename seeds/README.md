@@ -14,52 +14,60 @@ go run ./cmd/seed-locations -file seeds/locations.json
 
 Uses `MONGO_URI` / `MONGO_DATABASE` from env (defaults: `mongodb://127.0.0.1:27017`, `meetopoly`). Replaces all documents in `locations`, then ensures indexes on `(worldId, boardIndex)` and unique `(worldId, slug)`.
 
-### Import (Compass)
+### Board template (all worlds)
 
-1. Create database (e.g. `meetopoly`) and collection `locations`.
-2. **Add Data** → **Import JSON or CSV file**.
-3. Select `locations.json` (JSON Array).
-4. Import.
+Every `worldId` is a **classic 40-space** Monopoly ring:
 
-Filter in app/API by `worldId`. **Gameplay v1 ships `africa-1` first**; other Worlds are seeded for later.
+| Kind | boardIndex |
+|------|------------|
+| Corners | GO `0`, Jail `10`, Layover `20`, Go to Jail `30` |
+| Chance | `7`, `22`, `36` (tile label **CHA**) |
+| Community Chest | `2`, `17`, `33` (tile label **CHE**) |
+| Income / Luxury tax | `4`, `38` |
+| Air (railroad) | `5`, `15`, `25`, `35` |
+| Power / Water | `12`, `28` |
+| Properties | 22 city slots |
+
+`boardCode` is unique within `worldId` (`CHA`/`CHA2`/…, `CHE`/`CHE2`/…). The mobile board always displays Chance as **CHA** and Chest as **CHE**.
+
+If a continent has extra cities after filling 22: leftovers **&lt; 15** stay unused until a future `-2` pack; **≥ 15** can form a `-2` pack padded with repeats from `-1` (same continent). Short packs pad with in-world repeats (`slug-rN`) to reach 22.
 
 ### Worlds in this file
 
-| worldId                 | Cities (approx) | Board spaces | Notes                                                    |
-| ----------------------- | --------------- | ------------ | -------------------------------------------------------- |
-| `africa-1`              | 22              | 40           | **Ship first** — classic Chance/Chest at 7/22/36 and 2/17/33; corners 0/10/20/30 |
-| `europe-1` … `europe-5` | 26 each         | 42 each      | Alphabetical packs from SVGCities Europe                 |
-| `asia-1`, `asia-2`      | 24 each         | 38 each      | Split Asia pool                                          |
-| `north-america-1`       | 30              | 46           | Full NA pool                                             |
-| `south-america-1`       | 18              | 33           | Slightly short                                           |
-| `middle-east-1`         | 25              | 41           | Jerusalem once (`il-jerusalem`)                          |
-| `oceania-1`             | 14              | 24           | Short board                                              |
-| `central-america-1`     | 14              | 24           | Short board                                              |
+| worldId | Board spaces | Notes |
+| ----------------------- | ------------ | ------------------------------------------------------------ |
+| `africa-1` | 40 | Ship first |
+| `europe-1` … `europe-5` | 40 each | Trimmed to 22 cities each |
+| `asia-1`, `asia-2` | 40 each | Trimmed to 22 cities each |
+| `north-america-1` | 40 | Trimmed to 22 cities |
+| `south-america-1` | 40 | Padded with in-world repeats where needed |
+| `middle-east-1` | 40 | Trimmed to 22 cities |
+| `oceania-1` | 40 | Padded with in-world repeats |
+| `central-america-1` | 40 | Padded with in-world repeats |
 
-City icons: [svgcities.com](https://svgcities.com/) / [anto1/city-icons](https://github.com/anto1/city-icons) (CC BY 4.0). Duplicates in the site list (e.g. Hanoi×2, São Paulo×2) are deduped.
+City icons: [svgcities.com](https://svgcities.com/) / [anto1/city-icons](https://github.com/anto1/city-icons) (CC BY 4.0).
 
 ### Fields
 
 - `worldId` — board pack
 - `kind`: `property` (city) \| `railroad` \| `utility` \| `special`
 - `boardIndex` — logical track order (game pin)
-- `boardCode` — short tile label unique within `worldId` (Chance: `CHA`/`CHA2`/…; Chest: `CHE`/`CHE2`/… — board UI always shows **CHA** / **CHE**)
-- `map.x` / `map.z` — overworld placement (tune in Phase 4)
-- `assets.icon` — billboard art path relative to `meetopoly-mobile/` (cities: `city-icons/icons/{cc}-{slug}.svg`; airports/utilities: `city-icons/generic/*.svg`)
-- `svgcities` — display name from SVGCities
-- `svgcitiesUrl` / `svgcitiesPath` — source page + upstream file path
-- `symbol` — landmark title (e.g. “Accra Independence Arch”)
-- `about` / `aboutShort` — SVGCities About copy
-- `attribution` — required credit (SVGCities CC BY for cities; Tabler MIT for generics)
+- `boardCode` — short tile label unique within `worldId`
+- `map.x` / `map.z` — overworld placement
+- `assets.icon` — art path relative to `meetopoly-mobile/`
 - `hubId` — hub room key
 
 ### Art
 
 - **Cities (runtime):** `meetopoly-mobile/city-icons/icons/*.svg` (SVGCities, CC BY 4.0)
-- **Airports / utilities (runtime):** `meetopoly-mobile/city-icons/generic/` — `plane-tilt.svg`, `bolt.svg`, `droplet.svg` (Tabler Icons, MIT)
-- **Backend mirror:** `meetopoly-be/city-icons/` (same layout)
-- `kind` stays `railroad` / `utility` for rules; display names are **Air** hubs (real airport names + `boardCode`) and Power/Water works
+- **Airports / utilities / specials:** `meetopoly-mobile/city-icons/generic/`
+- `kind` stays `railroad` / `utility` for rules; display is Air hubs + Power/Water
 - Specials: jail + go-to-jail → Tabler `prison`; tax → Tabler `tax`; free parking display **Layover**
-- Specials still use `city-icons/generic/...` art
 
 See `docs/plan.md` Phases 3–4 and skill `product.md` Worlds table.
+
+### Remap script
+
+```bash
+python3 seeds/scripts/remap_all_worlds_classic_40.py
+```
