@@ -22,7 +22,8 @@
     "hubId": "hub:africa-1:go",
     "enterRadius": 1.8,
     "description": "Special space: go.",
-    "passBonus": 200
+    "passBonus": 200,
+    "boardCode": "GO"
   },
   {
     "worldId": "africa-1",
@@ -68,7 +69,8 @@
       "monument",
       "independence"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "ACC"
   },
   {
     "worldId": "africa-1",
@@ -92,7 +94,8 @@
     },
     "hubId": "hub:africa-1:community-chest",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CST"
   },
   {
     "worldId": "africa-1",
@@ -136,7 +139,8 @@
       "royal",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "ANT"
   },
   {
     "worldId": "africa-1",
@@ -156,17 +160,18 @@
       "scale": 1
     },
     "assets": {
-      "icon": "city-icons/generic/receipt-tax.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:africa-1:tax-income",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 200
+    "taxAmount": 200,
+    "boardCode": "TAX"
   },
   {
     "worldId": "africa-1",
     "slug": "rail-1",
-    "name": "Africa Air North",
+    "name": "Cairo International Airport",
     "countryCode": "XX",
     "region": "Africa",
     "kind": "railroad",
@@ -189,8 +194,10 @@
     },
     "hubId": "hub:africa-1:rail-1",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Cairo International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "CAI",
+    "aboutShort": "Cairo International Airport (CAI)"
   },
   {
     "worldId": "africa-1",
@@ -237,7 +244,8 @@
       "italian",
       "heritage"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "ASM"
   },
   {
     "worldId": "africa-1",
@@ -261,7 +269,8 @@
     },
     "hubId": "hub:africa-1:chance",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH"
   },
   {
     "worldId": "africa-1",
@@ -306,7 +315,8 @@
       "coastal",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BEN"
   },
   {
     "worldId": "africa-1",
@@ -351,7 +361,8 @@
       "ancient",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "CAR"
   },
   {
     "worldId": "africa-1",
@@ -371,11 +382,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "city-icons/generic/building-castle.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:africa-1:jail",
     "enterRadius": 1.8,
-    "description": "Special space: jail."
+    "description": "Special space: jail.",
+    "boardCode": "JAL"
   },
   {
     "worldId": "africa-1",
@@ -419,7 +431,8 @@
       "table mountain",
       "natural"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "CPT"
   },
   {
     "worldId": "africa-1",
@@ -447,7 +460,8 @@
     "hubId": "hub:africa-1:utility-power",
     "enterRadius": 2.0,
     "description": "Electric utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ELC"
   },
   {
     "worldId": "africa-1",
@@ -491,7 +505,8 @@
       "mosque",
       "modern"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "CAS"
   },
   {
     "worldId": "africa-1",
@@ -537,12 +552,13 @@
       "african",
       "independence"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "DAK"
   },
   {
     "worldId": "africa-1",
     "slug": "rail-2",
-    "name": "Africa Air East",
+    "name": "Jomo Kenyatta International Airport",
     "countryCode": "XX",
     "region": "Africa",
     "kind": "railroad",
@@ -565,8 +581,10 @@
     },
     "hubId": "hub:africa-1:rail-2",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Jomo Kenyatta International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "NBO",
+    "aboutShort": "Jomo Kenyatta International Airport (NBO)"
   },
   {
     "worldId": "africa-1",
@@ -613,7 +631,8 @@
       "traditional",
       "cultural"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "FEZ"
   },
   {
     "worldId": "africa-1",
@@ -637,7 +656,8 @@
     },
     "hubId": "hub:africa-1:community-chest-2",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CS2"
   },
   {
     "worldId": "africa-1",
@@ -683,7 +703,8 @@
       "architecture",
       "development"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "KIG"
   },
   {
     "worldId": "africa-1",
@@ -727,12 +748,13 @@
       "modern",
       "infrastructure"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "LOS"
   },
   {
     "worldId": "africa-1",
     "slug": "free-parking",
-    "name": "Free Parking — Plaza",
+    "name": "Layover",
     "countryCode": "XX",
     "region": "Africa",
     "kind": "special",
@@ -751,7 +773,9 @@
     },
     "hubId": "hub:africa-1:free-parking",
     "enterRadius": 1.8,
-    "description": "Special space: free_parking."
+    "description": "Layover",
+    "boardCode": "P",
+    "aboutShort": "Layover — free rest stop"
   },
   {
     "worldId": "africa-1",
@@ -798,7 +822,8 @@
       "pilgrimage",
       "heritage"
     ],
-    "landmarkCategory": "Religion"
+    "landmarkCategory": "Religion",
+    "boardCode": "LAL"
   },
   {
     "worldId": "africa-1",
@@ -822,7 +847,8 @@
     },
     "hubId": "hub:africa-1:chance-2",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH2"
   },
   {
     "worldId": "africa-1",
@@ -869,7 +895,8 @@
       "cuisine",
       "seafood"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "MAP"
   },
   {
     "worldId": "africa-1",
@@ -913,12 +940,13 @@
       "minaret",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "MAR"
   },
   {
     "worldId": "africa-1",
     "slug": "rail-3",
-    "name": "Africa Air South",
+    "name": "O.R. Tambo International Airport",
     "countryCode": "XX",
     "region": "Africa",
     "kind": "railroad",
@@ -941,8 +969,10 @@
     },
     "hubId": "hub:africa-1:rail-3",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "O.R. Tambo International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "JNB",
+    "aboutShort": "O.R. Tambo International Airport (JNB)"
   },
   {
     "worldId": "africa-1",
@@ -988,7 +1018,8 @@
       "monument",
       "national-symbol"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "MAS"
   },
   {
     "worldId": "africa-1",
@@ -1034,7 +1065,8 @@
       "unesco",
       "kingdom"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "MER"
   },
   {
     "worldId": "africa-1",
@@ -1062,7 +1094,8 @@
     "hubId": "hub:africa-1:utility-water",
     "enterRadius": 2.0,
     "description": "Water utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "WTR"
   },
   {
     "worldId": "africa-1",
@@ -1108,7 +1141,8 @@
       "conference",
       "iconic"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "NAI"
   },
   {
     "worldId": "africa-1",
@@ -1128,11 +1162,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "city-icons/generic/handcuffs.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:africa-1:go-to-jail",
     "enterRadius": 1.8,
-    "description": "Special space: go_to_jail."
+    "description": "Special space: go_to_jail.",
+    "boardCode": "GTJ"
   },
   {
     "worldId": "africa-1",
@@ -1179,7 +1214,8 @@
       "festival",
       "traditional"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "OUA"
   },
   {
     "worldId": "africa-1",
@@ -1225,7 +1261,8 @@
       "national-symbol",
       "wildlife"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "POR"
   },
   {
     "worldId": "africa-1",
@@ -1271,12 +1308,13 @@
       "nature",
       "island"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SAO"
   },
   {
     "worldId": "africa-1",
     "slug": "rail-4",
-    "name": "Africa Air West",
+    "name": "Murtala Muhammed International Airport",
     "countryCode": "XX",
     "region": "Africa",
     "kind": "railroad",
@@ -1299,8 +1337,10 @@
     },
     "hubId": "hub:africa-1:rail-4",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Murtala Muhammed International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "MM",
+    "aboutShort": "Murtala Muhammed International Airport (MM)"
   },
   {
     "worldId": "africa-1",
@@ -1346,7 +1386,8 @@
       "trade",
       "historic"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "TIM"
   },
   {
     "worldId": "africa-1",
@@ -1366,12 +1407,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "city-icons/generic/receipt-tax.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:africa-1:tax-luxury",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 100
+    "taxAmount": 100,
+    "boardCode": "LTX"
   },
   {
     "worldId": "africa-1",
@@ -1418,7 +1460,8 @@
       "medina",
       "colonial"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "TUN"
   },
   {
     "worldId": "africa-1",
@@ -1465,7 +1508,8 @@
       "monument",
       "freedom"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "WIN"
   },
   {
     "worldId": "africa-1",
@@ -1511,7 +1555,8 @@
       "sacred",
       "capital"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "YAM"
   },
   {
     "worldId": "europe-1",
@@ -1536,7 +1581,8 @@
     "hubId": "hub:europe-1:go",
     "enterRadius": 1.8,
     "description": "Special space: go.",
-    "passBonus": 200
+    "passBonus": 200,
+    "boardCode": "GO"
   },
   {
     "worldId": "europe-1",
@@ -1583,7 +1629,8 @@
       "medieval",
       "church"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "AAC"
   },
   {
     "worldId": "europe-1",
@@ -1628,7 +1675,8 @@
       "red",
       "unique"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "AKU"
   },
   {
     "worldId": "europe-1",
@@ -1674,7 +1722,8 @@
       "portuguese",
       "parish"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "AMA"
   },
   {
     "worldId": "europe-1",
@@ -1698,7 +1747,8 @@
     },
     "hubId": "hub:europe-1:community-chest",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CST"
   },
   {
     "worldId": "europe-1",
@@ -1743,7 +1793,8 @@
       "canals",
       "historic"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "AM2"
   },
   {
     "worldId": "europe-1",
@@ -1763,12 +1814,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-1-tax-income.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:europe-1:tax-income",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 200
+    "taxAmount": 200,
+    "boardCode": "TAX"
   },
   {
     "worldId": "europe-1",
@@ -1814,12 +1866,13 @@
       "historic",
       "government"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "AND"
   },
   {
     "worldId": "europe-1",
     "slug": "rail-1",
-    "name": "Europe 1 Air North",
+    "name": "Heathrow Airport",
     "countryCode": "XX",
     "region": "Europe 1",
     "kind": "railroad",
@@ -1842,8 +1895,10 @@
     },
     "hubId": "hub:europe-1:rail-1",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Heathrow Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "LHR",
+    "aboutShort": "Heathrow Airport (LHR)"
   },
   {
     "worldId": "europe-1",
@@ -1888,7 +1943,8 @@
       "ancient",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "ATH"
   },
   {
     "worldId": "europe-1",
@@ -1912,7 +1968,8 @@
     },
     "hubId": "hub:europe-1:chance",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH"
   },
   {
     "worldId": "europe-1",
@@ -1957,7 +2014,8 @@
       "gothic",
       "modernist"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BAR"
   },
   {
     "worldId": "europe-1",
@@ -2004,7 +2062,8 @@
       "ceramic",
       "national-symbol"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "BAC"
   },
   {
     "worldId": "europe-1",
@@ -2024,11 +2083,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-1-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:europe-1:jail",
     "enterRadius": 1.8,
-    "description": "Special space: jail."
+    "description": "Special space: jail.",
+    "boardCode": "JAL"
   },
   {
     "worldId": "europe-1",
@@ -2072,7 +2132,8 @@
       "historic",
       "riverside"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BEL"
   },
   {
     "worldId": "europe-1",
@@ -2100,7 +2161,8 @@
     "hubId": "hub:europe-1:utility-power",
     "enterRadius": 2.0,
     "description": "Electric utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ELC"
   },
   {
     "worldId": "europe-1",
@@ -2145,7 +2207,8 @@
       "historic",
       "neoclassical"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BER"
   },
   {
     "worldId": "europe-1",
@@ -2192,7 +2255,8 @@
       "medieval",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BEN"
   },
   {
     "worldId": "europe-1",
@@ -2239,12 +2303,13 @@
       "historic",
       "architecture"
     ],
-    "landmarkCategory": "Architecture"
+    "landmarkCategory": "Architecture",
+    "boardCode": "BIE"
   },
   {
     "worldId": "europe-1",
     "slug": "rail-2",
-    "name": "Europe 1 Air East",
+    "name": "Charles de Gaulle Airport",
     "countryCode": "XX",
     "region": "Europe 1",
     "kind": "railroad",
@@ -2267,8 +2332,10 @@
     },
     "hubId": "hub:europe-1:rail-2",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Charles de Gaulle Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "CDG",
+    "aboutShort": "Charles de Gaulle Airport (CDG)"
   },
   {
     "worldId": "europe-1",
@@ -2315,12 +2382,13 @@
       "medieval",
       "leaning-tower"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BOL"
   },
   {
     "worldId": "europe-1",
     "slug": "free-parking",
-    "name": "Free Parking — Plaza",
+    "name": "Layover",
     "countryCode": "XX",
     "region": "Europe 1",
     "kind": "special",
@@ -2339,7 +2407,9 @@
     },
     "hubId": "hub:europe-1:free-parking",
     "enterRadius": 1.8,
-    "description": "Special space: free_parking."
+    "description": "Layover",
+    "boardCode": "P",
+    "aboutShort": "Layover — free rest stop"
   },
   {
     "worldId": "europe-1",
@@ -2385,7 +2455,8 @@
       "architecture",
       "french"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "BOR"
   },
   {
     "worldId": "europe-1",
@@ -2432,7 +2503,8 @@
       "portuguese",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BRA"
   },
   {
     "worldId": "europe-1",
@@ -2456,7 +2528,8 @@
     },
     "hubId": "hub:europe-1:chance-2",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH2"
   },
   {
     "worldId": "europe-1",
@@ -2502,7 +2575,8 @@
       "slovak",
       "futuristic"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "BRT"
   },
   {
     "worldId": "europe-1",
@@ -2546,12 +2620,13 @@
       "medieval",
       "architecture"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "BRE"
   },
   {
     "worldId": "europe-1",
     "slug": "rail-3",
-    "name": "Europe 1 Air South",
+    "name": "Adolfo Suárez Madrid-Barajas Airport",
     "countryCode": "XX",
     "region": "Europe 1",
     "kind": "railroad",
@@ -2574,8 +2649,10 @@
     },
     "hubId": "hub:europe-1:rail-3",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Adolfo Suárez Madrid-Barajas Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "MAD",
+    "aboutShort": "Adolfo Suárez Madrid-Barajas Airport (MAD)"
   },
   {
     "worldId": "europe-1",
@@ -2621,7 +2698,8 @@
       "medieval",
       "historic"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "BRU"
   },
   {
     "worldId": "europe-1",
@@ -2649,7 +2727,8 @@
     "hubId": "hub:europe-1:utility-water",
     "enterRadius": 2.0,
     "description": "Water utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "WTR"
   },
   {
     "worldId": "europe-1",
@@ -2693,7 +2772,8 @@
       "modern",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BRS"
   },
   {
     "worldId": "europe-1",
@@ -2739,12 +2819,13 @@
       "monument",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BUC"
   },
   {
     "worldId": "europe-1",
     "slug": "rail-4",
-    "name": "Europe 1 Air West",
+    "name": "Amsterdam Schiphol Airport",
     "countryCode": "XX",
     "region": "Europe 1",
     "kind": "railroad",
@@ -2767,8 +2848,10 @@
     },
     "hubId": "hub:europe-1:rail-4",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Amsterdam Schiphol Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "AMS",
+    "aboutShort": "Amsterdam Schiphol Airport (AMS)"
   },
   {
     "worldId": "europe-1",
@@ -2814,7 +2897,8 @@
       "hill",
       "history"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BUD"
   },
   {
     "worldId": "europe-1",
@@ -2861,7 +2945,8 @@
       "architecture",
       "coastal"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BUV"
   },
   {
     "worldId": "europe-1",
@@ -2881,11 +2966,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-1-go-to-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:europe-1:go-to-jail",
     "enterRadius": 1.8,
-    "description": "Special space: go_to_jail."
+    "description": "Special space: go_to_jail.",
+    "boardCode": "GTJ"
   },
   {
     "worldId": "europe-1",
@@ -2930,7 +3016,8 @@
       "coastal",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BUR"
   },
   {
     "worldId": "europe-1",
@@ -2954,7 +3041,8 @@
     },
     "hubId": "hub:europe-1:community-chest-2",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CS2"
   },
   {
     "worldId": "europe-1",
@@ -3000,7 +3088,8 @@
       "historic",
       "architectural"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "CHA"
   },
   {
     "worldId": "europe-1",
@@ -3020,12 +3109,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-1-tax-luxury.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:europe-1:tax-luxury",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 100
+    "taxAmount": 100,
+    "boardCode": "LTX"
   },
   {
     "worldId": "europe-1",
@@ -3069,7 +3159,8 @@
       "modern",
       "architecture"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "CHI"
   },
   {
     "worldId": "europe-1",
@@ -3115,7 +3206,8 @@
       "medieval",
       "twin-spires"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "COL"
   },
   {
     "worldId": "europe-2",
@@ -3140,7 +3232,8 @@
     "hubId": "hub:europe-2:go",
     "enterRadius": 1.8,
     "description": "Special space: go.",
-    "passBonus": 200
+    "passBonus": 200,
+    "boardCode": "GO"
   },
   {
     "worldId": "europe-2",
@@ -3184,7 +3277,8 @@
       "modern",
       "scandinavian"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "COP"
   },
   {
     "worldId": "europe-2",
@@ -3230,7 +3324,8 @@
       "coastal",
       "spanish"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "COR"
   },
   {
     "worldId": "europe-2",
@@ -3276,7 +3371,8 @@
       "architecture",
       "historic"
     ],
-    "landmarkCategory": "Architecture"
+    "landmarkCategory": "Architecture",
+    "boardCode": "COD"
   },
   {
     "worldId": "europe-2",
@@ -3300,7 +3396,8 @@
     },
     "hubId": "hub:europe-2:community-chest",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CST"
   },
   {
     "worldId": "europe-2",
@@ -3346,7 +3443,8 @@
       "quirky",
       "landmark"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "DEM"
   },
   {
     "worldId": "europe-2",
@@ -3366,12 +3464,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-2-tax-income.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:europe-2:tax-income",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 200
+    "taxAmount": 200,
+    "boardCode": "TAX"
   },
   {
     "worldId": "europe-2",
@@ -3417,12 +3516,13 @@
       "tradition",
       "equestrian"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "DEB"
   },
   {
     "worldId": "europe-2",
     "slug": "rail-1",
-    "name": "Europe 2 Air North",
+    "name": "Frankfurt Airport",
     "countryCode": "XX",
     "region": "Europe 2",
     "kind": "railroad",
@@ -3445,8 +3545,10 @@
     },
     "hubId": "hub:europe-2:rail-1",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Frankfurt Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "FRA",
+    "aboutShort": "Frankfurt Airport (FRA)"
   },
   {
     "worldId": "europe-2",
@@ -3493,7 +3595,8 @@
       "music",
       "traditional"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "DUB"
   },
   {
     "worldId": "europe-2",
@@ -3517,7 +3620,8 @@
     },
     "hubId": "hub:europe-2:chance",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH"
   },
   {
     "worldId": "europe-2",
@@ -3561,7 +3665,8 @@
       "historic",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "EDI"
   },
   {
     "worldId": "europe-2",
@@ -3608,7 +3713,8 @@
       "architecture",
       "historic"
     ],
-    "landmarkCategory": "Architecture"
+    "landmarkCategory": "Architecture",
+    "boardCode": "ERF"
   },
   {
     "worldId": "europe-2",
@@ -3628,11 +3734,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-2-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:europe-2:jail",
     "enterRadius": 1.8,
-    "description": "Special space: jail."
+    "description": "Special space: jail.",
+    "boardCode": "JAL"
   },
   {
     "worldId": "europe-2",
@@ -3676,7 +3783,8 @@
       "gothic",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "FER"
   },
   {
     "worldId": "europe-2",
@@ -3704,7 +3812,8 @@
     "hubId": "hub:europe-2:utility-power",
     "enterRadius": 2.0,
     "description": "Electric utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ELC"
   },
   {
     "worldId": "europe-2",
@@ -3749,7 +3858,8 @@
       "road bicycle",
       "tuscany"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "FOR"
   },
   {
     "worldId": "europe-2",
@@ -3793,7 +3903,8 @@
       "finance",
       "modern"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "FR2"
   },
   {
     "worldId": "europe-2",
@@ -3838,12 +3949,13 @@
       "tower",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "FRE"
   },
   {
     "worldId": "europe-2",
     "slug": "rail-2",
-    "name": "Europe 2 Air East",
+    "name": "Munich Airport",
     "countryCode": "XX",
     "region": "Europe 2",
     "kind": "railroad",
@@ -3866,8 +3978,10 @@
     },
     "hubId": "hub:europe-2:rail-2",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Munich Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "MUC",
+    "aboutShort": "Munich Airport (MUC)"
   },
   {
     "worldId": "europe-2",
@@ -3913,12 +4027,13 @@
       "baroque",
       "hanseatic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "GDA"
   },
   {
     "worldId": "europe-2",
     "slug": "free-parking",
-    "name": "Free Parking — Plaza",
+    "name": "Layover",
     "countryCode": "XX",
     "region": "Europe 2",
     "kind": "special",
@@ -3937,7 +4052,9 @@
     },
     "hubId": "hub:europe-2:free-parking",
     "enterRadius": 1.8,
-    "description": "Special space: free_parking."
+    "description": "Layover",
+    "boardCode": "P",
+    "aboutShort": "Layover — free rest stop"
   },
   {
     "worldId": "europe-2",
@@ -3983,7 +4100,8 @@
       "wildlife",
       "legend"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "GIB"
   },
   {
     "worldId": "europe-2",
@@ -4029,7 +4147,8 @@
       "justus-von-liebig",
       "symbol"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "GIE"
   },
   {
     "worldId": "europe-2",
@@ -4053,7 +4172,8 @@
     },
     "hubId": "hub:europe-2:chance-2",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH2"
   },
   {
     "worldId": "europe-2",
@@ -4097,7 +4217,8 @@
       "modern",
       "coastal"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "GIJ"
   },
   {
     "worldId": "europe-2",
@@ -4144,12 +4265,13 @@
       "equestrian",
       "folk-tradition"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "GLA"
   },
   {
     "worldId": "europe-2",
     "slug": "rail-3",
-    "name": "Europe 2 Air South",
+    "name": "Zurich Airport",
     "countryCode": "XX",
     "region": "Europe 2",
     "kind": "railroad",
@@ -4172,8 +4294,10 @@
     },
     "hubId": "hub:europe-2:rail-3",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Zurich Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ZRH",
+    "aboutShort": "Zurich Airport (ZRH)"
   },
   {
     "worldId": "europe-2",
@@ -4219,7 +4343,8 @@
       "unesco",
       "fortress"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "GRA"
   },
   {
     "worldId": "europe-2",
@@ -4247,7 +4372,8 @@
     "hubId": "hub:europe-2:utility-water",
     "enterRadius": 2.0,
     "description": "Water utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "WTR"
   },
   {
     "worldId": "europe-2",
@@ -4291,7 +4417,8 @@
       "art",
       "modern"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "GRZ"
   },
   {
     "worldId": "europe-2",
@@ -4337,12 +4464,13 @@
       "portuguese",
       "historical"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "GUI"
   },
   {
     "worldId": "europe-2",
     "slug": "rail-4",
-    "name": "Europe 2 Air West",
+    "name": "Vienna International Airport",
     "countryCode": "XX",
     "region": "Europe 2",
     "kind": "railroad",
@@ -4365,8 +4493,10 @@
     },
     "hubId": "hub:europe-2:rail-4",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Vienna International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "VIE",
+    "aboutShort": "Vienna International Airport (VIE)"
   },
   {
     "worldId": "europe-2",
@@ -4414,7 +4544,8 @@
       "scenic",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "HAL"
   },
   {
     "worldId": "europe-2",
@@ -4461,7 +4592,8 @@
       "port",
       "history"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "HAM"
   },
   {
     "worldId": "europe-2",
@@ -4481,11 +4613,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-2-go-to-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:europe-2:go-to-jail",
     "enterRadius": 1.8,
-    "description": "Special space: go_to_jail."
+    "description": "Special space: go_to_jail.",
+    "boardCode": "GTJ"
   },
   {
     "worldId": "europe-2",
@@ -4531,7 +4664,8 @@
       "religious",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "HEL"
   },
   {
     "worldId": "europe-2",
@@ -4555,7 +4689,8 @@
     },
     "hubId": "hub:europe-2:community-chest-2",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CS2"
   },
   {
     "worldId": "europe-2",
@@ -4601,7 +4736,8 @@
       "symbol",
       "adriatic"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "HER"
   },
   {
     "worldId": "europe-2",
@@ -4621,12 +4757,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-2-tax-luxury.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:europe-2:tax-luxury",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 100
+    "taxAmount": 100,
+    "boardCode": "LTX"
   },
   {
     "worldId": "europe-2",
@@ -4672,7 +4809,8 @@
       "city-center",
       "tomb"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "KAR"
   },
   {
     "worldId": "europe-2",
@@ -4718,7 +4856,8 @@
       "polish",
       "tradition"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "KRA"
   },
   {
     "worldId": "europe-3",
@@ -4743,7 +4882,8 @@
     "hubId": "hub:europe-3:go",
     "enterRadius": 1.8,
     "description": "Special space: go.",
-    "passBonus": 200
+    "passBonus": 200,
+    "boardCode": "GO"
   },
   {
     "worldId": "europe-3",
@@ -4787,7 +4927,8 @@
       "observation",
       "modern"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "KUO"
   },
   {
     "worldId": "europe-3",
@@ -4832,7 +4973,8 @@
       "monument",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "KYI"
   },
   {
     "worldId": "europe-3",
@@ -4877,7 +5019,8 @@
       "education",
       "yorkshire"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "LEE"
   },
   {
     "worldId": "europe-3",
@@ -4901,7 +5044,8 @@
     },
     "hubId": "hub:europe-3:community-chest",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CST"
   },
   {
     "worldId": "europe-3",
@@ -4945,7 +5089,8 @@
       "architecture",
       "urban"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "LEI"
   },
   {
     "worldId": "europe-3",
@@ -4965,12 +5110,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-3-tax-income.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:europe-3:tax-income",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 200
+    "taxAmount": 200,
+    "boardCode": "TAX"
   },
   {
     "worldId": "europe-3",
@@ -5017,12 +5163,13 @@
       "historic",
       "portuguese"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "LER"
   },
   {
     "worldId": "europe-3",
     "slug": "rail-1",
-    "name": "Europe 3 Air North",
+    "name": "Leonardo da Vinci–Fiumicino Airport",
     "countryCode": "XX",
     "region": "Europe 3",
     "kind": "railroad",
@@ -5045,8 +5192,10 @@
     },
     "hubId": "hub:europe-3:rail-1",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Leonardo da Vinci–Fiumicino Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "FCO",
+    "aboutShort": "Leonardo da Vinci–Fiumicino Airport (FCO)"
   },
   {
     "worldId": "europe-3",
@@ -5092,7 +5241,8 @@
       "rhine",
       "skyline"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "LEV"
   },
   {
     "worldId": "europe-3",
@@ -5116,7 +5266,8 @@
     },
     "hubId": "hub:europe-3:chance",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH"
   },
   {
     "worldId": "europe-3",
@@ -5160,7 +5311,8 @@
       "fortress",
       "medieval"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "LIM"
   },
   {
     "worldId": "europe-3",
@@ -5204,7 +5356,8 @@
       "belem",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "LI2"
   },
   {
     "worldId": "europe-3",
@@ -5224,11 +5377,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-3-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:europe-3:jail",
     "enterRadius": 1.8,
-    "description": "Special space: jail."
+    "description": "Special space: jail.",
+    "boardCode": "JAL"
   },
   {
     "worldId": "europe-3",
@@ -5275,7 +5429,8 @@
       "maritime",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "LIV"
   },
   {
     "worldId": "europe-3",
@@ -5303,7 +5458,8 @@
     "hubId": "hub:europe-3:utility-power",
     "enterRadius": 2.0,
     "description": "Electric utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ELC"
   },
   {
     "worldId": "europe-3",
@@ -5347,7 +5503,8 @@
       "symbol",
       "historic"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "LJU"
   },
   {
     "worldId": "europe-3",
@@ -5392,7 +5549,8 @@
       "historic",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "LON"
   },
   {
     "worldId": "europe-3",
@@ -5438,12 +5596,13 @@
       "wildlife",
       "road-sign"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "LOG"
   },
   {
     "worldId": "europe-3",
     "slug": "rail-2",
-    "name": "Europe 3 Air East",
+    "name": "Milan Malpensa Airport",
     "countryCode": "XX",
     "region": "Europe 3",
     "kind": "railroad",
@@ -5466,8 +5625,10 @@
     },
     "hubId": "hub:europe-3:rail-2",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Milan Malpensa Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "MXP",
+    "aboutShort": "Milan Malpensa Airport (MXP)"
   },
   {
     "worldId": "europe-3",
@@ -5514,12 +5675,13 @@
       "heraldic",
       "national"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "LUX"
   },
   {
     "worldId": "europe-3",
     "slug": "free-parking",
-    "name": "Free Parking — Plaza",
+    "name": "Layover",
     "countryCode": "XX",
     "region": "Europe 3",
     "kind": "special",
@@ -5538,7 +5700,9 @@
     },
     "hubId": "hub:europe-3:free-parking",
     "enterRadius": 1.8,
-    "description": "Special space: free_parking."
+    "description": "Layover",
+    "boardCode": "P",
+    "aboutShort": "Layover — free rest stop"
   },
   {
     "worldId": "europe-3",
@@ -5583,7 +5747,8 @@
       "emblem",
       "historic"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "LYO"
   },
   {
     "worldId": "europe-3",
@@ -5629,7 +5794,8 @@
       "heraldry",
       "historic"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "MAA"
   },
   {
     "worldId": "europe-3",
@@ -5653,7 +5819,8 @@
     },
     "hubId": "hub:europe-3:chance-2",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH2"
   },
   {
     "worldId": "europe-3",
@@ -5698,7 +5865,8 @@
       "tree",
       "symbol"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "MAD"
   },
   {
     "worldId": "europe-3",
@@ -5743,12 +5911,13 @@
       "symbol",
       "industrial"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "MAN"
   },
   {
     "worldId": "europe-3",
     "slug": "rail-3",
-    "name": "Europe 3 Air South",
+    "name": "Athens International Airport",
     "countryCode": "XX",
     "region": "Europe 3",
     "kind": "railroad",
@@ -5771,8 +5940,10 @@
     },
     "hubId": "hub:europe-3:rail-3",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Athens International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ATH",
+    "aboutShort": "Athens International Airport (ATH)"
   },
   {
     "worldId": "europe-3",
@@ -5816,7 +5987,8 @@
       "seaside",
       "symbol"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "MAT"
   },
   {
     "worldId": "europe-3",
@@ -5844,7 +6016,8 @@
     "hubId": "hub:europe-3:utility-water",
     "enterRadius": 2.0,
     "description": "Water utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "WTR"
   },
   {
     "worldId": "europe-3",
@@ -5889,7 +6062,8 @@
       "gothic",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "MIL"
   },
   {
     "worldId": "europe-3",
@@ -5933,12 +6107,13 @@
       "orthodox",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "MIN"
   },
   {
     "worldId": "europe-3",
     "slug": "rail-4",
-    "name": "Europe 3 Air West",
+    "name": "Lisbon Humberto Delgado Airport",
     "countryCode": "XX",
     "region": "Europe 3",
     "kind": "railroad",
@@ -5961,8 +6136,10 @@
     },
     "hubId": "hub:europe-3:rail-4",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Lisbon Humberto Delgado Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "LIS",
+    "aboutShort": "Lisbon Humberto Delgado Airport (LIS)"
   },
   {
     "worldId": "europe-3",
@@ -6009,7 +6186,8 @@
       "royal",
       "elegant"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "MON"
   },
   {
     "worldId": "europe-3",
@@ -6056,7 +6234,8 @@
       "engineering",
       "historic"
     ],
-    "landmarkCategory": "Architecture"
+    "landmarkCategory": "Architecture",
+    "boardCode": "MOT"
   },
   {
     "worldId": "europe-3",
@@ -6076,11 +6255,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-3-go-to-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:europe-3:go-to-jail",
     "enterRadius": 1.8,
-    "description": "Special space: go_to_jail."
+    "description": "Special space: go_to_jail.",
+    "boardCode": "GTJ"
   },
   {
     "worldId": "europe-3",
@@ -6128,7 +6308,8 @@
       "russian",
       "historical"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "MOW"
   },
   {
     "worldId": "europe-3",
@@ -6152,7 +6333,8 @@
     },
     "hubId": "hub:europe-3:community-chest-2",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CS2"
   },
   {
     "worldId": "europe-3",
@@ -6196,7 +6378,8 @@
       "ottoman",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "MOS"
   },
   {
     "worldId": "europe-3",
@@ -6216,12 +6399,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-3-tax-luxury.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:europe-3:tax-luxury",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 100
+    "taxAmount": 100,
+    "boardCode": "LTX"
   },
   {
     "worldId": "europe-3",
@@ -6267,7 +6451,8 @@
       "bavarian",
       "traditional"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "MUN"
   },
   {
     "worldId": "europe-3",
@@ -6311,7 +6496,8 @@
       "aurora",
       "arctic"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "MUR"
   },
   {
     "worldId": "europe-4",
@@ -6336,7 +6522,8 @@
     "hubId": "hub:europe-4:go",
     "enterRadius": 1.8,
     "description": "Special space: go.",
-    "passBonus": 200
+    "passBonus": 200,
+    "boardCode": "GO"
   },
   {
     "worldId": "europe-4",
@@ -6383,7 +6570,8 @@
       "andalusian",
       "tradition"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "MAL"
   },
   {
     "worldId": "europe-4",
@@ -6429,7 +6617,8 @@
       "ocean",
       "extreme-sports"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "NAZ"
   },
   {
     "worldId": "europe-4",
@@ -6476,7 +6665,8 @@
       "cypriot",
       "symbolic"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "NIC"
   },
   {
     "worldId": "europe-4",
@@ -6500,7 +6690,8 @@
     },
     "hubId": "hub:europe-4:community-chest",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CST"
   },
   {
     "worldId": "europe-4",
@@ -6544,7 +6735,8 @@
       "medieval",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "NUR"
   },
   {
     "worldId": "europe-4",
@@ -6564,12 +6756,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-4-tax-income.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:europe-4:tax-income",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 200
+    "taxAmount": 200,
+    "boardCode": "TAX"
   },
   {
     "worldId": "europe-4",
@@ -6615,12 +6808,13 @@
       "richelieu",
       "french"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "ODE"
   },
   {
     "worldId": "europe-4",
     "slug": "rail-1",
-    "name": "Europe 4 Air North",
+    "name": "Stockholm Arlanda Airport",
     "countryCode": "XX",
     "region": "Europe 4",
     "kind": "railroad",
@@ -6643,8 +6837,10 @@
     },
     "hubId": "hub:europe-4:rail-1",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Stockholm Arlanda Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ARN",
+    "aboutShort": "Stockholm Arlanda Airport (ARN)"
   },
   {
     "worldId": "europe-4",
@@ -6688,7 +6884,8 @@
       "modern",
       "architecture"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "OS2"
   },
   {
     "worldId": "europe-4",
@@ -6712,7 +6909,8 @@
     },
     "hubId": "hub:europe-4:chance",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH"
   },
   {
     "worldId": "europe-4",
@@ -6759,7 +6957,8 @@
       "ancient",
       "surreal"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "PAL"
   },
   {
     "worldId": "europe-4",
@@ -6804,7 +7003,8 @@
       "mythology",
       "ancient"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "PAP"
   },
   {
     "worldId": "europe-4",
@@ -6824,11 +7024,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-4-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:europe-4:jail",
     "enterRadius": 1.8,
-    "description": "Special space: jail."
+    "description": "Special space: jail.",
+    "boardCode": "JAL"
   },
   {
     "worldId": "europe-4",
@@ -6873,7 +7074,8 @@
       "romance",
       "architecture"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "PAR"
   },
   {
     "worldId": "europe-4",
@@ -6901,7 +7103,8 @@
     "hubId": "hub:europe-4:utility-power",
     "enterRadius": 2.0,
     "description": "Electric utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ELC"
   },
   {
     "worldId": "europe-4",
@@ -6947,7 +7150,8 @@
       "historic",
       "timepiece"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "POD"
   },
   {
     "worldId": "europe-4",
@@ -6992,7 +7196,8 @@
       "riverside",
       "medieval"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "POR"
   },
   {
     "worldId": "europe-4",
@@ -7040,12 +7245,13 @@
       "tradition",
       "clock-tower"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "POZ"
   },
   {
     "worldId": "europe-4",
     "slug": "rail-2",
-    "name": "Europe 4 Air East",
+    "name": "Oslo Gardermoen Airport",
     "countryCode": "XX",
     "region": "Europe 4",
     "kind": "railroad",
@@ -7068,8 +7274,10 @@
     },
     "hubId": "hub:europe-4:rail-2",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Oslo Gardermoen Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "OSL",
+    "aboutShort": "Oslo Gardermoen Airport (OSL)"
   },
   {
     "worldId": "europe-4",
@@ -7114,12 +7322,13 @@
       "historic",
       "medieval"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "PRA"
   },
   {
     "worldId": "europe-4",
     "slug": "free-parking",
-    "name": "Free Parking — Plaza",
+    "name": "Layover",
     "countryCode": "XX",
     "region": "Europe 4",
     "kind": "special",
@@ -7138,7 +7347,9 @@
     },
     "hubId": "hub:europe-4:free-parking",
     "enterRadius": 1.8,
-    "description": "Special space: free_parking."
+    "description": "Layover",
+    "boardCode": "P",
+    "aboutShort": "Layover — free rest stop"
   },
   {
     "worldId": "europe-4",
@@ -7185,7 +7396,8 @@
       "modern",
       "cultural"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "PRI"
   },
   {
     "worldId": "europe-4",
@@ -7231,7 +7443,8 @@
       "historic",
       "breton"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "REN"
   },
   {
     "worldId": "europe-4",
@@ -7255,7 +7468,8 @@
     },
     "hubId": "hub:europe-4:chance-2",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH2"
   },
   {
     "worldId": "europe-4",
@@ -7299,7 +7513,8 @@
       "modern",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "REY"
   },
   {
     "worldId": "europe-4",
@@ -7343,12 +7558,13 @@
       "architecture",
       "medieval"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "RIG"
   },
   {
     "worldId": "europe-4",
     "slug": "rail-3",
-    "name": "Europe 4 Air South",
+    "name": "Copenhagen Airport",
     "countryCode": "XX",
     "region": "Europe 4",
     "kind": "railroad",
@@ -7371,8 +7587,10 @@
     },
     "hubId": "hub:europe-4:rail-3",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Copenhagen Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "CPH",
+    "aboutShort": "Copenhagen Airport (CPH)"
   },
   {
     "worldId": "europe-4",
@@ -7417,7 +7635,8 @@
       "ancient",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "ROM"
   },
   {
     "worldId": "europe-4",
@@ -7445,7 +7664,8 @@
     "hubId": "hub:europe-4:utility-water",
     "enterRadius": 2.0,
     "description": "Water utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "WTR"
   },
   {
     "worldId": "europe-4",
@@ -7491,7 +7711,8 @@
       "architecture",
       "innovative"
     ],
-    "landmarkCategory": "Architecture"
+    "landmarkCategory": "Architecture",
+    "boardCode": "ROT"
   },
   {
     "worldId": "europe-4",
@@ -7537,12 +7758,13 @@
       "historic",
       "fortress"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SAN"
   },
   {
     "worldId": "europe-4",
     "slug": "rail-4",
-    "name": "Europe 4 Air West",
+    "name": "Helsinki Airport",
     "countryCode": "XX",
     "region": "Europe 4",
     "kind": "railroad",
@@ -7565,8 +7787,10 @@
     },
     "hubId": "hub:europe-4:rail-4",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Helsinki Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "HEL",
+    "aboutShort": "Helsinki Airport (HEL)"
   },
   {
     "worldId": "europe-4",
@@ -7612,7 +7836,8 @@
       "cathedral",
       "religious"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SAT"
   },
   {
     "worldId": "europe-4",
@@ -7658,7 +7883,8 @@
       "historic",
       "cultural"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SAR"
   },
   {
     "worldId": "europe-4",
@@ -7678,11 +7904,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-4-go-to-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:europe-4:go-to-jail",
     "enterRadius": 1.8,
-    "description": "Special space: go_to_jail."
+    "description": "Special space: go_to_jail.",
+    "boardCode": "GTJ"
   },
   {
     "worldId": "europe-4",
@@ -7729,7 +7956,8 @@
       "saxon",
       "folklore"
     ],
-    "landmarkCategory": "Architecture"
+    "landmarkCategory": "Architecture",
+    "boardCode": "SIB"
   },
   {
     "worldId": "europe-4",
@@ -7753,7 +7981,8 @@
     },
     "hubId": "hub:europe-4:community-chest-2",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CS2"
   },
   {
     "worldId": "europe-4",
@@ -7800,7 +8029,8 @@
       "metalworking",
       "heritage"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "SIE"
   },
   {
     "worldId": "europe-4",
@@ -7820,12 +8050,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-4-tax-luxury.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:europe-4:tax-luxury",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 100
+    "taxAmount": 100,
+    "boardCode": "LTX"
   },
   {
     "worldId": "europe-4",
@@ -7869,7 +8100,8 @@
       "alexander",
       "monument"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SKO"
   },
   {
     "worldId": "europe-4",
@@ -7916,7 +8148,8 @@
       "orthodox",
       "religious"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SOF"
   },
   {
     "worldId": "europe-5",
@@ -7941,7 +8174,8 @@
     "hubId": "hub:europe-5:go",
     "enterRadius": 1.8,
     "description": "Special space: go.",
-    "passBonus": 200
+    "passBonus": 200,
+    "boardCode": "GO"
   },
   {
     "worldId": "europe-5",
@@ -7985,7 +8219,8 @@
       "citrus",
       "traditional"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "SOR"
   },
   {
     "worldId": "europe-5",
@@ -8029,7 +8264,8 @@
       "royal",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "STO"
   },
   {
     "worldId": "europe-5",
@@ -8076,7 +8312,8 @@
       "modern-architecture",
       "futuristic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "STU"
   },
   {
     "worldId": "europe-5",
@@ -8100,7 +8337,8 @@
     },
     "hubId": "hub:europe-5:community-chest",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CST"
   },
   {
     "worldId": "europe-5",
@@ -8147,7 +8385,8 @@
       "secession",
       "ornamental"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SUB"
   },
   {
     "worldId": "europe-5",
@@ -8167,12 +8406,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-5-tax-income.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:europe-5:tax-income",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 200
+    "taxAmount": 200,
+    "boardCode": "TAX"
   },
   {
     "worldId": "europe-5",
@@ -8218,12 +8458,13 @@
       "tower",
       "gothic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SZE"
   },
   {
     "worldId": "europe-5",
     "slug": "rail-1",
-    "name": "Europe 5 Air North",
+    "name": "Warsaw Chopin Airport",
     "countryCode": "XX",
     "region": "Europe 5",
     "kind": "railroad",
@@ -8246,8 +8487,10 @@
     },
     "hubId": "hub:europe-5:rail-1",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Warsaw Chopin Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "WAW",
+    "aboutShort": "Warsaw Chopin Airport (WAW)"
   },
   {
     "worldId": "europe-5",
@@ -8293,7 +8536,8 @@
       "medieval",
       "defensive"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "TAL"
   },
   {
     "worldId": "europe-5",
@@ -8317,7 +8561,8 @@
     },
     "hubId": "hub:europe-5:chance",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH"
   },
   {
     "worldId": "europe-5",
@@ -8363,7 +8608,8 @@
       "coastal",
       "symbol"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "TAR"
   },
   {
     "worldId": "europe-5",
@@ -8410,7 +8656,8 @@
       "hero",
       "national"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "TIR"
   },
   {
     "worldId": "europe-5",
@@ -8430,11 +8677,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-5-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:europe-5:jail",
     "enterRadius": 1.8,
-    "description": "Special space: jail."
+    "description": "Special space: jail.",
+    "boardCode": "JAL"
   },
   {
     "worldId": "europe-5",
@@ -8480,7 +8728,8 @@
       "symbol",
       "french"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "TOU"
   },
   {
     "worldId": "europe-5",
@@ -8508,7 +8757,8 @@
     "hubId": "hub:europe-5:utility-power",
     "enterRadius": 2.0,
     "description": "Electric utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ELC"
   },
   {
     "worldId": "europe-5",
@@ -8552,7 +8802,8 @@
       "historic",
       "mediterranean"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "TRI"
   },
   {
     "worldId": "europe-5",
@@ -8599,7 +8850,8 @@
       "craftsmanship",
       "cultural-heritage"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "TUL"
   },
   {
     "worldId": "europe-5",
@@ -8646,12 +8898,13 @@
       "government",
       "modern"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "VAD"
   },
   {
     "worldId": "europe-5",
     "slug": "rail-2",
-    "name": "Europe 5 Air East",
+    "name": "Václav Havel Airport Prague",
     "countryCode": "XX",
     "region": "Europe 5",
     "kind": "railroad",
@@ -8674,8 +8927,10 @@
     },
     "hubId": "hub:europe-5:rail-2",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Václav Havel Airport Prague",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "PRG",
+    "aboutShort": "Václav Havel Airport Prague (PRG)"
   },
   {
     "worldId": "europe-5",
@@ -8720,12 +8975,13 @@
       "aquarium",
       "modern"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "VAL"
   },
   {
     "worldId": "europe-5",
     "slug": "free-parking",
-    "name": "Free Parking — Plaza",
+    "name": "Layover",
     "countryCode": "XX",
     "region": "Europe 5",
     "kind": "special",
@@ -8744,7 +9000,9 @@
     },
     "hubId": "hub:europe-5:free-parking",
     "enterRadius": 1.8,
-    "description": "Special space: free_parking."
+    "description": "Layover",
+    "boardCode": "P",
+    "aboutShort": "Layover — free rest stop"
   },
   {
     "worldId": "europe-5",
@@ -8790,7 +9048,8 @@
       "symbolic",
       "cultural"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "VAE"
   },
   {
     "worldId": "europe-5",
@@ -8838,7 +9097,8 @@
       "religious",
       "symbolic"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "VAT"
   },
   {
     "worldId": "europe-5",
@@ -8862,7 +9122,8 @@
     },
     "hubId": "hub:europe-5:chance-2",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH2"
   },
   {
     "worldId": "europe-5",
@@ -8907,7 +9168,8 @@
       "book",
       "historic"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "VEN"
   },
   {
     "worldId": "europe-5",
@@ -8953,12 +9215,13 @@
       "monument",
       "cultural"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "VIA"
   },
   {
     "worldId": "europe-5",
     "slug": "rail-3",
-    "name": "Europe 5 Air South",
+    "name": "Budapest Ferenc Liszt Airport",
     "countryCode": "XX",
     "region": "Europe 5",
     "kind": "railroad",
@@ -8981,8 +9244,10 @@
     },
     "hubId": "hub:europe-5:rail-3",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Budapest Ferenc Liszt Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "BUD",
+    "aboutShort": "Budapest Ferenc Liszt Airport (BUD)"
   },
   {
     "worldId": "europe-5",
@@ -9027,7 +9292,8 @@
       "gothic",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "VIE"
   },
   {
     "worldId": "europe-5",
@@ -9055,7 +9321,8 @@
     "hubId": "hub:europe-5:utility-water",
     "enterRadius": 2.0,
     "description": "Water utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "WTR"
   },
   {
     "worldId": "europe-5",
@@ -9101,7 +9368,8 @@
       "culinary",
       "spanish"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "VIG"
   },
   {
     "worldId": "europe-5",
@@ -9147,12 +9415,13 @@
       "portuguese",
       "cultural"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "VIL"
   },
   {
     "worldId": "europe-5",
     "slug": "rail-4",
-    "name": "Europe 5 Air West",
+    "name": "Bucharest Henri Coandă Airport",
     "countryCode": "XX",
     "region": "Europe 5",
     "kind": "railroad",
@@ -9175,8 +9444,10 @@
     },
     "hubId": "hub:europe-5:rail-4",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Bucharest Henri Coandă Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "OTP",
+    "aboutShort": "Bucharest Henri Coandă Airport (OTP)"
   },
   {
     "worldId": "europe-5",
@@ -9222,7 +9493,8 @@
       "medieval",
       "defensive"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "VIN"
   },
   {
     "worldId": "europe-5",
@@ -9267,7 +9539,8 @@
       "mythology",
       "symbol"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "WAR"
   },
   {
     "worldId": "europe-5",
@@ -9287,11 +9560,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-5-go-to-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:europe-5:go-to-jail",
     "enterRadius": 1.8,
-    "description": "Special space: go_to_jail."
+    "description": "Special space: go_to_jail.",
+    "boardCode": "GTJ"
   },
   {
     "worldId": "europe-5",
@@ -9337,7 +9611,8 @@
       "historic",
       "heritage"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "WOE"
   },
   {
     "worldId": "europe-5",
@@ -9361,7 +9636,8 @@
     },
     "hubId": "hub:europe-5:community-chest-2",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CS2"
   },
   {
     "worldId": "europe-5",
@@ -9409,7 +9685,8 @@
       "statue",
       "tradition"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "WRO"
   },
   {
     "worldId": "europe-5",
@@ -9429,12 +9706,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/europe-5-tax-luxury.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:europe-5:tax-luxury",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 100
+    "taxAmount": 100,
+    "boardCode": "LTX"
   },
   {
     "worldId": "europe-5",
@@ -9482,7 +9760,8 @@
       "medieval",
       "religious"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "ZAG"
   },
   {
     "worldId": "europe-5",
@@ -9527,7 +9806,8 @@
       "statue",
       "christian"
     ],
-    "landmarkCategory": "Religion"
+    "landmarkCategory": "Religion",
+    "boardCode": "SWI"
   },
   {
     "worldId": "asia-1",
@@ -9552,7 +9832,8 @@
     "hubId": "hub:asia-1:go",
     "enterRadius": 1.8,
     "description": "Special space: go.",
-    "passBonus": 200
+    "passBonus": 200,
+    "boardCode": "GO"
   },
   {
     "worldId": "asia-1",
@@ -9597,7 +9878,8 @@
       "mausoleum",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "AGR"
   },
   {
     "worldId": "asia-1",
@@ -9642,7 +9924,8 @@
       "nature",
       "scenic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "ALM"
   },
   {
     "worldId": "asia-1",
@@ -9688,7 +9971,8 @@
       "monument",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "ASH"
   },
   {
     "worldId": "asia-1",
@@ -9712,7 +9996,8 @@
     },
     "hubId": "hub:asia-1:community-chest",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CST"
   },
   {
     "worldId": "asia-1",
@@ -9760,12 +10045,13 @@
       "landmark",
       "capital"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "AST"
   },
   {
     "worldId": "asia-1",
     "slug": "rail-1",
-    "name": "Asia 1 Air North",
+    "name": "Tokyo Narita International Airport",
     "countryCode": "XX",
     "region": "Asia 1",
     "kind": "railroad",
@@ -9788,8 +10074,10 @@
     },
     "hubId": "hub:asia-1:rail-1",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Tokyo Narita International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "NRT",
+    "aboutShort": "Tokyo Narita International Airport (NRT)"
   },
   {
     "worldId": "asia-1",
@@ -9836,7 +10124,8 @@
       "pagoda",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BAG"
   },
   {
     "worldId": "asia-1",
@@ -9882,7 +10171,8 @@
       "historic",
       "gate"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "PE2"
   },
   {
     "worldId": "asia-1",
@@ -9906,7 +10196,8 @@
     },
     "hubId": "hub:asia-1:chance",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH"
   },
   {
     "worldId": "asia-1",
@@ -9953,7 +10244,8 @@
       "hero",
       "heritage"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "BIS"
   },
   {
     "worldId": "asia-1",
@@ -9998,7 +10290,8 @@
       "mactan shrine",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "CEB"
   },
   {
     "worldId": "asia-1",
@@ -10018,11 +10311,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/asia-1-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:asia-1:jail",
     "enterRadius": 1.8,
-    "description": "Special space: jail."
+    "description": "Special space: jail.",
+    "boardCode": "JAL"
   },
   {
     "worldId": "asia-1",
@@ -10068,7 +10362,8 @@
       "conservation",
       "symbol"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "CHE"
   },
   {
     "worldId": "asia-1",
@@ -10096,7 +10391,8 @@
     "hubId": "hub:asia-1:utility-power",
     "enterRadius": 2.0,
     "description": "Electric utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ELC"
   },
   {
     "worldId": "asia-1",
@@ -10142,7 +10438,8 @@
       "coastal",
       "hilltop"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "DAN"
   },
   {
     "worldId": "asia-1",
@@ -10186,12 +10483,13 @@
       "lotus",
       "modern"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "DEL"
   },
   {
     "worldId": "asia-1",
     "slug": "rail-2",
-    "name": "Asia 1 Air East",
+    "name": "Beijing Capital International Airport",
     "countryCode": "XX",
     "region": "Asia 1",
     "kind": "railroad",
@@ -10214,8 +10512,10 @@
     },
     "hubId": "hub:asia-1:rail-2",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Beijing Capital International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "PEK",
+    "aboutShort": "Beijing Capital International Airport (PEK)"
   },
   {
     "worldId": "asia-1",
@@ -10259,12 +10559,13 @@
       "balinese",
       "traditional"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "DEN"
   },
   {
     "worldId": "asia-1",
     "slug": "free-parking",
-    "name": "Free Parking — Plaza",
+    "name": "Layover",
     "countryCode": "XX",
     "region": "Asia 1",
     "kind": "special",
@@ -10283,7 +10584,9 @@
     },
     "hubId": "hub:asia-1:free-parking",
     "enterRadius": 1.8,
-    "description": "Special space: free_parking."
+    "description": "Layover",
+    "boardCode": "P",
+    "aboutShort": "Layover — free rest stop"
   },
   {
     "worldId": "asia-1",
@@ -10327,7 +10630,8 @@
       "urban",
       "architecture"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "DHA"
   },
   {
     "worldId": "asia-1",
@@ -10374,7 +10678,8 @@
       "religious",
       "hilltop"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "DIL"
   },
   {
     "worldId": "asia-1",
@@ -10398,7 +10703,8 @@
     },
     "hubId": "hub:asia-1:chance-2",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH2"
   },
   {
     "worldId": "asia-1",
@@ -10444,7 +10750,8 @@
       "arch",
       "national-hero"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "DUS"
   },
   {
     "worldId": "asia-1",
@@ -10488,7 +10795,8 @@
       "tower",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "HAN"
   },
   {
     "worldId": "asia-1",
@@ -10516,7 +10824,8 @@
     "hubId": "hub:asia-1:utility-water",
     "enterRadius": 2.0,
     "description": "Water utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "WTR"
   },
   {
     "worldId": "asia-1",
@@ -10562,7 +10871,8 @@
       "clock-tower",
       "street-food"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "HOC"
   },
   {
     "worldId": "asia-1",
@@ -10608,7 +10918,8 @@
       "religious",
       "architectural"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "ISL"
   },
   {
     "worldId": "asia-1",
@@ -10653,12 +10964,13 @@
       "historic",
       "guan yu"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "JIN"
   },
   {
     "worldId": "asia-1",
     "slug": "rail-4",
-    "name": "Asia 1 Air West",
+    "name": "Singapore Changi Airport",
     "countryCode": "XX",
     "region": "Asia 1",
     "kind": "railroad",
@@ -10681,8 +10993,10 @@
     },
     "hubId": "hub:asia-1:rail-4",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Singapore Changi Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "SIN",
+    "aboutShort": "Singapore Changi Airport (SIN)"
   },
   {
     "worldId": "asia-1",
@@ -10726,7 +11040,8 @@
       "harbor",
       "modern"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "KAR"
   },
   {
     "worldId": "asia-1",
@@ -10746,11 +11061,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/asia-1-go-to-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:asia-1:go-to-jail",
     "enterRadius": 1.8,
-    "description": "Special space: go_to_jail."
+    "description": "Special space: go_to_jail.",
+    "boardCode": "GTJ"
   },
   {
     "worldId": "asia-1",
@@ -10796,7 +11112,8 @@
       "industrial",
       "heritage"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "KAA"
   },
   {
     "worldId": "asia-1",
@@ -10820,7 +11137,8 @@
     },
     "hubId": "hub:asia-1:community-chest-2",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CS2"
   },
   {
     "worldId": "asia-1",
@@ -10864,7 +11182,8 @@
       "buddhist",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "KAT"
   },
   {
     "worldId": "asia-1",
@@ -10884,12 +11203,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/asia-1-tax-luxury.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:asia-1:tax-luxury",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 100
+    "taxAmount": 100,
+    "boardCode": "LTX"
   },
   {
     "worldId": "asia-1",
@@ -10937,7 +11257,8 @@
       "pegasus",
       "cultural"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "KOS"
   },
   {
     "worldId": "asia-1",
@@ -10983,7 +11304,8 @@
       "modern",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "KUA"
   },
   {
     "worldId": "asia-2",
@@ -11008,7 +11330,8 @@
     "hubId": "hub:asia-2:go",
     "enterRadius": 1.8,
     "description": "Special space: go.",
-    "passBonus": 200
+    "passBonus": 200,
+    "boardCode": "GO"
   },
   {
     "worldId": "asia-2",
@@ -11055,7 +11378,8 @@
       "quirky",
       "mascot"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "KUC"
   },
   {
     "worldId": "asia-2",
@@ -11099,7 +11423,8 @@
       "buddhist",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "KYO"
   },
   {
     "worldId": "asia-2",
@@ -11145,7 +11470,8 @@
       "unesco",
       "giant"
     ],
-    "landmarkCategory": "Religion"
+    "landmarkCategory": "Religion",
+    "boardCode": "LES"
   },
   {
     "worldId": "asia-2",
@@ -11169,7 +11495,8 @@
     },
     "hubId": "hub:asia-2:community-chest",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CST"
   },
   {
     "worldId": "asia-2",
@@ -11216,12 +11543,13 @@
       "laotian",
       "sacred"
     ],
-    "landmarkCategory": "Religion"
+    "landmarkCategory": "Religion",
+    "boardCode": "LUA"
   },
   {
     "worldId": "asia-2",
     "slug": "rail-1",
-    "name": "Asia 2 Air North",
+    "name": "Seoul Incheon International Airport",
     "countryCode": "XX",
     "region": "Asia 2",
     "kind": "railroad",
@@ -11244,8 +11572,10 @@
     },
     "hubId": "hub:asia-2:rail-1",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Seoul Incheon International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ICN",
+    "aboutShort": "Seoul Incheon International Airport (ICN)"
   },
   {
     "worldId": "asia-2",
@@ -11289,7 +11619,8 @@
       "colonial",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "MAN"
   },
   {
     "worldId": "asia-2",
@@ -11336,7 +11667,8 @@
       "temple",
       "national-treasure"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "NAR"
   },
   {
     "worldId": "asia-2",
@@ -11360,7 +11692,8 @@
     },
     "hubId": "hub:asia-2:chance",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH"
   },
   {
     "worldId": "asia-2",
@@ -11406,7 +11739,8 @@
       "headwear",
       "ethnic"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "NUK"
   },
   {
     "worldId": "asia-2",
@@ -11451,7 +11785,8 @@
       "spiritual",
       "thai"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "PAT"
   },
   {
     "worldId": "asia-2",
@@ -11471,11 +11806,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/asia-2-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:asia-2:jail",
     "enterRadius": 1.8,
-    "description": "Special space: jail."
+    "description": "Special space: jail.",
+    "boardCode": "JAL"
   },
   {
     "worldId": "asia-2",
@@ -11522,7 +11858,8 @@
       "monument",
       "ideology"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "PYO"
   },
   {
     "worldId": "asia-2",
@@ -11550,7 +11887,8 @@
     "hubId": "hub:asia-2:utility-power",
     "enterRadius": 2.0,
     "description": "Electric utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ELC"
   },
   {
     "worldId": "asia-2",
@@ -11594,7 +11932,8 @@
       "lake",
       "nature"
     ],
-    "landmarkCategory": "Nature"
+    "landmarkCategory": "Nature",
+    "boardCode": "SCH"
   },
   {
     "worldId": "asia-2",
@@ -11640,12 +11979,13 @@
       "fish",
       "singapore"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SEN"
   },
   {
     "worldId": "asia-2",
     "slug": "rail-2",
-    "name": "Asia 2 Air East",
+    "name": "Hong Kong International Airport",
     "countryCode": "XX",
     "region": "Asia 2",
     "kind": "railroad",
@@ -11668,8 +12008,10 @@
     },
     "hubId": "hub:asia-2:rail-2",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Hong Kong International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "HKG",
+    "aboutShort": "Hong Kong International Airport (HKG)"
   },
   {
     "worldId": "asia-2",
@@ -11713,12 +12055,13 @@
       "technology",
       "urban"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "SEL"
   },
   {
     "worldId": "asia-2",
     "slug": "free-parking",
-    "name": "Free Parking — Plaza",
+    "name": "Layover",
     "countryCode": "XX",
     "region": "Asia 2",
     "kind": "special",
@@ -11737,7 +12080,9 @@
     },
     "hubId": "hub:asia-2:free-parking",
     "enterRadius": 1.8,
-    "description": "Special space: free_parking."
+    "description": "Layover",
+    "boardCode": "P",
+    "aboutShort": "Layover — free rest stop"
   },
   {
     "worldId": "asia-2",
@@ -11783,7 +12128,8 @@
       "petroleum",
       "industry"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SER"
   },
   {
     "worldId": "asia-2",
@@ -11828,7 +12174,8 @@
       "modern",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SHA"
   },
   {
     "worldId": "asia-2",
@@ -11852,7 +12199,8 @@
     },
     "hubId": "hub:asia-2:chance-2",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH2"
   },
   {
     "worldId": "asia-2",
@@ -11901,7 +12249,8 @@
       "rural",
       "japanese"
     ],
-    "landmarkCategory": "Architecture"
+    "landmarkCategory": "Architecture",
+    "boardCode": "SHI"
   },
   {
     "worldId": "asia-2",
@@ -11947,7 +12296,8 @@
       "iconic",
       "coastal"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SIH"
   },
   {
     "worldId": "asia-2",
@@ -11975,7 +12325,8 @@
     "hubId": "hub:asia-2:utility-water",
     "enterRadius": 2.0,
     "description": "Water utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "WTR"
   },
   {
     "worldId": "asia-2",
@@ -12021,7 +12372,8 @@
       "tower",
       "modern-architecture"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "TAI"
   },
   {
     "worldId": "asia-2",
@@ -12066,7 +12418,8 @@
       "islamic",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "TAS"
   },
   {
     "worldId": "asia-2",
@@ -12112,12 +12465,13 @@
       "spiritual",
       "traditional"
     ],
-    "landmarkCategory": "Religion"
+    "landmarkCategory": "Religion",
+    "boardCode": "THI"
   },
   {
     "worldId": "asia-2",
     "slug": "rail-4",
-    "name": "Asia 2 Air West",
+    "name": "Indira Gandhi International Airport",
     "countryCode": "XX",
     "region": "Asia 2",
     "kind": "railroad",
@@ -12140,8 +12494,10 @@
     },
     "hubId": "hub:asia-2:rail-4",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Indira Gandhi International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "DEL",
+    "aboutShort": "Indira Gandhi International Airport (DEL)"
   },
   {
     "worldId": "asia-2",
@@ -12190,7 +12546,8 @@
       "sacred",
       "nature"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "TYO"
   },
   {
     "worldId": "asia-2",
@@ -12210,11 +12567,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/asia-2-go-to-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:asia-2:go-to-jail",
     "enterRadius": 1.8,
-    "description": "Special space: go_to_jail."
+    "description": "Special space: go_to_jail.",
+    "boardCode": "GTJ"
   },
   {
     "worldId": "asia-2",
@@ -12260,7 +12618,8 @@
       "traditional",
       "dwelling"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "ULA"
   },
   {
     "worldId": "asia-2",
@@ -12284,7 +12643,8 @@
     },
     "hubId": "hub:asia-2:community-chest-2",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CS2"
   },
   {
     "worldId": "asia-2",
@@ -12328,7 +12688,8 @@
       "riverside",
       "traditional"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "URA"
   },
   {
     "worldId": "asia-2",
@@ -12348,12 +12709,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/asia-2-tax-luxury.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:asia-2:tax-luxury",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 100
+    "taxAmount": 100,
+    "boardCode": "LTX"
   },
   {
     "worldId": "asia-2",
@@ -12400,7 +12762,8 @@
       "religious",
       "hilltop"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "VUN"
   },
   {
     "worldId": "asia-2",
@@ -12448,7 +12811,8 @@
       "historical",
       "fortress"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "YAK"
   },
   {
     "worldId": "north-america-1",
@@ -12473,7 +12837,8 @@
     "hubId": "hub:north-america-1:go",
     "enterRadius": 1.8,
     "description": "Special space: go.",
-    "passBonus": 200
+    "passBonus": 200,
+    "boardCode": "GO"
   },
   {
     "worldId": "north-america-1",
@@ -12519,7 +12884,8 @@
       "aviation",
       "new-mexico"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "ALB"
   },
   {
     "worldId": "north-america-1",
@@ -12566,7 +12932,8 @@
       "symbol",
       "southern"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "AT2"
   },
   {
     "worldId": "north-america-1",
@@ -12613,7 +12980,8 @@
       "live music",
       "cultural"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "AUS"
   },
   {
     "worldId": "north-america-1",
@@ -12637,7 +13005,8 @@
     },
     "hubId": "hub:north-america-1:community-chest",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CST"
   },
   {
     "worldId": "north-america-1",
@@ -12684,7 +13053,8 @@
       "landmark",
       "fenway"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BOS"
   },
   {
     "worldId": "north-america-1",
@@ -12729,7 +13099,8 @@
       "modern",
       "urban"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "CHI"
   },
   {
     "worldId": "north-america-1",
@@ -12749,12 +13120,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/north-america-1-tax-income.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:north-america-1:tax-income",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 200
+    "taxAmount": 200,
+    "boardCode": "TAX"
   },
   {
     "worldId": "north-america-1",
@@ -12801,12 +13173,13 @@
       "american",
       "transportation"
     ],
-    "landmarkCategory": "Architecture"
+    "landmarkCategory": "Architecture",
+    "boardCode": "CIN"
   },
   {
     "worldId": "north-america-1",
     "slug": "rail-1",
-    "name": "North America Air North",
+    "name": "John F. Kennedy International Airport",
     "countryCode": "XX",
     "region": "North America",
     "kind": "railroad",
@@ -12829,8 +13202,10 @@
     },
     "hubId": "hub:north-america-1:rail-1",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "John F. Kennedy International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "JFK",
+    "aboutShort": "John F. Kennedy International Airport (JFK)"
   },
   {
     "worldId": "north-america-1",
@@ -12874,7 +13249,8 @@
       "exploration",
       "historic"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "COL"
   },
   {
     "worldId": "north-america-1",
@@ -12898,7 +13274,8 @@
     },
     "hubId": "hub:north-america-1:chance",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH"
   },
   {
     "worldId": "north-america-1",
@@ -12943,7 +13320,8 @@
       "colorado",
       "nature"
     ],
-    "landmarkCategory": "Nature"
+    "landmarkCategory": "Nature",
+    "boardCode": "DEN"
   },
   {
     "worldId": "north-america-1",
@@ -12991,7 +13369,8 @@
       "traditional",
       "music"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "GUA"
   },
   {
     "worldId": "north-america-1",
@@ -13036,7 +13415,8 @@
       "historic",
       "nature"
     ],
-    "landmarkCategory": "Nature"
+    "landmarkCategory": "Nature",
+    "boardCode": "HAR"
   },
   {
     "worldId": "north-america-1",
@@ -13056,11 +13436,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/north-america-1-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:north-america-1:jail",
     "enterRadius": 1.8,
-    "description": "Special space: jail."
+    "description": "Special space: jail.",
+    "boardCode": "JAL"
   },
   {
     "worldId": "north-america-1",
@@ -13107,7 +13488,8 @@
       "california",
       "adventure"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "IRV"
   },
   {
     "worldId": "north-america-1",
@@ -13135,7 +13517,8 @@
     "hubId": "hub:north-america-1:utility-power",
     "enterRadius": 2.0,
     "description": "Electric utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ELC"
   },
   {
     "worldId": "north-america-1",
@@ -13182,7 +13565,8 @@
       "california",
       "iconic"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "LA2"
   },
   {
     "worldId": "north-america-1",
@@ -13227,7 +13611,8 @@
       "modern",
       "tropical"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "MIA"
   },
   {
     "worldId": "north-america-1",
@@ -13274,12 +13659,13 @@
       "heritage",
       "cultural"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "NEW"
   },
   {
     "worldId": "north-america-1",
     "slug": "rail-2",
-    "name": "North America Air East",
+    "name": "O'Hare International Airport",
     "countryCode": "XX",
     "region": "North America",
     "kind": "railroad",
@@ -13302,8 +13688,10 @@
     },
     "hubId": "hub:north-america-1:rail-2",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "O'Hare International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ORD",
+    "aboutShort": "O'Hare International Airport (ORD)"
   },
   {
     "worldId": "north-america-1",
@@ -13348,12 +13736,13 @@
       "liberty",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "NYC"
   },
   {
     "worldId": "north-america-1",
     "slug": "free-parking",
-    "name": "Free Parking — Plaza",
+    "name": "Layover",
     "countryCode": "XX",
     "region": "North America",
     "kind": "special",
@@ -13372,7 +13761,9 @@
     },
     "hubId": "hub:north-america-1:free-parking",
     "enterRadius": 1.8,
-    "description": "Special space: free_parking."
+    "description": "Layover",
+    "boardCode": "P",
+    "aboutShort": "Layover — free rest stop"
   },
   {
     "worldId": "north-america-1",
@@ -13416,7 +13807,8 @@
       "hill",
       "government"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "OTT"
   },
   {
     "worldId": "north-america-1",
@@ -13463,7 +13855,8 @@
       "maritime",
       "infrastructure"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "PAN"
   },
   {
     "worldId": "north-america-1",
@@ -13487,7 +13880,8 @@
     },
     "hubId": "hub:north-america-1:chance-2",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH2"
   },
   {
     "worldId": "north-america-1",
@@ -13534,7 +13928,8 @@
       "historic",
       "illinois"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "PEO"
   },
   {
     "worldId": "north-america-1",
@@ -13583,12 +13978,13 @@
       "tourism",
       "symbol"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "PHI"
   },
   {
     "worldId": "north-america-1",
     "slug": "rail-3",
-    "name": "North America Air South",
+    "name": "Hartsfield–Jackson Atlanta International Airport",
     "countryCode": "XX",
     "region": "North America",
     "kind": "railroad",
@@ -13611,8 +14007,10 @@
     },
     "hubId": "hub:north-america-1:rail-3",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Hartsfield–Jackson Atlanta International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ATL",
+    "aboutShort": "Hartsfield–Jackson Atlanta International Airport (ATL)"
   },
   {
     "worldId": "north-america-1",
@@ -13656,7 +14054,8 @@
       "modern",
       "southwestern"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "PHO"
   },
   {
     "worldId": "north-america-1",
@@ -13701,7 +14100,8 @@
       "industrial",
       "modern"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "PIT"
   },
   {
     "worldId": "north-america-1",
@@ -13729,7 +14129,8 @@
     "hubId": "hub:north-america-1:utility-water",
     "enterRadius": 2.0,
     "description": "Water utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "WTR"
   },
   {
     "worldId": "north-america-1",
@@ -13775,7 +14176,8 @@
       "green-city",
       "canopy"
     ],
-    "landmarkCategory": "Nature"
+    "landmarkCategory": "Nature",
+    "boardCode": "SAC"
   },
   {
     "worldId": "north-america-1",
@@ -13821,7 +14223,8 @@
       "historic",
       "spanish-colonial"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SAN"
   },
   {
     "worldId": "north-america-1",
@@ -13868,12 +14271,13 @@
       "california",
       "engineering"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SAF"
   },
   {
     "worldId": "north-america-1",
     "slug": "rail-4",
-    "name": "North America Air West",
+    "name": "Los Angeles International Airport",
     "countryCode": "XX",
     "region": "North America",
     "kind": "railroad",
@@ -13896,8 +14300,10 @@
     },
     "hubId": "hub:north-america-1:rail-4",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Los Angeles International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "LAX",
+    "aboutShort": "Los Angeles International Airport (LAX)"
   },
   {
     "worldId": "north-america-1",
@@ -13942,7 +14348,8 @@
       "modern",
       "skyline"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "SEA"
   },
   {
     "worldId": "north-america-1",
@@ -13962,11 +14369,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/north-america-1-go-to-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:north-america-1:go-to-jail",
     "enterRadius": 1.8,
-    "description": "Special space: go_to_jail."
+    "description": "Special space: go_to_jail.",
+    "boardCode": "GTJ"
   },
   {
     "worldId": "north-america-1",
@@ -14013,7 +14421,8 @@
       "modern",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "STL"
   },
   {
     "worldId": "north-america-1",
@@ -14058,7 +14467,8 @@
       "border",
       "landmark"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "TIJ"
   },
   {
     "worldId": "north-america-1",
@@ -14082,7 +14492,8 @@
     },
     "hubId": "hub:north-america-1:community-chest-2",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CS2"
   },
   {
     "worldId": "north-america-1",
@@ -14127,7 +14538,8 @@
       "modern",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "TOR"
   },
   {
     "worldId": "north-america-1",
@@ -14147,12 +14559,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/north-america-1-tax-luxury.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:north-america-1:tax-luxury",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 100
+    "taxAmount": 100,
+    "boardCode": "LTX"
   },
   {
     "worldId": "north-america-1",
@@ -14196,7 +14609,8 @@
       "nature",
       "scenic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "VAN"
   },
   {
     "worldId": "north-america-1",
@@ -14243,7 +14657,8 @@
       "political",
       "american"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "WAS"
   },
   {
     "worldId": "south-america-1",
@@ -14268,7 +14683,8 @@
     "hubId": "hub:south-america-1:go",
     "enterRadius": 1.8,
     "description": "Special space: go.",
-    "passBonus": 200
+    "passBonus": 200,
+    "boardCode": "GO"
   },
   {
     "worldId": "south-america-1",
@@ -14314,7 +14730,8 @@
       "historic",
       "architecture"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BO2"
   },
   {
     "worldId": "south-america-1",
@@ -14358,7 +14775,8 @@
       "modern",
       "architecture"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BRA"
   },
   {
     "worldId": "south-america-1",
@@ -14382,7 +14800,8 @@
     },
     "hubId": "hub:south-america-1:community-chest",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CST"
   },
   {
     "worldId": "south-america-1",
@@ -14426,12 +14845,13 @@
       "historic",
       "latin"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "BUE"
   },
   {
     "worldId": "south-america-1",
     "slug": "rail-1",
-    "name": "South America Air North",
+    "name": "São Paulo–Guarulhos International Airport",
     "countryCode": "XX",
     "region": "South America",
     "kind": "railroad",
@@ -14454,8 +14874,10 @@
     },
     "hubId": "hub:south-america-1:rail-1",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "São Paulo–Guarulhos International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "GRU",
+    "aboutShort": "São Paulo–Guarulhos International Airport (GRU)"
   },
   {
     "worldId": "south-america-1",
@@ -14501,7 +14923,8 @@
       "brutalist",
       "performing-arts"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "CAR"
   },
   {
     "worldId": "south-america-1",
@@ -14525,7 +14948,8 @@
     },
     "hubId": "hub:south-america-1:chance",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH"
   },
   {
     "worldId": "south-america-1",
@@ -14571,7 +14995,8 @@
       "colonial",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "CAT"
   },
   {
     "worldId": "south-america-1",
@@ -14617,7 +15042,8 @@
       "medieval",
       "romanesque"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "COR"
   },
   {
     "worldId": "south-america-1",
@@ -14637,11 +15063,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/south-america-1-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:south-america-1:jail",
     "enterRadius": 1.8,
-    "description": "Special space: jail."
+    "description": "Special space: jail.",
+    "boardCode": "JAL"
   },
   {
     "worldId": "south-america-1",
@@ -14686,7 +15113,8 @@
       "wall",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "CUS"
   },
   {
     "worldId": "south-america-1",
@@ -14714,7 +15142,8 @@
     "hubId": "hub:south-america-1:utility-power",
     "enterRadius": 2.0,
     "description": "Electric utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ELC"
   },
   {
     "worldId": "south-america-1",
@@ -14760,12 +15189,13 @@
       "gothic",
       "tallest-wooden"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "GEO"
   },
   {
     "worldId": "south-america-1",
     "slug": "rail-2",
-    "name": "South America Air East",
+    "name": "Ministro Pistarini International Airport",
     "countryCode": "XX",
     "region": "South America",
     "kind": "railroad",
@@ -14788,8 +15218,10 @@
     },
     "hubId": "hub:south-america-1:rail-2",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Ministro Pistarini International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "EZE",
+    "aboutShort": "Ministro Pistarini International Airport (EZE)"
   },
   {
     "worldId": "south-america-1",
@@ -14836,12 +15268,13 @@
       "talisman",
       "aymara"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "LAP"
   },
   {
     "worldId": "south-america-1",
     "slug": "free-parking",
-    "name": "Free Parking — Plaza",
+    "name": "Layover",
     "countryCode": "XX",
     "region": "South America",
     "kind": "special",
@@ -14860,7 +15293,9 @@
     },
     "hubId": "hub:south-america-1:free-parking",
     "enterRadius": 1.8,
-    "description": "Special space: free_parking."
+    "description": "Layover",
+    "boardCode": "P",
+    "aboutShort": "Layover — free rest stop"
   },
   {
     "worldId": "south-america-1",
@@ -14907,7 +15342,8 @@
       "equestrian",
       "colonial"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "LIM"
   },
   {
     "worldId": "south-america-1",
@@ -14953,7 +15389,8 @@
       "urban",
       "innovation"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "MED"
   },
   {
     "worldId": "south-america-1",
@@ -14977,7 +15414,8 @@
     },
     "hubId": "hub:south-america-1:chance-2",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH2"
   },
   {
     "worldId": "south-america-1",
@@ -15023,7 +15461,8 @@
       "independence",
       "patriotic"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "MON"
   },
   {
     "worldId": "south-america-1",
@@ -15051,7 +15490,8 @@
     "hubId": "hub:south-america-1:utility-water",
     "enterRadius": 2.0,
     "description": "Water utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "WTR"
   },
   {
     "worldId": "south-america-1",
@@ -15098,12 +15538,13 @@
       "geodesic",
       "latitude-zero"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "QUI"
   },
   {
     "worldId": "south-america-1",
     "slug": "rail-3",
-    "name": "South America Air South",
+    "name": "El Dorado International Airport",
     "countryCode": "XX",
     "region": "South America",
     "kind": "railroad",
@@ -15126,8 +15567,10 @@
     },
     "hubId": "hub:south-america-1:rail-3",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "El Dorado International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "BOG",
+    "aboutShort": "El Dorado International Airport (BOG)"
   },
   {
     "worldId": "south-america-1",
@@ -15171,12 +15614,13 @@
       "statue",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "RIO"
   },
   {
     "worldId": "south-america-1",
     "slug": "rail-4",
-    "name": "South America Air West",
+    "name": "Arturo Merino Benítez Airport",
     "countryCode": "XX",
     "region": "South America",
     "kind": "railroad",
@@ -15199,8 +15643,10 @@
     },
     "hubId": "hub:south-america-1:rail-4",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Arturo Merino Benítez Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "SCL",
+    "aboutShort": "Arturo Merino Benítez Airport (SCL)"
   },
   {
     "worldId": "south-america-1",
@@ -15244,7 +15690,8 @@
       "religious",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SAN"
   },
   {
     "worldId": "south-america-1",
@@ -15264,11 +15711,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/south-america-1-go-to-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:south-america-1:go-to-jail",
     "enterRadius": 1.8,
-    "description": "Special space: go_to_jail."
+    "description": "Special space: go_to_jail.",
+    "boardCode": "GTJ"
   },
   {
     "worldId": "south-america-1",
@@ -15314,7 +15762,8 @@
       "gothic",
       "religious"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SAO"
   },
   {
     "worldId": "south-america-1",
@@ -15338,7 +15787,8 @@
     },
     "hubId": "hub:south-america-1:community-chest-2",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CS2"
   },
   {
     "worldId": "south-america-1",
@@ -15384,7 +15834,8 @@
       "end-of-the-world",
       "nature"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "USH"
   },
   {
     "worldId": "south-america-1",
@@ -15404,12 +15855,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/south-america-1-tax-luxury.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:south-america-1:tax-luxury",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 100
+    "taxAmount": 100,
+    "boardCode": "LTX"
   },
   {
     "worldId": "south-america-1",
@@ -15455,7 +15907,8 @@
       "chilean-cuisine",
       "avocado"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "VAL"
   },
   {
     "worldId": "middle-east-1",
@@ -15480,7 +15933,8 @@
     "hubId": "hub:middle-east-1:go",
     "enterRadius": 1.8,
     "description": "Special space: go.",
-    "passBonus": 200
+    "passBonus": 200,
+    "boardCode": "GO"
   },
   {
     "worldId": "middle-east-1",
@@ -15526,7 +15980,8 @@
       "traditional",
       "cultural"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "ABU"
   },
   {
     "worldId": "middle-east-1",
@@ -15570,7 +16025,8 @@
       "roman",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "AMM"
   },
   {
     "worldId": "middle-east-1",
@@ -15618,7 +16074,8 @@
       "memorial",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "ANK"
   },
   {
     "worldId": "middle-east-1",
@@ -15642,7 +16099,8 @@
     },
     "hubId": "hub:middle-east-1:community-chest",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CST"
   },
   {
     "worldId": "middle-east-1",
@@ -15687,7 +16145,8 @@
       "turkish",
       "cultural"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "ANT"
   },
   {
     "worldId": "middle-east-1",
@@ -15707,12 +16166,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/middle-east-1-tax-income.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:middle-east-1:tax-income",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 200
+    "taxAmount": 200,
+    "boardCode": "TAX"
   },
   {
     "worldId": "middle-east-1",
@@ -15756,12 +16216,13 @@
       "towers",
       "modern"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "BAK"
   },
   {
     "worldId": "middle-east-1",
     "slug": "rail-1",
-    "name": "Middle East Air North",
+    "name": "Dubai International Airport",
     "countryCode": "XX",
     "region": "Middle East",
     "kind": "railroad",
@@ -15784,8 +16245,10 @@
     },
     "hubId": "hub:middle-east-1:rail-1",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Dubai International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "DXB",
+    "aboutShort": "Dubai International Airport (DXB)"
   },
   {
     "worldId": "middle-east-1",
@@ -15829,7 +16292,8 @@
       "modern",
       "architecture"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "BAT"
   },
   {
     "worldId": "middle-east-1",
@@ -15853,7 +16317,8 @@
     },
     "hubId": "hub:middle-east-1:chance",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH"
   },
   {
     "worldId": "middle-east-1",
@@ -15897,7 +16362,8 @@
       "religious",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BEI"
   },
   {
     "worldId": "middle-east-1",
@@ -15941,7 +16407,8 @@
       "dhow",
       "traditional"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "DO2"
   },
   {
     "worldId": "middle-east-1",
@@ -15961,11 +16428,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/middle-east-1-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:middle-east-1:jail",
     "enterRadius": 1.8,
-    "description": "Special space: jail."
+    "description": "Special space: jail.",
+    "boardCode": "JAL"
   },
   {
     "worldId": "middle-east-1",
@@ -16011,7 +16479,8 @@
       "modern",
       "tallest"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "DX2"
   },
   {
     "worldId": "middle-east-1",
@@ -16039,7 +16508,8 @@
     "hubId": "hub:middle-east-1:utility-power",
     "enterRadius": 2.0,
     "description": "Electric utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ELC"
   },
   {
     "worldId": "middle-east-1",
@@ -16085,7 +16555,8 @@
       "landmark",
       "religious"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "HAI"
   },
   {
     "worldId": "middle-east-1",
@@ -16131,12 +16602,13 @@
       "architecture",
       "unesco"
     ],
-    "landmarkCategory": "Religion"
+    "landmarkCategory": "Religion",
+    "boardCode": "ISF"
   },
   {
     "worldId": "middle-east-1",
     "slug": "rail-2",
-    "name": "Middle East Air East",
+    "name": "Hamad International Airport",
     "countryCode": "XX",
     "region": "Middle East",
     "kind": "railroad",
@@ -16159,8 +16631,10 @@
     },
     "hubId": "hub:middle-east-1:rail-2",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Hamad International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "DOH",
+    "aboutShort": "Hamad International Airport (DOH)"
   },
   {
     "worldId": "middle-east-1",
@@ -16205,12 +16679,13 @@
       "bosphorus",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "IS2"
   },
   {
     "worldId": "middle-east-1",
     "slug": "free-parking",
-    "name": "Free Parking — Plaza",
+    "name": "Layover",
     "countryCode": "XX",
     "region": "Middle East",
     "kind": "special",
@@ -16229,7 +16704,9 @@
     },
     "hubId": "hub:middle-east-1:free-parking",
     "enterRadius": 1.8,
-    "description": "Special space: free_parking."
+    "description": "Layover",
+    "boardCode": "P",
+    "aboutShort": "Layover — free rest stop"
   },
   {
     "worldId": "middle-east-1",
@@ -16273,7 +16750,8 @@
       "historic",
       "ottoman"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "IZM"
   },
   {
     "worldId": "middle-east-1",
@@ -16318,7 +16796,8 @@
       "religious",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "JER"
   },
   {
     "worldId": "middle-east-1",
@@ -16342,7 +16821,8 @@
     },
     "hubId": "hub:middle-east-1:chance-2",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH2"
   },
   {
     "worldId": "middle-east-1",
@@ -16388,7 +16868,8 @@
       "golden-horses",
       "square"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "KUT"
   },
   {
     "worldId": "middle-east-1",
@@ -16434,12 +16915,13 @@
       "water-towers",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "KUW"
   },
   {
     "worldId": "middle-east-1",
     "slug": "rail-3",
-    "name": "Middle East Air South",
+    "name": "Istanbul Airport",
     "countryCode": "XX",
     "region": "Middle East",
     "kind": "railroad",
@@ -16462,8 +16944,10 @@
     },
     "hubId": "hub:middle-east-1:rail-3",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Istanbul Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "IST",
+    "aboutShort": "Istanbul Airport (IST)"
   },
   {
     "worldId": "middle-east-1",
@@ -16509,7 +16993,8 @@
       "financial",
       "modern"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "MAN"
   },
   {
     "worldId": "middle-east-1",
@@ -16537,7 +17022,8 @@
     "hubId": "hub:middle-east-1:utility-water",
     "enterRadius": 2.0,
     "description": "Water utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "WTR"
   },
   {
     "worldId": "middle-east-1",
@@ -16583,7 +17069,8 @@
       "religious",
       "cultural"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "MAS"
   },
   {
     "worldId": "middle-east-1",
@@ -16629,7 +17116,8 @@
       "traditional",
       "cultural"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "MUS"
   },
   {
     "worldId": "middle-east-1",
@@ -16675,12 +17163,13 @@
       "skyscraper",
       "modern"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "RIY"
   },
   {
     "worldId": "middle-east-1",
     "slug": "rail-4",
-    "name": "Middle East Air West",
+    "name": "Abu Dhabi International Airport",
     "countryCode": "XX",
     "region": "Middle East",
     "kind": "railroad",
@@ -16703,8 +17192,10 @@
     },
     "hubId": "hub:middle-east-1:rail-4",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Abu Dhabi International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "AUH",
+    "aboutShort": "Abu Dhabi International Airport (AUH)"
   },
   {
     "worldId": "middle-east-1",
@@ -16748,7 +17239,8 @@
       "spiral",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SAM"
   },
   {
     "worldId": "middle-east-1",
@@ -16768,11 +17260,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/middle-east-1-go-to-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:middle-east-1:go-to-jail",
     "enterRadius": 1.8,
-    "description": "Special space: go_to_jail."
+    "description": "Special space: go_to_jail.",
+    "boardCode": "GTJ"
   },
   {
     "worldId": "middle-east-1",
@@ -16816,7 +17309,8 @@
       "architecture",
       "traditional"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "TBI"
   },
   {
     "worldId": "middle-east-1",
@@ -16840,7 +17334,8 @@
     },
     "hubId": "hub:middle-east-1:community-chest-2",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CS2"
   },
   {
     "worldId": "middle-east-1",
@@ -16884,7 +17379,8 @@
       "modern",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "TEH"
   },
   {
     "worldId": "middle-east-1",
@@ -16904,12 +17400,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/middle-east-1-tax-luxury.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:middle-east-1:tax-luxury",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 100
+    "taxAmount": 100,
+    "boardCode": "LTX"
   },
   {
     "worldId": "middle-east-1",
@@ -16953,7 +17450,8 @@
       "architecture",
       "urban"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "TEL"
   },
   {
     "worldId": "middle-east-1",
@@ -16998,7 +17496,8 @@
       "historic",
       "government"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "YER"
   },
   {
     "worldId": "oceania-1",
@@ -17023,7 +17522,8 @@
     "hubId": "hub:oceania-1:go",
     "enterRadius": 1.8,
     "description": "Special space: go.",
-    "passBonus": 200
+    "passBonus": 200,
+    "boardCode": "GO"
   },
   {
     "worldId": "oceania-1",
@@ -17068,7 +17568,8 @@
       "house",
       "samoan"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "API"
   },
   {
     "worldId": "oceania-1",
@@ -17092,7 +17593,8 @@
     },
     "hubId": "hub:oceania-1:community-chest",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CST"
   },
   {
     "worldId": "oceania-1",
@@ -17139,7 +17641,8 @@
       "capital",
       "democracy"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "CAN"
   },
   {
     "worldId": "oceania-1",
@@ -17159,12 +17662,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/oceania-1-tax-income.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:oceania-1:tax-income",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 200
+    "taxAmount": 200,
+    "boardCode": "TAX"
   },
   {
     "worldId": "oceania-1",
@@ -17210,12 +17714,13 @@
       "polynesia",
       "coral"
     ],
-    "landmarkCategory": "Nature"
+    "landmarkCategory": "Nature",
+    "boardCode": "FUN"
   },
   {
     "worldId": "oceania-1",
     "slug": "rail-1",
-    "name": "Oceania Air North",
+    "name": "Sydney Kingsford Smith Airport",
     "countryCode": "XX",
     "region": "Oceania",
     "kind": "railroad",
@@ -17238,8 +17743,10 @@
     },
     "hubId": "hub:oceania-1:rail-1",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Sydney Kingsford Smith Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "SYD",
+    "aboutShort": "Sydney Kingsford Smith Airport (SYD)"
   },
   {
     "worldId": "oceania-1",
@@ -17285,7 +17792,8 @@
       "tasmania",
       "colonial"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "HOB"
   },
   {
     "worldId": "oceania-1",
@@ -17309,7 +17817,8 @@
     },
     "hubId": "hub:oceania-1:chance",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH"
   },
   {
     "worldId": "oceania-1",
@@ -17354,7 +17863,8 @@
       "pacific",
       "melanesia"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "HON"
   },
   {
     "worldId": "oceania-1",
@@ -17374,11 +17884,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/oceania-1-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:oceania-1:jail",
     "enterRadius": 1.8,
-    "description": "Special space: jail."
+    "description": "Special space: jail.",
+    "boardCode": "JAL"
   },
   {
     "worldId": "oceania-1",
@@ -17425,7 +17936,8 @@
       "landmark",
       "federation"
     ],
-    "landmarkCategory": "Buildings"
+    "landmarkCategory": "Buildings",
+    "boardCode": "MEL"
   },
   {
     "worldId": "oceania-1",
@@ -17453,7 +17965,8 @@
     "hubId": "hub:oceania-1:utility-power",
     "enterRadius": 2.0,
     "description": "Electric utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ELC"
   },
   {
     "worldId": "oceania-1",
@@ -17499,12 +18012,13 @@
       "marine",
       "oceanic"
     ],
-    "landmarkCategory": "Nature"
+    "landmarkCategory": "Nature",
+    "boardCode": "NOU"
   },
   {
     "worldId": "oceania-1",
     "slug": "free-parking",
-    "name": "Free Parking — Plaza",
+    "name": "Layover",
     "countryCode": "XX",
     "region": "Oceania",
     "kind": "special",
@@ -17523,7 +18037,9 @@
     },
     "hubId": "hub:oceania-1:free-parking",
     "enterRadius": 1.8,
-    "description": "Special space: free_parking."
+    "description": "Layover",
+    "boardCode": "P",
+    "aboutShort": "Layover — free rest stop"
   },
   {
     "worldId": "oceania-1",
@@ -17569,7 +18085,8 @@
       "polynesia",
       "megalith"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "NUK"
   },
   {
     "worldId": "oceania-1",
@@ -17615,7 +18132,8 @@
       "wildlife",
       "smiling"
     ],
-    "landmarkCategory": "Nature"
+    "landmarkCategory": "Nature",
+    "boardCode": "PER"
   },
   {
     "worldId": "oceania-1",
@@ -17639,7 +18157,8 @@
     },
     "hubId": "hub:oceania-1:chance-2",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH2"
   },
   {
     "worldId": "oceania-1",
@@ -17685,7 +18204,8 @@
       "tribal",
       "cultural"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "POR"
   },
   {
     "worldId": "oceania-1",
@@ -17730,12 +18250,13 @@
       "thatched",
       "fijian"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "SUV"
   },
   {
     "worldId": "oceania-1",
     "slug": "rail-3",
-    "name": "Oceania Air South",
+    "name": "Auckland Airport",
     "countryCode": "XX",
     "region": "Oceania",
     "kind": "railroad",
@@ -17758,8 +18279,10 @@
     },
     "hubId": "hub:oceania-1:rail-3",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Auckland Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "AKL",
+    "aboutShort": "Auckland Airport (AKL)"
   },
   {
     "worldId": "oceania-1",
@@ -17804,7 +18327,8 @@
       "harbor",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SY2"
   },
   {
     "worldId": "oceania-1",
@@ -17849,7 +18373,8 @@
       "wildlife",
       "pacific"
     ],
-    "landmarkCategory": "Nature"
+    "landmarkCategory": "Nature",
+    "boardCode": "TAR"
   },
   {
     "worldId": "oceania-1",
@@ -17893,7 +18418,8 @@
       "beehive",
       "government"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "WEL"
   },
   {
     "worldId": "central-america-1",
@@ -17918,7 +18444,8 @@
     "hubId": "hub:central-america-1:go",
     "enterRadius": 1.8,
     "description": "Special space: go.",
-    "passBonus": 200
+    "passBonus": 200,
+    "boardCode": "GO"
   },
   {
     "worldId": "central-america-1",
@@ -17965,7 +18492,8 @@
       "national",
       "monument"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "ALA"
   },
   {
     "worldId": "central-america-1",
@@ -17989,7 +18517,8 @@
     },
     "hubId": "hub:central-america-1:community-chest",
     "enterRadius": 1.8,
-    "description": "Special space: community_chest."
+    "description": "Special space: community_chest.",
+    "boardCode": "CST"
   },
   {
     "worldId": "central-america-1",
@@ -18036,7 +18565,8 @@
       "spanish",
       "iconic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "ANT"
   },
   {
     "worldId": "central-america-1",
@@ -18056,12 +18586,13 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/central-america-1-tax-income.svg"
+      "icon": "city-icons/generic/tax.svg"
     },
     "hubId": "hub:central-america-1:tax-income",
     "enterRadius": 1.8,
     "description": "Special space: tax.",
-    "taxAmount": 200
+    "taxAmount": 200,
+    "boardCode": "TAX"
   },
   {
     "worldId": "central-america-1",
@@ -18108,12 +18639,13 @@
       "church",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "GRA"
   },
   {
     "worldId": "central-america-1",
     "slug": "rail-1",
-    "name": "Central America Air North",
+    "name": "Tocumen International Airport",
     "countryCode": "XX",
     "region": "Central America",
     "kind": "railroad",
@@ -18136,8 +18668,10 @@
     },
     "hubId": "hub:central-america-1:rail-1",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Tocumen International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "PTY",
+    "aboutShort": "Tocumen International Airport (PTY)"
   },
   {
     "worldId": "central-america-1",
@@ -18181,7 +18715,8 @@
       "neoclassical",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "HAV"
   },
   {
     "worldId": "central-america-1",
@@ -18205,7 +18740,8 @@
     },
     "hubId": "hub:central-america-1:chance",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH"
   },
   {
     "worldId": "central-america-1",
@@ -18252,7 +18788,8 @@
       "limestone",
       "colonial"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "NAS"
   },
   {
     "worldId": "central-america-1",
@@ -18272,11 +18809,12 @@
       "scale": 1
     },
     "assets": {
-      "icon": "icons/generic/central-america-1-jail.svg"
+      "icon": "city-icons/generic/prison.svg"
     },
     "hubId": "hub:central-america-1:jail",
     "enterRadius": 1.8,
-    "description": "Special space: jail."
+    "description": "Special space: jail.",
+    "boardCode": "JAL"
   },
   {
     "worldId": "central-america-1",
@@ -18323,7 +18861,8 @@
       "historic",
       "market"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "POR"
   },
   {
     "worldId": "central-america-1",
@@ -18351,7 +18890,8 @@
     "hubId": "hub:central-america-1:utility-power",
     "enterRadius": 2.0,
     "description": "Electric utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ELC"
   },
   {
     "worldId": "central-america-1",
@@ -18397,12 +18937,13 @@
       "religious",
       "colonial"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SAI"
   },
   {
     "worldId": "central-america-1",
     "slug": "free-parking",
-    "name": "Free Parking — Plaza",
+    "name": "Layover",
     "countryCode": "XX",
     "region": "Central America",
     "kind": "special",
@@ -18421,7 +18962,9 @@
     },
     "hubId": "hub:central-america-1:free-parking",
     "enterRadius": 1.8,
-    "description": "Special space: free_parking."
+    "description": "Layover",
+    "boardCode": "P",
+    "aboutShort": "Layover — free rest stop"
   },
   {
     "worldId": "central-america-1",
@@ -18467,7 +19010,8 @@
       "ancient",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SAN"
   },
   {
     "worldId": "central-america-1",
@@ -18513,7 +19057,8 @@
       "colonial",
       "spanish"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SAJ"
   },
   {
     "worldId": "central-america-1",
@@ -18537,7 +19082,8 @@
     },
     "hubId": "hub:central-america-1:chance-2",
     "enterRadius": 1.8,
-    "description": "Special space: chance."
+    "description": "Special space: chance.",
+    "boardCode": "CH2"
   },
   {
     "worldId": "central-america-1",
@@ -18583,7 +19129,8 @@
       "iconic",
       "national-symbol"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "SAS"
   },
   {
     "worldId": "central-america-1",
@@ -18630,12 +19177,13 @@
       "caribbean",
       "tropical"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "SOU"
   },
   {
     "worldId": "central-america-1",
     "slug": "rail-3",
-    "name": "Central America Air South",
+    "name": "Cancún International Airport",
     "countryCode": "XX",
     "region": "Central America",
     "kind": "railroad",
@@ -18658,8 +19206,10 @@
     },
     "hubId": "hub:central-america-1:rail-3",
     "enterRadius": 2.5,
-    "description": "Airport hub — rent scales with airports owned.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)"
+    "description": "Cancún International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "CUN",
+    "aboutShort": "Cancún International Airport (CUN)"
   },
   {
     "worldId": "central-america-1",
@@ -18707,7 +19257,8 @@
       "colonial",
       "historic"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "STG"
   },
   {
     "worldId": "central-america-1",
@@ -18753,7 +19304,8 @@
       "architectural",
       "honduran"
     ],
-    "landmarkCategory": "Landmarks"
+    "landmarkCategory": "Landmarks",
+    "boardCode": "TEG"
   },
   {
     "worldId": "central-america-1",
@@ -18800,6 +19352,7 @@
       "caribbean",
       "iconic"
     ],
-    "landmarkCategory": "Culture"
+    "landmarkCategory": "Culture",
+    "boardCode": "WIL"
   }
 ]

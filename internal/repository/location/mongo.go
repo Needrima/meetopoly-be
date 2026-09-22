@@ -31,6 +31,7 @@ type mongoDoc struct {
 	Region            string             `bson:"region,omitempty"`
 	Kind              string             `bson:"kind"`
 	BoardIndex        int                `bson:"boardIndex"`
+	BoardCode         string             `bson:"boardCode,omitempty"`
 	Price             int                `bson:"price"`
 	Rents             []int              `bson:"rents,omitempty"`
 	HouseCost         *int               `bson:"houseCost,omitempty"`
@@ -192,6 +193,7 @@ func fromDoc(doc mongoDoc) *Location {
 		Region:            doc.Region,
 		Kind:              doc.Kind,
 		BoardIndex:        doc.BoardIndex,
+		BoardCode:         doc.BoardCode,
 		Price:             doc.Price,
 		Rents:             doc.Rents,
 		HouseCost:         doc.HouseCost,
@@ -231,6 +233,7 @@ func toDoc(loc Location) mongoDoc {
 		Region:            loc.Region,
 		Kind:              loc.Kind,
 		BoardIndex:        loc.BoardIndex,
+		BoardCode:         loc.BoardCode,
 		Price:             loc.Price,
 		Rents:             loc.Rents,
 		HouseCost:         loc.HouseCost,

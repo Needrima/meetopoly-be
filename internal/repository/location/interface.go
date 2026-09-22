@@ -30,6 +30,7 @@ type Location struct {
 	Region            string
 	Kind              string
 	BoardIndex        int
+	BoardCode         string
 	Price             int
 	Rents             []int
 	HouseCost         *int

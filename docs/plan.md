@@ -28,29 +28,29 @@ Meetopoly is a **mobile-first**, worldwide social property game:
 
 ## 1. Locked technical decisions
 
-| Area           | Decision                                                                       |
-| -------------- | ------------------------------------------------------------------------------ |
-| HTTP router    | **chi** (`github.com/go-chi/chi/v5`)                                           |
-| Backend module | `meetopoly-be`                                                                 |
-| Architecture   | Hexagonal: adapters → services → repository                                    |
-| Adapters       | HTTP, WebSocket, WebRTC (Pion)                                                 |
-| DB / cache     | MongoDB (local → Atlas later), Redis (local → Contabo later)                   |
-| Deploy         | Contabo VPS, **no Docker**                                                     |
-| Mobile         | Expo + Expo Router + NativeWind + `@expo/ui` + Moti + TanStack Query           |
-| Orientation    | **Landscape**                                                                  |
-| Theme          | `meetopoly-mobile/theme/` — forest brand, gold accent, warm paper bg           |
-| Fonts          | **Fraunces** (display) + **Figtree** (UI/body) — `assets/fonts/`               |
-| Board UI (v1)  | **2D** RN + `react-native-svg`; board square 1:1 height; panel takes remaining width |
-| API contract   | OpenAPI → **orval** → `meetopoly-mobile/api/`                                  |
-| Auth           | Email → Google SMTP verify → password → username/country; login email/password |
-| Board art      | Monopoly-like ring + center; SVGCities / generic icons; original chrome (not Hasbro art) |
-| Spaces         | **40** for `africa-1` (11 per side incl. corners; 9 between) — classic even ring |
-| Hub enter      | **Walk near** property / railroad / utility → Enter; specials not enterable    |
-| Board walk     | Avatar walks whole board; joystick in **panel bottom-right**                   |
+| Area           | Decision                                                                                                 |
+| -------------- | -------------------------------------------------------------------------------------------------------- |
+| HTTP router    | **chi** (`github.com/go-chi/chi/v5`)                                                                     |
+| Backend module | `meetopoly-be`                                                                                           |
+| Architecture   | Hexagonal: adapters → services → repository                                                              |
+| Adapters       | HTTP, WebSocket, WebRTC (Pion)                                                                           |
+| DB / cache     | MongoDB (local → Atlas later), Redis (local → Contabo later)                                             |
+| Deploy         | Contabo VPS, **no Docker**                                                                               |
+| Mobile         | Expo + Expo Router + NativeWind + `@expo/ui` + Moti + TanStack Query                                     |
+| Orientation    | **Landscape**                                                                                            |
+| Theme          | `meetopoly-mobile/theme/` — forest brand, gold accent, warm paper bg                                     |
+| Fonts          | **Fraunces** (display) + **Figtree** (UI/body) — `assets/fonts/`                                         |
+| Board UI (v1)  | **2D** RN + `react-native-svg`; board square 1:1 height; panel takes remaining width                     |
+| API contract   | OpenAPI → **orval** → `meetopoly-mobile/api/`                                                            |
+| Auth           | Email → Google SMTP verify → password → username/country; login email/password                           |
+| Board art      | Monopoly-like ring + center; SVGCities / generic icons; original chrome (not Hasbro art)                 |
+| Spaces         | **40** for `africa-1` (11 per side incl. corners; 9 between) — classic even ring                         |
+| Hub enter      | **Walk near** property / railroad / utility → Enter; specials not enterable                              |
+| Board walk     | Avatar walks whole board; joystick in **panel bottom-right**                                             |
 | Collisions     | Hard: board outer edge + **center** Chance/Chest decks; soft: pins. Ring Chance/Chest **tiles** walkable |
-| Avatar look    | Pod + Maps-style callout: colored circle + **initial** now; photo later (settings upload) |
-| Presence sync  | Pins via game WS; board + hub avatar positions later (~10–20 Hz)               |
-| Voice          | Phase after presence; same room model                                          |
+| Avatar look    | Pod + Maps-style callout: colored circle + **initial** now; photo later (settings upload)                |
+| Presence sync  | Pins via game WS; board + hub avatar positions later (~10–20 Hz)                                         |
+| Voice          | Phase after presence; same room model                                                                    |
 
 ---
 
@@ -310,19 +310,19 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 **Dual presence (on this board)**
 
-| Concept | Placement | Behavior |
-|---------|-----------|----------|
-| **Pin** | `boardIndex` slot (start **GO**) | Rules / dice; not the walk body |
-| **Avatar** | Anywhere on board surface | Walk with joystick; pod + initial callout |
+| Concept    | Placement                        | Behavior                                  |
+| ---------- | -------------------------------- | ----------------------------------------- |
+| **Pin**    | `boardIndex` slot (start **GO**) | Rules / dice; not the walk body           |
+| **Avatar** | Anywhere on board surface        | Walk with joystick; pod + initial callout |
 
 **Collisions (locked)**
 
-| Collider | Type | Notes |
-|----------|------|--------|
-| Outer board edge | Hard | Cannot leave the board square |
-| **Center** Chance + Community Chest decks (parallelograms) | Hard | Cannot walk through card decks |
-| Ring Chance / Chest / Tax / etc. **tiles** | Walkable | Part of the track; approachable |
-| Pins | Soft radius | Slide around; avoid hard stuck-at-GO |
+| Collider                                                   | Type        | Notes                                |
+| ---------------------------------------------------------- | ----------- | ------------------------------------ |
+| Outer board edge                                           | Hard        | Cannot leave the board square        |
+| **Center** Chance + Community Chest decks (parallelograms) | Hard        | Cannot walk through card decks       |
+| Ring Chance / Chest / Tax / etc. **tiles**                 | Walkable    | Part of the track; approachable      |
+| Pins                                                       | Soft radius | Slide around; avoid hard stuck-at-GO |
 
 **Enter hub (locked)**
 
@@ -345,18 +345,18 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 **Mobile — incremental slices (implement one at a time)**
 
-| Slice | Done when | Avoid |
-|-------|-----------|--------|
-| **4.0** | Landscape shell: 1:1 board placeholder + panel; reachable from home | Ring, walk |
-| **4.1** | Empty ring of slots from `boardIndex` (geometry only) | Colors, icons |
-| **4.2** | Color bands + kind styling | Icons, walk |
-| **4.3** | Icons + short names from `useLocations('africa-1')` | Walk, Enter |
-| **4.4** | Center brand + Chance/Chest deck shapes (obstacles reserved) | Movement |
-| **4.5** | Local avatar (pod + initial) + PanResponder joystick in panel BR + edge/deck/pin collision | Enter, net |
-| **4.6** | Walk-near Enter for property \| railroad \| utility → hub placeholder | SFU |
-| **4.7** | Local/debug **pins** on GO (and optional other indices) | Full game rules |
-| **4.8** | Board as home + ⋯ menu (Locations / logout; health `__DEV__`) | — |
-| **4.9** | Polish: attribution, side-length pass, feel; tick Phase 4 exit criteria | New features |
+| Slice   | Done when                                                                                  | Avoid           |
+| ------- | ------------------------------------------------------------------------------------------ | --------------- |
+| **4.0** | Landscape shell: 1:1 board placeholder + panel; reachable from home                        | Ring, walk      |
+| **4.1** | Empty ring of slots from `boardIndex` (geometry only)                                      | Colors, icons   |
+| **4.2** | Color bands + kind styling                                                                 | Icons, walk     |
+| **4.3** | Icons + short names from `useLocations('africa-1')`                                        | Walk, Enter     |
+| **4.4** | Center brand + Chance/Chest deck shapes (obstacles reserved)                               | Movement        |
+| **4.5** | Local avatar (pod + initial) + PanResponder joystick in panel BR + edge/deck/pin collision | Enter, net      |
+| **4.6** | Walk-near Enter for property \| railroad \| utility → hub placeholder                      | SFU             |
+| **4.7** | Local/debug **pins** on GO (and optional other indices)                                    | Full game rules |
+| **4.8** | Board as home + ⋯ menu (Locations / logout; health `__DEV__`)                              | —               |
+| **4.9** | Polish: attribution, side-length pass, feel; tick Phase 4 exit criteria                    | New features    |
 
 **Suggested files**
 
@@ -608,22 +608,22 @@ Only when the user asks:
 
 ## 8. Changelog
 
-| Date       | Change                                                                                                        |
-| ---------- | ------------------------------------------------------------------------------------------------------------- |
-| 2026-09-20 | Initial comprehensive plan from locked product/tech decisions                                                 |
-| 2026-09-20 | Worlds + SVGCities billboards; `locations.json` / `africa-1` replaces Nigeria districts                       |
-| 2026-09-20 | Expanded `locations.json` with all SVGCities Worlds (Europe×5, Asia×2, NA, SA, ME, Oceania, Central America)  |
-| 2026-09-20 | Linked all 304 city properties to `city-icons/icons/{cc}-*.svg` + About/attribution from SVGCities metadata   |
-| 2026-09-20 | Phase 0: chi HTTP `/health`, Mongo+Redis wiring, Expo Router + NativeWind + TanStack health screen            |
-| 2026-09-20 | Locked landscape orientation + theme tokens (forest/gold/warm paper)                                          |
-| 2026-09-21 | Locked fonts: Fraunces (display) + Figtree (UI/body); wired via expo-font                                     |
-| 2026-09-21 | Frontend perf rule: Compiler-first; selective memo only (skill `frontend.md`)                                 |
-| 2026-09-21 | Phase 1: orval OpenAPI codegen → `meetopoly-mobile/api/generated`; `useHealth` on generated client            |
-| 2026-09-21 | Phase 2: email signup (6-digit SMTP) + bcrypt + opaque Redis sessions; Expo `(auth)` + secure-store           |
-| 2026-09-21 | Locked forms: Formik `useFormik` + Yup in hooks (auth screens)                                                |
-| 2026-09-21 | Auth UI: RN inputs + Moti city drift + Lottie sun; sunny paper afternoon vibe                                 |
+| Date       | Change                                                                                                            |
+| ---------- | ----------------------------------------------------------------------------------------------------------------- |
+| 2026-09-20 | Initial comprehensive plan from locked product/tech decisions                                                     |
+| 2026-09-20 | Worlds + SVGCities billboards; `locations.json` / `africa-1` replaces Nigeria districts                           |
+| 2026-09-20 | Expanded `locations.json` with all SVGCities Worlds (Europe×5, Asia×2, NA, SA, ME, Oceania, Central America)      |
+| 2026-09-20 | Linked all 304 city properties to `city-icons/icons/{cc}-*.svg` + About/attribution from SVGCities metadata       |
+| 2026-09-20 | Phase 0: chi HTTP `/health`, Mongo+Redis wiring, Expo Router + NativeWind + TanStack health screen                |
+| 2026-09-20 | Locked landscape orientation + theme tokens (forest/gold/warm paper)                                              |
+| 2026-09-21 | Locked fonts: Fraunces (display) + Figtree (UI/body); wired via expo-font                                         |
+| 2026-09-21 | Frontend perf rule: Compiler-first; selective memo only (skill `frontend.md`)                                     |
+| 2026-09-21 | Phase 1: orval OpenAPI codegen → `meetopoly-mobile/api/generated`; `useHealth` on generated client                |
+| 2026-09-21 | Phase 2: email signup (6-digit SMTP) + bcrypt + opaque Redis sessions; Expo `(auth)` + secure-store               |
+| 2026-09-21 | Locked forms: Formik `useFormik` + Yup in hooks (auth screens)                                                    |
+| 2026-09-21 | Auth UI: RN inputs + Moti city drift + Lottie sun; sunny paper afternoon vibe                                     |
 | 2026-09-22 | **Phase 4 pivot:** 2D Monopoly-style board (left) + right panel; drop GoG 3D overworld for v1; sub-phases 4.0–4.8 |
-| 2026-09-22 | **africa-1 → 40 spaces:** classic even sides (corners 0/10/20/30); dropped Zanzibar; reseed required |
-| 2026-09-21 | Password reset (OTP) + session revoke-all; branded toasts via `notify()`                                      |
-| 2026-09-21 | Signup resume after password: `/auth/signup/status` + login `needsProfile`                                    |
-| 2026-09-21 | Phase 3: locations Mongo + seed CLI; Bearer `/worlds` + `/locations` (+ by id/slug); mobile `(app)/locations` |
+| 2026-09-22 | **africa-1 → 40 spaces:** classic even sides (corners 0/10/20/30); dropped Zanzibar; reseed required              |
+| 2026-09-21 | Password reset (OTP) + session revoke-all; branded toasts via `notify()`                                          |
+| 2026-09-21 | Signup resume after password: `/auth/signup/status` + login `needsProfile`                                        |
+| 2026-09-21 | Phase 3: locations Mongo + seed CLI; Bearer `/worlds` + `/locations` (+ by id/slug); mobile `(app)/locations`     |

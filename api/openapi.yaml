@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.3.0
+  version: 0.3.1
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -589,7 +589,7 @@ components:
           format: email
         code:
           type: string
-          pattern: '^[0-9]{6}$'
+          pattern: "^[0-9]{6}$"
           description: 6-digit verification code from email
     SignupVerifyResponse:
       type: object
@@ -622,11 +622,11 @@ components:
           type: string
           minLength: 3
           maxLength: 20
-          pattern: '^[A-Za-z0-9_]{3,20}$'
+          pattern: "^[A-Za-z0-9_]{3,20}$"
           description: Unique username (letters, digits, underscore)
         country:
           type: string
-          pattern: '^[A-Z]{2}$'
+          pattern: "^[A-Z]{2}$"
           description: ISO 3166-1 alpha-2 country code (uppercase)
     LoginRequest:
       type: object
@@ -706,7 +706,7 @@ components:
           format: email
         code:
           type: string
-          pattern: '^[0-9]{6}$'
+          pattern: "^[0-9]{6}$"
     PasswordResetVerifyResponse:
       type: object
       additionalProperties: false
@@ -835,6 +835,7 @@ components:
         - name
         - kind
         - boardIndex
+        - boardCode
         - price
         - map
         - assets
@@ -859,6 +860,11 @@ components:
           enum: [property, railroad, utility, special]
         boardIndex:
           type: integer
+        boardCode:
+          type: string
+          description: Short tile label unique within worldId (e.g. NYC, CAI, CH, CST)
+          minLength: 1
+          maxLength: 6
         price:
           type: integer
         rents:

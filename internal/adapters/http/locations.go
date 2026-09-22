@@ -43,6 +43,7 @@ type locationResponse struct {
 	Region            string          `json:"region,omitempty"`
 	Kind              string          `json:"kind"`
 	BoardIndex        int             `json:"boardIndex"`
+	BoardCode         string          `json:"boardCode"`
 	Price             int             `json:"price"`
 	Rents             []int           `json:"rents,omitempty"`
 	HouseCost         *int            `json:"houseCost,omitempty"`
@@ -137,6 +138,7 @@ func toLocationResponse(loc *locationrepo.Location) locationResponse {
 		Region:            loc.Region,
 		Kind:              loc.Kind,
 		BoardIndex:        loc.BoardIndex,
+		BoardCode:         loc.BoardCode,
 		Price:             loc.Price,
 		Rents:             loc.Rents,
 		HouseCost:         loc.HouseCost,

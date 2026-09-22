@@ -78,6 +78,7 @@ type seedDoc struct {
 	Region            string      `json:"region"`
 	Kind              string      `json:"kind"`
 	BoardIndex        int         `json:"boardIndex"`
+	BoardCode         string      `json:"boardCode"`
 	Price             int         `json:"price"`
 	Rents             []int       `json:"rents"`
 	HouseCost         *int        `json:"houseCost"`
@@ -112,6 +113,7 @@ func (d seedDoc) toLocation() locationrepo.Location {
 		Region:            d.Region,
 		Kind:              d.Kind,
 		BoardIndex:        d.BoardIndex,
+		BoardCode:         d.BoardCode,
 		Price:             d.Price,
 		Rents:             d.Rents,
 		HouseCost:         d.HouseCost,
