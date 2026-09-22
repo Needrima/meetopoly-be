@@ -1,1564 +1,5 @@
 [
   {
-    "worldId": "africa-1",
-    "slug": "go",
-    "name": "GO — African Gateway",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "special",
-    "boardIndex": 0,
-    "price": 0,
-    "rents": [],
-    "colorGroup": null,
-    "specialType": "go",
-    "map": {
-      "x": 24.0,
-      "z": 24,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/generic/arrow-narrow-right.svg"
-    },
-    "hubId": "hub:africa-1:go",
-    "enterRadius": 1.8,
-    "description": "Special space: go.",
-    "passBonus": 200,
-    "boardCode": "GO"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "accra",
-    "name": "Accra",
-    "countryCode": "GH",
-    "region": "West Africa",
-    "kind": "property",
-    "boardIndex": 1,
-    "price": 60,
-    "rents": [
-      2,
-      10,
-      30,
-      90,
-      160,
-      250
-    ],
-    "houseCost": 50,
-    "colorGroup": "brown",
-    "map": {
-      "x": 21.6,
-      "z": 24,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/gh-accra.svg"
-    },
-    "hubId": "hub:africa-1:accra",
-    "enterRadius": 2.0,
-    "svgcities": "Accra",
-    "description": "Accra is the vibrant capital of Ghana, home to the iconic Independence Arch at Black Star Square. Built in 1961 to commemorate Ghana's independence as the first sub-Saharan African nation to gain…",
-    "svgcitiesPath": "public/icons/gh-accra.svg",
-    "svgcitiesUrl": "https://svgcities.com/gh/accra",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Accra Independence Arch",
-    "about": "Accra is the vibrant capital of Ghana, home to the iconic Independence Arch at Black Star Square. Built in 1961 to commemorate Ghana's independence as the first sub-Saharan African nation to gain freedom from colonial rule, the arch draws inspiration from the Arc de Triomphe. Crowned with a black star — Ghana's national symbol of African emancipation — the monument stands at the heart of Independence Square, the country's largest public gathering space and a powerful symbol of pan-African pride.",
-    "aboutShort": "Accra is the vibrant capital of Ghana, home to the iconic Independence Arch at Black Star Square. Built in 1961 to commemorate Ghana's independence as the…",
-    "tags": [
-      "independence-arch",
-      "black-star-square",
-      "freedom",
-      "monument",
-      "independence"
-    ],
-    "landmarkCategory": "Landmarks",
-    "boardCode": "ACC"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "community-chest",
-    "name": "Community Chest",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "special",
-    "boardIndex": 2,
-    "price": 0,
-    "rents": [],
-    "colorGroup": null,
-    "specialType": "community_chest",
-    "map": {
-      "x": 19.2,
-      "z": 24,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/generic/treasure-chest.svg"
-    },
-    "hubId": "hub:africa-1:community-chest",
-    "enterRadius": 1.8,
-    "description": "Special space: community_chest.",
-    "boardCode": "CST"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "antananarivo",
-    "name": "Antananarivo",
-    "countryCode": "MG",
-    "region": "East Africa",
-    "kind": "property",
-    "boardIndex": 3,
-    "price": 60,
-    "rents": [
-      4,
-      20,
-      60,
-      180,
-      320,
-      450
-    ],
-    "houseCost": 50,
-    "colorGroup": "brown",
-    "map": {
-      "x": 16.8,
-      "z": 24,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/mg-antananarivo.svg"
-    },
-    "hubId": "hub:africa-1:antananarivo",
-    "enterRadius": 2.0,
-    "svgcities": "Antananarivo",
-    "description": "Antananarivo is the capital and largest city of Madagascar, known for its historic royal palace complex and rich cultural heritage. The city combines traditional Malagasy culture with colonial…",
-    "svgcitiesPath": "public/icons/mg-antananarivo.svg",
-    "svgcitiesUrl": "https://svgcities.com/mg/antananarivo",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Antananarivo Palace",
-    "about": "Antananarivo is the capital and largest city of Madagascar, known for its historic royal palace complex and rich cultural heritage. The city combines traditional Malagasy culture with colonial architecture, featuring the iconic Rova palace complex and the vibrant Analakely market district.",
-    "aboutShort": "Antananarivo is the capital and largest city of Madagascar, known for its historic royal palace complex and rich cultural heritage. The city combines…",
-    "tags": [
-      "palace",
-      "royal",
-      "historic"
-    ],
-    "landmarkCategory": "Landmarks",
-    "boardCode": "ANT"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "tax-income",
-    "name": "Income Tax",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "special",
-    "boardIndex": 4,
-    "price": 0,
-    "rents": [],
-    "colorGroup": null,
-    "specialType": "tax",
-    "map": {
-      "x": 14.399999999999999,
-      "z": 24,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/generic/tax.svg"
-    },
-    "hubId": "hub:africa-1:tax-income",
-    "enterRadius": 1.8,
-    "description": "Special space: tax.",
-    "taxAmount": 200,
-    "boardCode": "TAX"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "rail-1",
-    "name": "Cairo International Airport",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "railroad",
-    "boardIndex": 5,
-    "price": 200,
-    "rents": [
-      25,
-      50,
-      100,
-      200
-    ],
-    "colorGroup": null,
-    "map": {
-      "x": 12.0,
-      "z": 24,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/generic/plane-tilt.svg"
-    },
-    "hubId": "hub:africa-1:rail-1",
-    "enterRadius": 2.5,
-    "description": "Cairo International Airport",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
-    "boardCode": "CAI",
-    "aboutShort": "Cairo International Airport (CAI)"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "asmara",
-    "name": "Asmara",
-    "countryCode": "ER",
-    "region": "East Africa",
-    "kind": "property",
-    "boardIndex": 6,
-    "price": 100,
-    "rents": [
-      6,
-      30,
-      90,
-      270,
-      400,
-      550
-    ],
-    "houseCost": 50,
-    "colorGroup": "lightblue",
-    "map": {
-      "x": 9.600000000000001,
-      "z": 24,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/er-asmara.svg"
-    },
-    "hubId": "hub:africa-1:asmara",
-    "enterRadius": 2.0,
-    "svgcities": "Asmara",
-    "description": "Asmara is the capital of Eritrea, a UNESCO World Heritage city celebrated as Africa's modernist capital. The Fiat Tagliero Building, designed by Italian engineer Giuseppe Pettazzi and completed in…",
-    "svgcitiesPath": "public/icons/er-asmara.svg",
-    "svgcitiesUrl": "https://svgcities.com/er/asmara",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Asmara Fiat Tagliero Building",
-    "about": "Asmara is the capital of Eritrea, a UNESCO World Heritage city celebrated as Africa's modernist capital. The Fiat Tagliero Building, designed by Italian engineer Giuseppe Pettazzi and completed in 1938, is its most iconic landmark — a futurist service station shaped like a soaring airplane, with two cantilevered concrete wings stretching 15 meters on each side with no supporting columns. A masterpiece of Italian Rationalist architecture, the building stands as a symbol of Asmara's unique blend of modernist heritage and highland African identity.",
-    "aboutShort": "Asmara is the capital of Eritrea, a UNESCO World Heritage city celebrated as Africa's modernist capital. The Fiat Tagliero Building, designed by Italian…",
-    "symbolStory": "Completed in 1938 to a design by the Italian engineer Giuseppe Pettazzi, this former service station on Asmara's Sematat Avenue became a landmark almost immediately because of its Futurist form: a central tower flanked by two concrete wings roughly thirty metres long that project without visible supports. A widely repeated story holds that colonial officials insisted on props beneath the cantilevers and that Pettazzi forced their removal at gunpoint, or by standing underneath himself; this account is anecdotal and unverified. The building continued as a filling station for decades and now features in Eritrean tourism imagery and stamps, and it stands among the structures cited when UNESCO inscribed \"Asmara: A Modernist African City\" as a World Heritage site in 2017.",
-    "tags": [
-      "modernist",
-      "futurist",
-      "architecture",
-      "italian",
-      "heritage"
-    ],
-    "landmarkCategory": "Buildings",
-    "boardCode": "ASM"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "chance",
-    "name": "Chance",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "special",
-    "boardIndex": 7,
-    "price": 0,
-    "rents": [],
-    "colorGroup": null,
-    "specialType": "chance",
-    "map": {
-      "x": 7.200000000000003,
-      "z": 24,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/generic/question-mark.svg"
-    },
-    "hubId": "hub:africa-1:chance",
-    "enterRadius": 1.8,
-    "description": "Special space: chance.",
-    "boardCode": "CH"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "benghazi",
-    "name": "Benghazi",
-    "countryCode": "LY",
-    "region": "North Africa",
-    "kind": "property",
-    "boardIndex": 8,
-    "price": 100,
-    "rents": [
-      6,
-      30,
-      90,
-      270,
-      400,
-      550
-    ],
-    "houseCost": 50,
-    "colorGroup": "lightblue",
-    "map": {
-      "x": 4.799999999999997,
-      "z": 24,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/ly-benghazi.svg"
-    },
-    "hubId": "hub:africa-1:benghazi",
-    "enterRadius": 2.0,
-    "svgcities": "Benghazi",
-    "description": "Benghazi is the second-largest city in Libya, known for its iconic Benghazi Lighthouse (Fanar Benghazi) - a historic coastal landmark. The city combines Mediterranean charm with rich cultural…",
-    "svgcitiesPath": "public/icons/ly-benghazi.svg",
-    "svgcitiesUrl": "https://svgcities.com/ly/benghazi",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Benghazi Lighthouse",
-    "about": "Benghazi is the second-largest city in Libya, known for its iconic Benghazi Lighthouse (Fanar Benghazi) - a historic coastal landmark. The city combines Mediterranean charm with rich cultural heritage, featuring the beautiful Mediterranean coastline, historic architecture, the famous Benghazi University, and vibrant local markets.",
-    "aboutShort": "Benghazi is the second-largest city in Libya, known for its iconic Benghazi Lighthouse (Fanar Benghazi) - a historic coastal landmark. The city combines…",
-    "tags": [
-      "lighthouse",
-      "fanar",
-      "coastal",
-      "historic"
-    ],
-    "landmarkCategory": "Landmarks",
-    "boardCode": "BEN"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "cairo",
-    "name": "Cairo",
-    "countryCode": "EG",
-    "region": "North Africa",
-    "kind": "property",
-    "boardIndex": 9,
-    "price": 120,
-    "rents": [
-      8,
-      40,
-      100,
-      300,
-      450,
-      600
-    ],
-    "houseCost": 50,
-    "colorGroup": "lightblue",
-    "map": {
-      "x": 2.3999999999999986,
-      "z": 24,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/eg-cairo.svg"
-    },
-    "hubId": "hub:africa-1:cairo",
-    "enterRadius": 2.0,
-    "svgcities": "Cairo",
-    "description": "Cairo is the capital and largest city of Egypt, known for its ancient pyramids, the Great Sphinx, and rich Islamic heritage. The city combines ancient wonders with modern urban development, featuring…",
-    "svgcitiesPath": "public/icons/eg-cairo.svg",
-    "svgcitiesUrl": "https://svgcities.com/eg/cairo",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Cairo Pyramids",
-    "about": "Cairo is the capital and largest city of Egypt, known for its ancient pyramids, the Great Sphinx, and rich Islamic heritage. The city combines ancient wonders with modern urban development, featuring the iconic Giza pyramids and historic Islamic architecture.",
-    "aboutShort": "Cairo is the capital and largest city of Egypt, known for its ancient pyramids, the Great Sphinx, and rich Islamic heritage. The city combines ancient wonders…",
-    "symbolStory": "Standing on the Giza plateau on the west bank of the Nile, the three large pyramids were raised during Egypt's Fourth Dynasty around 2600–2500 BCE for the kings Khufu, Khafre and Menkaure, roughly sixteen centuries before the Fatimid general Jawhar founded al-Qahira in 969 CE. The city later grew westward until Giza became part of the Cairo metropolitan area, so the tombs now sit at the edge of its suburbs. UNESCO listed them in 1979 as part of \"Memphis and its Necropolis,\" and they remain Egypt's main tourist draw, with the Grand Egyptian Museum built nearby. Herodotus's claim that Khufu used slave labour is disputed; evidence points to organised, paid work crews.",
-    "tags": [
-      "pyramids",
-      "ancient",
-      "historic"
-    ],
-    "landmarkCategory": "Landmarks",
-    "boardCode": "CAR"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "jail",
-    "name": "Jail — Just Visiting",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "special",
-    "boardIndex": 10,
-    "price": 0,
-    "rents": [],
-    "colorGroup": null,
-    "specialType": "jail",
-    "map": {
-      "x": 0.0,
-      "z": 24,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/generic/prison.svg"
-    },
-    "hubId": "hub:africa-1:jail",
-    "enterRadius": 1.8,
-    "description": "Special space: jail.",
-    "boardCode": "JAL"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "cape-town",
-    "name": "Cape Town",
-    "countryCode": "ZA",
-    "region": "Southern Africa",
-    "kind": "property",
-    "boardIndex": 11,
-    "price": 140,
-    "rents": [
-      10,
-      50,
-      150,
-      450,
-      625,
-      750
-    ],
-    "houseCost": 100,
-    "colorGroup": "pink",
-    "map": {
-      "x": 0,
-      "z": 21.6,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/za-cape-town.svg"
-    },
-    "hubId": "hub:africa-1:cape-town",
-    "enterRadius": 2.0,
-    "svgcities": "Cape Town",
-    "description": "Cape Town is the legislative capital of South Africa, known for its iconic Table Mountain and stunning natural beauty. The city combines African culture with modern development, featuring the Cape of…",
-    "svgcitiesPath": "public/icons/za-cape-town.svg",
-    "svgcitiesUrl": "https://svgcities.com/za/cape-town",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Cape Town Table Mountain",
-    "about": "Cape Town is the legislative capital of South Africa, known for its iconic Table Mountain and stunning natural beauty. The city combines African culture with modern development, featuring the Cape of Good Hope, Robben Island, and vibrant multicultural scene.",
-    "aboutShort": "Cape Town is the legislative capital of South Africa, known for its iconic Table Mountain and stunning natural beauty. The city combines African culture with…",
-    "tags": [
-      "mountain",
-      "table mountain",
-      "natural"
-    ],
-    "landmarkCategory": "Landmarks",
-    "boardCode": "CPT"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "utility-power",
-    "name": "Africa Power Grid",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "utility",
-    "boardIndex": 12,
-    "price": 150,
-    "rents": [],
-    "utilityMultiplier": [
-      4,
-      10
-    ],
-    "colorGroup": null,
-    "map": {
-      "x": 0,
-      "z": 19.2,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/generic/bolt.svg"
-    },
-    "hubId": "hub:africa-1:utility-power",
-    "enterRadius": 2.0,
-    "description": "Electric utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
-    "boardCode": "ELC"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "casablanca",
-    "name": "Casablanca",
-    "countryCode": "MA",
-    "region": "North Africa",
-    "kind": "property",
-    "boardIndex": 13,
-    "price": 140,
-    "rents": [
-      10,
-      50,
-      150,
-      450,
-      625,
-      750
-    ],
-    "houseCost": 100,
-    "colorGroup": "pink",
-    "map": {
-      "x": 0,
-      "z": 16.8,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/ma-casablanca.svg"
-    },
-    "hubId": "hub:africa-1:casablanca",
-    "enterRadius": 2.0,
-    "svgcities": "Casablanca",
-    "description": "Casablanca is the largest city in Morocco, known for its iconic Hassan II Mosque with its distinctive minaret. The city combines traditional Moroccan culture with modern development, featuring the…",
-    "svgcitiesPath": "public/icons/ma-casablanca.svg",
-    "svgcitiesUrl": "https://svgcities.com/ma/casablanca",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Casablanca Hassan II Minaret",
-    "about": "Casablanca is the largest city in Morocco, known for its iconic Hassan II Mosque with its distinctive minaret. The city combines traditional Moroccan culture with modern development, featuring the historic medina, the modern Corniche waterfront, and the impressive Hassan II Mosque complex.",
-    "aboutShort": "Casablanca is the largest city in Morocco, known for its iconic Hassan II Mosque with its distinctive minaret. The city combines traditional Moroccan culture…",
-    "tags": [
-      "minaret",
-      "mosque",
-      "modern"
-    ],
-    "landmarkCategory": "Landmarks",
-    "boardCode": "CAS"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "dakar",
-    "name": "Dakar",
-    "countryCode": "SN",
-    "region": "West Africa",
-    "kind": "property",
-    "boardIndex": 14,
-    "price": 160,
-    "rents": [
-      12,
-      60,
-      180,
-      500,
-      700,
-      900
-    ],
-    "houseCost": 100,
-    "colorGroup": "pink",
-    "map": {
-      "x": 0,
-      "z": 14.399999999999999,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/sn-dakar.svg"
-    },
-    "hubId": "hub:africa-1:dakar",
-    "enterRadius": 2.0,
-    "svgcities": "Dakar",
-    "description": "Dakar is the capital and largest city of Senegal, home to the iconic African Renaissance Monument - a 49-meter bronze statue that stands as the tallest statue in Africa. Built in 2010, this striking…",
-    "svgcitiesPath": "public/icons/sn-dakar.svg",
-    "svgcitiesUrl": "https://svgcities.com/sn/dakar",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "African Renaissance Monument",
-    "about": "Dakar is the capital and largest city of Senegal, home to the iconic African Renaissance Monument - a 49-meter bronze statue that stands as the tallest statue in Africa. Built in 2010, this striking monument depicts a family emerging from a mountain and symbolizes Africa's liberation from centuries of colonialism and slavery, representing hope, progress, and the rebirth of the African continent.",
-    "aboutShort": "Dakar is the capital and largest city of Senegal, home to the iconic African Renaissance Monument - a 49-meter bronze statue that stands as the tallest statue…",
-    "tags": [
-      "monument",
-      "statue",
-      "modern",
-      "african",
-      "independence"
-    ],
-    "landmarkCategory": "Landmarks",
-    "boardCode": "DAK"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "rail-2",
-    "name": "Jomo Kenyatta International Airport",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "railroad",
-    "boardIndex": 15,
-    "price": 200,
-    "rents": [
-      25,
-      50,
-      100,
-      200
-    ],
-    "colorGroup": null,
-    "map": {
-      "x": 0,
-      "z": 12.0,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/generic/plane-tilt.svg"
-    },
-    "hubId": "hub:africa-1:rail-2",
-    "enterRadius": 2.5,
-    "description": "Jomo Kenyatta International Airport",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
-    "boardCode": "NBO",
-    "aboutShort": "Jomo Kenyatta International Airport (NBO)"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "fez",
-    "name": "Fez",
-    "countryCode": "MA",
-    "region": "North Africa",
-    "kind": "property",
-    "boardIndex": 16,
-    "price": 180,
-    "rents": [
-      14,
-      70,
-      200,
-      550,
-      750,
-      950
-    ],
-    "houseCost": 100,
-    "colorGroup": "orange",
-    "map": {
-      "x": 0,
-      "z": 9.600000000000001,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/ma-fez.svg"
-    },
-    "hubId": "hub:africa-1:fez",
-    "enterRadius": 2.0,
-    "svgcities": "Fez",
-    "description": "Fez is one of Morocco's oldest and most important cities, known for its traditional Moroccan fez hat and rich cultural heritage. The city combines medieval architecture with vibrant culture…",
-    "svgcitiesPath": "public/icons/ma-fez.svg",
-    "svgcitiesUrl": "https://svgcities.com/ma/fez",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Fez Moroccan Hat",
-    "about": "Fez is one of Morocco's oldest and most important cities, known for its traditional Moroccan fez hat and rich cultural heritage. The city combines medieval architecture with vibrant culture, featuring the famous Fes el-Bali medina (a UNESCO World Heritage site), the beautiful Al-Qarawiyyin University (the world's oldest university), and the iconic tanneries.",
-    "aboutShort": "Fez is one of Morocco's oldest and most important cities, known for its traditional Moroccan fez hat and rich cultural heritage. The city combines medieval…",
-    "symbolStory": "Named after the city itself, the brimless red felt cap known in English as the \"fez\" is linked to Fez through its long-standing reputation for producing and dyeing such headgear, though the often-repeated story that its crimson colour came from a berry dye unique to the city is traditional rather than documented. The cap spread widely after Sultan Mahmud II's clothing reforms of the 1820s made it standard dress across the Ottoman Empire, which is also why Turkey banned it under the Hat Law of 1925. In Morocco, where it is usually called the tarbouch, it remains formal and ceremonial wear, and Fez artisans still market it as a product tied to the city's name.",
-    "tags": [
-      "fez",
-      "hat",
-      "moroccan",
-      "traditional",
-      "cultural"
-    ],
-    "landmarkCategory": "Culture",
-    "boardCode": "FEZ"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "community-chest-2",
-    "name": "Community Chest",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "special",
-    "boardIndex": 17,
-    "price": 0,
-    "rents": [],
-    "colorGroup": null,
-    "specialType": "community_chest",
-    "map": {
-      "x": 0,
-      "z": 7.200000000000003,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/generic/treasure-chest.svg"
-    },
-    "hubId": "hub:africa-1:community-chest-2",
-    "enterRadius": 1.8,
-    "description": "Special space: community_chest.",
-    "boardCode": "CS2"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "kigali",
-    "name": "Kigali",
-    "countryCode": "RW",
-    "region": "East Africa",
-    "kind": "property",
-    "boardIndex": 18,
-    "price": 180,
-    "rents": [
-      14,
-      70,
-      200,
-      550,
-      750,
-      950
-    ],
-    "houseCost": 100,
-    "colorGroup": "orange",
-    "map": {
-      "x": 0,
-      "z": 4.799999999999997,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/rw-kigali.svg"
-    },
-    "hubId": "hub:africa-1:kigali",
-    "enterRadius": 2.0,
-    "svgcities": "Kigali",
-    "description": "Kigali is the clean, green capital of Rwanda, crowned by the striking Kigali Convention Centre and its luminous dome that has become the city's defining silhouette. Completed in 2016, the complex…",
-    "svgcitiesPath": "public/icons/rw-kigali.svg",
-    "svgcitiesUrl": "https://svgcities.com/rw/kigali",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Kigali Convention Centre",
-    "about": "Kigali is the clean, green capital of Rwanda, crowned by the striking Kigali Convention Centre and its luminous dome that has become the city's defining silhouette. Completed in 2016, the complex rises on a hilltop overlooking the city of a thousand hills, its sweeping dome inspired by the traditional Rwandan king's palace. Illuminated at night in shifting colors, the KCC symbolizes Rwanda's extraordinary transformation and forward-looking ambition, serving as East Africa's premier conference destination and a beacon of the nation's renaissance.",
-    "aboutShort": "Kigali is the clean, green capital of Rwanda, crowned by the striking Kigali Convention Centre and its luminous dome that has become the city's defining…",
-    "tags": [
-      "convention-centre",
-      "dome",
-      "modern",
-      "architecture",
-      "development"
-    ],
-    "landmarkCategory": "Buildings",
-    "boardCode": "KIG"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "lagos",
-    "name": "Lagos",
-    "countryCode": "NG",
-    "region": "West Africa",
-    "kind": "property",
-    "boardIndex": 19,
-    "price": 200,
-    "rents": [
-      16,
-      80,
-      220,
-      600,
-      800,
-      1000
-    ],
-    "houseCost": 100,
-    "colorGroup": "orange",
-    "map": {
-      "x": 0,
-      "z": 2.3999999999999986,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/ng-lagos.svg"
-    },
-    "hubId": "hub:africa-1:lagos",
-    "enterRadius": 2.0,
-    "svgcities": "Lagos",
-    "description": "Lagos is the largest city and economic hub of Nigeria, known for its modern infrastructure including iconic bridges, bustling port, and vibrant culture. The city combines traditional Nigerian culture…",
-    "svgcitiesPath": "public/icons/ng-lagos.svg",
-    "svgcitiesUrl": "https://svgcities.com/ng/lagos",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Lagos Bridge",
-    "about": "Lagos is the largest city and economic hub of Nigeria, known for its modern infrastructure including iconic bridges, bustling port, and vibrant culture. The city combines traditional Nigerian culture with contemporary development, featuring the Third Mainland Bridge, Victoria Island, and dynamic street life.",
-    "aboutShort": "Lagos is the largest city and economic hub of Nigeria, known for its modern infrastructure including iconic bridges, bustling port, and vibrant culture. The…",
-    "tags": [
-      "bridge",
-      "modern",
-      "infrastructure"
-    ],
-    "landmarkCategory": "Landmarks",
-    "boardCode": "LOS"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "free-parking",
-    "name": "Layover",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "special",
-    "boardIndex": 20,
-    "price": 0,
-    "rents": [],
-    "colorGroup": null,
-    "specialType": "free_parking",
-    "map": {
-      "x": 0,
-      "z": 0.0,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/generic/parking.svg"
-    },
-    "hubId": "hub:africa-1:free-parking",
-    "enterRadius": 1.8,
-    "description": "Layover",
-    "boardCode": "P",
-    "aboutShort": "Layover — free rest stop"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "lalibela",
-    "name": "Lalibela",
-    "countryCode": "ET",
-    "region": "East Africa",
-    "kind": "property",
-    "boardIndex": 21,
-    "price": 220,
-    "rents": [
-      18,
-      90,
-      250,
-      700,
-      875,
-      1050
-    ],
-    "houseCost": 150,
-    "colorGroup": "red",
-    "map": {
-      "x": 2.4000000000000004,
-      "z": 0,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/et-lalibela.svg"
-    },
-    "hubId": "hub:africa-1:lalibela",
-    "enterRadius": 2.0,
-    "svgcities": "Lalibela",
-    "description": "Lalibela is home to the famous rock-hewn churches, including the iconic Church of Saint George carved in the shape of a cross. These UNESCO World Heritage churches represent one of Ethiopia's most…",
-    "svgcitiesPath": "public/icons/et-lalibela.svg",
-    "svgcitiesUrl": "https://svgcities.com/et/lalibela",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Lalibela Cross Church",
-    "about": "Lalibela is home to the famous rock-hewn churches, including the iconic Church of Saint George carved in the shape of a cross. These UNESCO World Heritage churches represent one of Ethiopia's most sacred pilgrimage sites and showcase the remarkable architectural achievements of medieval Ethiopian Orthodox Christianity.",
-    "aboutShort": "Lalibela is home to the famous rock-hewn churches, including the iconic Church of Saint George carved in the shape of a cross. These UNESCO World Heritage…",
-    "tags": [
-      "church",
-      "cross",
-      "orthodox",
-      "ethiopian",
-      "pilgrimage",
-      "heritage"
-    ],
-    "landmarkCategory": "Religion",
-    "boardCode": "LAL"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "chance-2",
-    "name": "Chance",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "special",
-    "boardIndex": 22,
-    "price": 0,
-    "rents": [],
-    "colorGroup": null,
-    "specialType": "chance",
-    "map": {
-      "x": 4.800000000000001,
-      "z": 0,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/generic/question-mark.svg"
-    },
-    "hubId": "hub:africa-1:chance-2",
-    "enterRadius": 1.8,
-    "description": "Special space: chance.",
-    "boardCode": "CH2"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "maputo",
-    "name": "Maputo",
-    "countryCode": "MZ",
-    "region": "Southern Africa",
-    "kind": "property",
-    "boardIndex": 23,
-    "price": 220,
-    "rents": [
-      18,
-      90,
-      250,
-      700,
-      875,
-      1050
-    ],
-    "houseCost": 150,
-    "colorGroup": "red",
-    "map": {
-      "x": 7.199999999999999,
-      "z": 0,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/mz-maputo.svg"
-    },
-    "hubId": "hub:africa-1:maputo",
-    "enterRadius": 2.0,
-    "svgcities": "Maputo",
-    "description": "Maputo is the capital of Mozambique, a coastal city inseparable from its legendary piri-piri prawns. Grilled over charcoal and drenched in a fiery marinade of bird's-eye chillies, garlic, and citrus…",
-    "svgcitiesPath": "public/icons/mz-maputo.svg",
-    "svgcitiesUrl": "https://svgcities.com/mz/maputo",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Maputo Piri-Piri Prawns",
-    "about": "Maputo is the capital of Mozambique, a coastal city inseparable from its legendary piri-piri prawns. Grilled over charcoal and drenched in a fiery marinade of bird's-eye chillies, garlic, and citrus, these giant prawns are Mozambique's most celebrated dish — a tradition born where the Indian Ocean's rich fishing grounds meet centuries of Portuguese and East African culinary influence. Savored at open-air seafood markets and beachside restaurants, Maputo's peri-peri prawns have become an icon of Mozambican identity and one of Africa's great gastronomic experiences.",
-    "aboutShort": "Maputo is the capital of Mozambique, a coastal city inseparable from its legendary piri-piri prawns. Grilled over charcoal and drenched in a fiery marinade of…",
-    "tags": [
-      "piri-piri",
-      "peri-peri",
-      "prawns",
-      "shrimp",
-      "cuisine",
-      "seafood"
-    ],
-    "landmarkCategory": "Culture",
-    "boardCode": "MAP"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "marrakesh",
-    "name": "Marrakesh",
-    "countryCode": "MA",
-    "region": "North Africa",
-    "kind": "property",
-    "boardIndex": 24,
-    "price": 240,
-    "rents": [
-      20,
-      100,
-      300,
-      750,
-      925,
-      1100
-    ],
-    "houseCost": 150,
-    "colorGroup": "red",
-    "map": {
-      "x": 9.600000000000001,
-      "z": 0,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/ma-marrakesh.svg"
-    },
-    "hubId": "hub:africa-1:marrakesh",
-    "enterRadius": 2.0,
-    "svgcities": "Marrakesh",
-    "description": "Marrakesh is a historic city in Morocco, known for its iconic Koutoubia Mosque and vibrant medina. The city combines traditional Moroccan culture with historic architecture, featuring the famous…",
-    "svgcitiesPath": "public/icons/ma-marrakesh.svg",
-    "svgcitiesUrl": "https://svgcities.com/ma/marrakesh",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Marrakesh Koutoubia Mosque",
-    "about": "Marrakesh is a historic city in Morocco, known for its iconic Koutoubia Mosque and vibrant medina. The city combines traditional Moroccan culture with historic architecture, featuring the famous Jemaa el-Fnaa square, historic palaces, and the Atlas Mountains backdrop.",
-    "aboutShort": "Marrakesh is a historic city in Morocco, known for its iconic Koutoubia Mosque and vibrant medina. The city combines traditional Moroccan culture with historic…",
-    "tags": [
-      "mosque",
-      "minaret",
-      "historic"
-    ],
-    "landmarkCategory": "Landmarks",
-    "boardCode": "MAR"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "rail-3",
-    "name": "O.R. Tambo International Airport",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "railroad",
-    "boardIndex": 25,
-    "price": 200,
-    "rents": [
-      25,
-      50,
-      100,
-      200
-    ],
-    "colorGroup": null,
-    "map": {
-      "x": 12.0,
-      "z": 0,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/generic/plane-tilt.svg"
-    },
-    "hubId": "hub:africa-1:rail-3",
-    "enterRadius": 2.5,
-    "description": "O.R. Tambo International Airport",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
-    "boardCode": "JNB",
-    "aboutShort": "O.R. Tambo International Airport (JNB)"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "maseru",
-    "name": "Maseru",
-    "countryCode": "LS",
-    "region": "Southern Africa",
-    "kind": "property",
-    "boardIndex": 26,
-    "price": 260,
-    "rents": [
-      22,
-      110,
-      330,
-      800,
-      975,
-      1150
-    ],
-    "houseCost": 150,
-    "colorGroup": "yellow",
-    "map": {
-      "x": 14.399999999999999,
-      "z": 0,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/ls-maseru.svg"
-    },
-    "hubId": "hub:africa-1:maseru",
-    "enterRadius": 2.0,
-    "svgcities": "Maseru",
-    "description": "Maseru is the capital of Lesotho, home to the iconic Basotho Hat (Mokorotlo) monument - a distinctive conical straw hat that has become the national symbol of the Mountain Kingdom. This traditional…",
-    "svgcitiesPath": "public/icons/ls-maseru.svg",
-    "svgcitiesUrl": "https://svgcities.com/ls/maseru",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Maseru Basotho Hat Monument",
-    "about": "Maseru is the capital of Lesotho, home to the iconic Basotho Hat (Mokorotlo) monument - a distinctive conical straw hat that has become the national symbol of the Mountain Kingdom. This traditional headwear, inspired by the shape of Mount Qiloane, represents Basotho cultural identity and pride. The monument celebrates Lesotho's unique heritage as Africa's only country entirely above 1,000 meters, where the Mokorotlo remains an everyday symbol of national identity.",
-    "aboutShort": "Maseru is the capital of Lesotho, home to the iconic Basotho Hat (Mokorotlo) monument - a distinctive conical straw hat that has become the national symbol of…",
-    "tags": [
-      "mokorotlo",
-      "basotho-hat",
-      "traditional",
-      "monument",
-      "national-symbol"
-    ],
-    "landmarkCategory": "Culture",
-    "boardCode": "MAS"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "meroe",
-    "name": "Meroë",
-    "countryCode": "SD",
-    "region": "North Africa",
-    "kind": "property",
-    "boardIndex": 27,
-    "price": 260,
-    "rents": [
-      22,
-      110,
-      330,
-      800,
-      975,
-      1150
-    ],
-    "houseCost": 150,
-    "colorGroup": "yellow",
-    "map": {
-      "x": 16.799999999999997,
-      "z": 0,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/sd-meroe.svg"
-    },
-    "hubId": "hub:africa-1:meroe",
-    "enterRadius": 2.0,
-    "svgcities": "Meroë",
-    "description": "Meroë is an ancient city on the east bank of the Nile in Sudan, once the royal seat of the Kingdom of Kush. Its Nubian pyramids — smaller, steeper, and more numerous than those of Egypt — rise from…",
-    "svgcitiesPath": "public/icons/sd-meroe.svg",
-    "svgcitiesUrl": "https://svgcities.com/sd/meroe",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Meroë Nubian Pyramids",
-    "about": "Meroë is an ancient city on the east bank of the Nile in Sudan, once the royal seat of the Kingdom of Kush. Its Nubian pyramids — smaller, steeper, and more numerous than those of Egypt — rise from the desert in three royal cemeteries where Kushite kings and queens were entombed between roughly 300 BCE and 350 CE. A UNESCO World Heritage site, the pyramids of Meroë are a striking reminder that Africa's pyramid-building civilization stretched far up the Nile, rivaling its northern neighbor in both power and craftsmanship.",
-    "aboutShort": "Meroë is an ancient city on the east bank of the Nile in Sudan, once the royal seat of the Kingdom of Kush. Its Nubian pyramids — smaller, steeper, and more…",
-    "tags": [
-      "pyramids",
-      "nubian",
-      "ancient",
-      "unesco",
-      "kingdom"
-    ],
-    "landmarkCategory": "Landmarks",
-    "boardCode": "MER"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "utility-water",
-    "name": "Africa Water Works",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "utility",
-    "boardIndex": 28,
-    "price": 150,
-    "rents": [],
-    "utilityMultiplier": [
-      4,
-      10
-    ],
-    "colorGroup": null,
-    "map": {
-      "x": 19.200000000000003,
-      "z": 0,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/generic/droplet.svg"
-    },
-    "hubId": "hub:africa-1:utility-water",
-    "enterRadius": 2.0,
-    "description": "Water utility — rent is dice × multiplier.",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
-    "boardCode": "WTR"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "nairobi",
-    "name": "Nairobi",
-    "countryCode": "KE",
-    "region": "East Africa",
-    "kind": "property",
-    "boardIndex": 29,
-    "price": 280,
-    "rents": [
-      24,
-      120,
-      360,
-      850,
-      1025,
-      1200
-    ],
-    "houseCost": 150,
-    "colorGroup": "yellow",
-    "map": {
-      "x": 21.6,
-      "z": 0,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/ke-nairobi.svg"
-    },
-    "hubId": "hub:africa-1:nairobi",
-    "enterRadius": 2.0,
-    "svgcities": "Nairobi",
-    "description": "Nairobi is the capital and largest city of Kenya, featuring the iconic Kenyatta International Convention Centre (KICC) tower. This distinctive 28-story cylindrical tower with its unique architectural…",
-    "svgcitiesPath": "public/icons/ke-nairobi.svg",
-    "svgcitiesUrl": "https://svgcities.com/ke/nairobi",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "KICC Tower",
-    "about": "Nairobi is the capital and largest city of Kenya, featuring the iconic Kenyatta International Convention Centre (KICC) tower. This distinctive 28-story cylindrical tower with its unique architectural design has defined Nairobi's skyline since 1973, serving as a symbol of Kenya's post-independence development and its role as East Africa's premier business and conference hub.",
-    "aboutShort": "Nairobi is the capital and largest city of Kenya, featuring the iconic Kenyatta International Convention Centre (KICC) tower. This distinctive 28-story…",
-    "tags": [
-      "tower",
-      "skyscraper",
-      "modern",
-      "conference",
-      "iconic"
-    ],
-    "landmarkCategory": "Buildings",
-    "boardCode": "NAI"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "go-to-jail",
-    "name": "Go to Jail",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "special",
-    "boardIndex": 30,
-    "price": 0,
-    "rents": [],
-    "colorGroup": null,
-    "specialType": "go_to_jail",
-    "map": {
-      "x": 24.0,
-      "z": 0,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/generic/prison.svg"
-    },
-    "hubId": "hub:africa-1:go-to-jail",
-    "enterRadius": 1.8,
-    "description": "Special space: go_to_jail.",
-    "boardCode": "GTJ"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "ouagadougou",
-    "name": "Ouagadougou",
-    "countryCode": "BF",
-    "region": "West Africa",
-    "kind": "property",
-    "boardIndex": 31,
-    "price": 300,
-    "rents": [
-      26,
-      130,
-      390,
-      900,
-      1100,
-      1275
-    ],
-    "houseCost": 200,
-    "colorGroup": "green",
-    "map": {
-      "x": 24,
-      "z": 2.4000000000000004,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/bf-ouagadougou.svg"
-    },
-    "hubId": "hub:africa-1:ouagadougou",
-    "enterRadius": 2.0,
-    "svgcities": "Ouagadougou",
-    "description": "Ouagadougou is the capital of Burkina Faso, host of the legendary SIAO (Salon International de l'Artisanat de Ouagadougou) — Africa's largest arts and crafts fair. The event's iconic mask symbol…",
-    "svgcitiesPath": "public/icons/bf-ouagadougou.svg",
-    "svgcitiesUrl": "https://svgcities.com/bf/ouagadougou",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Ouagadougou SIAO Mask",
-    "about": "Ouagadougou is the capital of Burkina Faso, host of the legendary SIAO (Salon International de l'Artisanat de Ouagadougou) — Africa's largest arts and crafts fair. The event's iconic mask symbol draws on the region's rich tradition of ceremonial masks used by the Mossi, Bobo, and Bwa peoples in rituals, harvest celebrations, and spiritual ceremonies. These intricately carved and painted masks represent the soul of West African artistic expression, making Ouagadougou a global hub for African craft and cultural exchange.",
-    "aboutShort": "Ouagadougou is the capital of Burkina Faso, host of the legendary SIAO (Salon International de l'Artisanat de Ouagadougou) — Africa's largest arts and crafts…",
-    "tags": [
-      "siao",
-      "mask",
-      "african-art",
-      "craft",
-      "festival",
-      "traditional"
-    ],
-    "landmarkCategory": "Culture",
-    "boardCode": "OUA"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "port-louis",
-    "name": "Port Louis",
-    "countryCode": "MU",
-    "region": "East Africa",
-    "kind": "property",
-    "boardIndex": 32,
-    "price": 300,
-    "rents": [
-      26,
-      130,
-      390,
-      900,
-      1100,
-      1275
-    ],
-    "houseCost": 200,
-    "colorGroup": "green",
-    "map": {
-      "x": 24,
-      "z": 4.800000000000001,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/mu-port-louis.svg"
-    },
-    "hubId": "hub:africa-1:port-louis",
-    "enterRadius": 2.0,
-    "svgcities": "Port Louis",
-    "description": "Port Louis is the capital of Mauritius, an island nation forever linked to the dodo — the flightless bird that became history's most famous symbol of extinction. Endemic to Mauritius and last sighted…",
-    "svgcitiesPath": "public/icons/mu-port-louis.svg",
-    "svgcitiesUrl": "https://svgcities.com/mu/port-louis",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Port Louis Dodo",
-    "about": "Port Louis is the capital of Mauritius, an island nation forever linked to the dodo — the flightless bird that became history's most famous symbol of extinction. Endemic to Mauritius and last sighted around 1681, the plump, fearless dodo has transcended its tragic fate to become the proud national emblem, appearing on the Mauritian coat of arms, currency, and countless souvenirs. Its silhouette evokes both a cautionary tale of human impact on nature and a celebration of Mauritius's unique natural heritage.",
-    "aboutShort": "Port Louis is the capital of Mauritius, an island nation forever linked to the dodo — the flightless bird that became history's most famous symbol of…",
-    "tags": [
-      "dodo",
-      "extinct",
-      "bird",
-      "national-symbol",
-      "wildlife"
-    ],
-    "landmarkCategory": "Culture",
-    "boardCode": "POR"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "sao-tome",
-    "name": "São Tomé",
-    "countryCode": "ST",
-    "region": "West Africa",
-    "kind": "property",
-    "boardIndex": 33,
-    "price": 320,
-    "rents": [
-      28,
-      150,
-      450,
-      1000,
-      1200,
-      1400
-    ],
-    "houseCost": 200,
-    "colorGroup": "green",
-    "map": {
-      "x": 24,
-      "z": 7.199999999999999,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/st-sao-tome.svg"
-    },
-    "hubId": "hub:africa-1:sao-tome",
-    "enterRadius": 2.0,
-    "svgcities": "São Tomé",
-    "description": "São Tomé is the capital of the island nation of São Tomé and Príncipe, set in the Gulf of Guinea. Inland, rising sharply from the dense Atlantic rainforest of Obô Natural Park, stands Pico Cão Grande…",
-    "svgcitiesPath": "public/icons/st-sao-tome.svg",
-    "svgcitiesUrl": "https://svgcities.com/st/sao-tome",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "São Tomé Pico Cão Grande",
-    "about": "São Tomé is the capital of the island nation of São Tomé and Príncipe, set in the Gulf of Guinea. Inland, rising sharply from the dense Atlantic rainforest of Obô Natural Park, stands Pico Cão Grande — a slender volcanic neck that shoots up more than 300 meters from the jungle floor, its sheer basalt walls forming one of the most dramatic silhouettes in Africa. A remnant of the island's volcanic past, the peak has become the defining landmark of the archipelago, symbolizing São Tomé's wild tropical interior and equatorial beauty.",
-    "aboutShort": "São Tomé is the capital of the island nation of São Tomé and Príncipe, set in the Gulf of Guinea. Inland, rising sharply from the dense Atlantic rainforest of…",
-    "tags": [
-      "volcanic",
-      "peak",
-      "jungle",
-      "nature",
-      "island"
-    ],
-    "landmarkCategory": "Landmarks",
-    "boardCode": "SAO"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "rail-4",
-    "name": "Murtala Muhammed International Airport",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "railroad",
-    "boardIndex": 34,
-    "price": 200,
-    "rents": [
-      25,
-      50,
-      100,
-      200
-    ],
-    "colorGroup": null,
-    "map": {
-      "x": 24,
-      "z": 9.600000000000001,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/generic/plane-tilt.svg"
-    },
-    "hubId": "hub:africa-1:rail-4",
-    "enterRadius": 2.5,
-    "description": "Murtala Muhammed International Airport",
-    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
-    "boardCode": "MM",
-    "aboutShort": "Murtala Muhammed International Airport (MM)"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "timbuktu",
-    "name": "Timbuktu",
-    "countryCode": "ML",
-    "region": "West Africa",
-    "kind": "property",
-    "boardIndex": 35,
-    "price": 350,
-    "rents": [
-      35,
-      175,
-      500,
-      1100,
-      1300,
-      1500
-    ],
-    "houseCost": 200,
-    "colorGroup": "darkblue",
-    "map": {
-      "x": 24,
-      "z": 12.0,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/ml-timbuktu.svg"
-    },
-    "hubId": "hub:africa-1:timbuktu",
-    "enterRadius": 2.0,
-    "svgcities": "Timbuktu",
-    "description": "Timbuktu is a legendary city on the southern edge of the Sahara in Mali, for centuries the crossroads of Trans-Saharan trade and Islamic scholarship. Camel caravans laden with salt from Taoudenni…",
-    "svgcitiesPath": "public/icons/ml-timbuktu.svg",
-    "svgcitiesUrl": "https://svgcities.com/ml/timbuktu",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Timbuktu Camel Caravan",
-    "about": "Timbuktu is a legendary city on the southern edge of the Sahara in Mali, for centuries the crossroads of Trans-Saharan trade and Islamic scholarship. Camel caravans laden with salt from Taoudenni, gold from the Sahel, and manuscripts bound for the city's fabled libraries converged here from across North and West Africa, making Timbuktu a byword for the ends of the earth. The silhouette of the caravan still symbolizes this golden age — when the city was a vital hub of commerce, learning, and cultural exchange across the desert.",
-    "aboutShort": "Timbuktu is a legendary city on the southern edge of the Sahara in Mali, for centuries the crossroads of Trans-Saharan trade and Islamic scholarship. Camel…",
-    "tags": [
-      "camel",
-      "caravan",
-      "sahara",
-      "trade",
-      "historic"
-    ],
-    "landmarkCategory": "Culture",
-    "boardCode": "TIM"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "tax-luxury",
-    "name": "Luxury Tax",
-    "countryCode": "XX",
-    "region": "Africa",
-    "kind": "special",
-    "boardIndex": 36,
-    "price": 0,
-    "rents": [],
-    "colorGroup": null,
-    "specialType": "tax",
-    "map": {
-      "x": 24,
-      "z": 14.399999999999999,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/generic/tax.svg"
-    },
-    "hubId": "hub:africa-1:tax-luxury",
-    "enterRadius": 1.8,
-    "description": "Special space: tax.",
-    "taxAmount": 100,
-    "boardCode": "LTX"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "tunis",
-    "name": "Tunis",
-    "countryCode": "TN",
-    "region": "North Africa",
-    "kind": "property",
-    "boardIndex": 37,
-    "price": 400,
-    "rents": [
-      50,
-      200,
-      600,
-      1400,
-      1700,
-      2000
-    ],
-    "houseCost": 200,
-    "colorGroup": "darkblue",
-    "map": {
-      "x": 24,
-      "z": 16.799999999999997,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/tn-tunis.svg"
-    },
-    "hubId": "hub:africa-1:tunis",
-    "enterRadius": 2.0,
-    "svgcities": "Tunis",
-    "description": "Tunis is the capital of Tunisia, home to the iconic Bab el Bhar (Porte de France) — the historic gateway that once marked the boundary between the ancient medina and the modern French colonial city…",
-    "svgcitiesPath": "public/icons/tn-tunis.svg",
-    "svgcitiesUrl": "https://svgcities.com/tn/tunis",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Bab el Bhar",
-    "about": "Tunis is the capital of Tunisia, home to the iconic Bab el Bhar (Porte de France) — the historic gateway that once marked the boundary between the ancient medina and the modern French colonial city. Built during the Ottoman era and later renamed by the French, this grand archway stands as a symbol of Tunis's layered history, where Carthaginian, Arab, Ottoman, and French influences merge into one of North Africa's most captivating capitals.",
-    "aboutShort": "Tunis is the capital of Tunisia, home to the iconic Bab el Bhar (Porte de France) — the historic gateway that once marked the boundary between the ancient…",
-    "symbolStory": "Standing at the eastern edge of the medina of Tunis, the arch known as Bab el Bhar, or \"Gate of the Sea,\" took its name from the route it once opened toward the harbour on the Lake of Tunis and the Gulf beyond. As a main entry point to the medina, it controlled access to the souks and served roles in trade, customs and defence. Sources disagree on its origins, placing the first gate variously in the Aghlabid or Hafsid periods, and dating the present single arch with crenellated parapet to a mid-19th-century rebuilding often attributed to Ahmed Bey after 1848; these accounts are not firmly established. Under the French protectorate it was called Porte de France, entrance to the European quarter, and the Arabic name returned after independence. It now marks the boundary between the medina and the modern city.",
-    "tags": [
-      "gate",
-      "porte-de-france",
-      "historic",
-      "medina",
-      "colonial"
-    ],
-    "landmarkCategory": "Landmarks",
-    "boardCode": "TUN"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "windhoek",
-    "name": "Windhoek",
-    "countryCode": "NA",
-    "region": "Southern Africa",
-    "kind": "property",
-    "boardIndex": 38,
-    "price": 320,
-    "rents": [
-      26,
-      130,
-      390,
-      900,
-      1100,
-      1275
-    ],
-    "houseCost": 200,
-    "colorGroup": "violet",
-    "map": {
-      "x": 24,
-      "z": 19.200000000000003,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/na-windhoek.svg"
-    },
-    "hubId": "hub:africa-1:windhoek",
-    "enterRadius": 2.0,
-    "svgcities": "Windhoek",
-    "description": "Windhoek is the capital of Namibia, crowned by the striking Independence Memorial Museum — a modernist glass-and-steel structure that towers over the city from a hilltop in the historic center…",
-    "svgcitiesPath": "public/icons/na-windhoek.svg",
-    "svgcitiesUrl": "https://svgcities.com/na/windhoek",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Independence Memorial Museum",
-    "about": "Windhoek is the capital of Namibia, crowned by the striking Independence Memorial Museum — a modernist glass-and-steel structure that towers over the city from a hilltop in the historic center. Inaugurated in 2014, the museum commemorates Namibia's long struggle for freedom from colonial rule and apartheid, housing exhibits that trace the nation's journey to independence in 1990. Its bold silhouette, flanked by a bronze statue of founding president Sam Nujoma, has become Windhoek's most recognizable landmark and a powerful symbol of Namibian sovereignty.",
-    "aboutShort": "Windhoek is the capital of Namibia, crowned by the striking Independence Memorial Museum — a modernist glass-and-steel structure that towers over the city from…",
-    "symbolStory": "Rising 40 metres above Robert Mugabe Avenue, between the Alte Feste and the Christuskirche, the gold-glass tower was built for the Namibian government by the North Korean firm Mansudae Overseas Projects, with groundbreaking in 2011 and inauguration by President Hifikepunye Pohamba on 21 March 2014, the 24th anniversary of independence (some sources give 20 March). It occupies the ridge where the German colonial Reiterdenkmal stood for over a century; that monument's removal, and the new statues of founding president Sam Nujoma and the genocide memorial, made the site a deliberate replacement of colonial commemoration.",
-    "tags": [
-      "independence",
-      "memorial",
-      "museum",
-      "monument",
-      "freedom"
-    ],
-    "landmarkCategory": "Landmarks",
-    "boardCode": "WIN"
-  },
-  {
-    "worldId": "africa-1",
-    "slug": "yamoussoukro",
-    "name": "Yamoussoukro",
-    "countryCode": "CI",
-    "region": "West Africa",
-    "kind": "property",
-    "boardIndex": 39,
-    "price": 340,
-    "rents": [
-      26,
-      130,
-      390,
-      900,
-      1100,
-      1275
-    ],
-    "houseCost": 200,
-    "colorGroup": "violet",
-    "map": {
-      "x": 24,
-      "z": 21.6,
-      "scale": 1
-    },
-    "assets": {
-      "icon": "city-icons/icons/ci-yamoussoukro.svg"
-    },
-    "hubId": "hub:africa-1:yamoussoukro",
-    "enterRadius": 2.0,
-    "svgcities": "Yamoussoukro",
-    "description": "Yamoussoukro is the political capital of Côte d'Ivoire, the birthplace of founding president Félix Houphouët-Boigny. Around the artificial lake surrounding the Presidential Palace lives a famous…",
-    "svgcitiesPath": "public/icons/ci-yamoussoukro.svg",
-    "svgcitiesUrl": "https://svgcities.com/ci/yamoussoukro",
-    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
-    "symbol": "Yamoussoukro Presidential Crocodiles",
-    "about": "Yamoussoukro is the political capital of Côte d'Ivoire, the birthplace of founding president Félix Houphouët-Boigny. Around the artificial lake surrounding the Presidential Palace lives a famous colony of sacred crocodiles, introduced by the president and long fed by a dedicated keeper in a ritual that drew visitors from around the world. Seen as guardians of the palace and tied to local spiritual traditions, the Yamoussoukro crocodiles have become one of the city's most recognizable symbols, a living emblem beside the palace and the monumental Basilica of Our Lady of Peace.",
-    "aboutShort": "Yamoussoukro is the political capital of Côte d'Ivoire, the birthplace of founding president Félix Houphouët-Boigny. Around the artificial lake surrounding the…",
-    "tags": [
-      "crocodiles",
-      "presidential",
-      "lake",
-      "sacred",
-      "capital"
-    ],
-    "landmarkCategory": "Landmarks",
-    "boardCode": "YAM"
-  },
-  {
     "worldId": "europe-1",
     "slug": "go",
     "name": "GO — Europe 1",
@@ -1748,7 +189,7 @@
     "hubId": "hub:europe-1:community-chest",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CST"
+    "boardCode": "CHE"
   },
   {
     "worldId": "europe-1",
@@ -1969,7 +410,7 @@
     "hubId": "hub:europe-1:chance",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH"
+    "boardCode": "CHA"
   },
   {
     "worldId": "europe-1",
@@ -2529,7 +970,7 @@
     "hubId": "hub:europe-1:chance-2",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH2"
+    "boardCode": "CHA2"
   },
   {
     "worldId": "europe-1",
@@ -3042,7 +1483,7 @@
     "hubId": "hub:europe-1:community-chest-2",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CS2"
+    "boardCode": "CHE2"
   },
   {
     "worldId": "europe-1",
@@ -3089,7 +1530,7 @@
       "architectural"
     ],
     "landmarkCategory": "Landmarks",
-    "boardCode": "CHA"
+    "boardCode": "CH2"
   },
   {
     "worldId": "europe-1",
@@ -3397,7 +1838,7 @@
     "hubId": "hub:europe-2:community-chest",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CST"
+    "boardCode": "CHE"
   },
   {
     "worldId": "europe-2",
@@ -3621,7 +2062,7 @@
     "hubId": "hub:europe-2:chance",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH"
+    "boardCode": "CHA"
   },
   {
     "worldId": "europe-2",
@@ -4173,7 +2614,7 @@
     "hubId": "hub:europe-2:chance-2",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH2"
+    "boardCode": "CHA2"
   },
   {
     "worldId": "europe-2",
@@ -4690,7 +3131,7 @@
     "hubId": "hub:europe-2:community-chest-2",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CS2"
+    "boardCode": "CHE2"
   },
   {
     "worldId": "europe-2",
@@ -5045,7 +3486,7 @@
     "hubId": "hub:europe-3:community-chest",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CST"
+    "boardCode": "CHE"
   },
   {
     "worldId": "europe-3",
@@ -5267,7 +3708,7 @@
     "hubId": "hub:europe-3:chance",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH"
+    "boardCode": "CHA"
   },
   {
     "worldId": "europe-3",
@@ -5820,7 +4261,7 @@
     "hubId": "hub:europe-3:chance-2",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH2"
+    "boardCode": "CHA2"
   },
   {
     "worldId": "europe-3",
@@ -6334,7 +4775,7 @@
     "hubId": "hub:europe-3:community-chest-2",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CS2"
+    "boardCode": "CHE2"
   },
   {
     "worldId": "europe-3",
@@ -6691,7 +5132,7 @@
     "hubId": "hub:europe-4:community-chest",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CST"
+    "boardCode": "CHE"
   },
   {
     "worldId": "europe-4",
@@ -6910,7 +5351,7 @@
     "hubId": "hub:europe-4:chance",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH"
+    "boardCode": "CHA"
   },
   {
     "worldId": "europe-4",
@@ -7469,7 +5910,7 @@
     "hubId": "hub:europe-4:chance-2",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH2"
+    "boardCode": "CHA2"
   },
   {
     "worldId": "europe-4",
@@ -7982,7 +6423,7 @@
     "hubId": "hub:europe-4:community-chest-2",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CS2"
+    "boardCode": "CHE2"
   },
   {
     "worldId": "europe-4",
@@ -8338,7 +6779,7 @@
     "hubId": "hub:europe-5:community-chest",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CST"
+    "boardCode": "CHE"
   },
   {
     "worldId": "europe-5",
@@ -8562,7 +7003,7 @@
     "hubId": "hub:europe-5:chance",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH"
+    "boardCode": "CHA"
   },
   {
     "worldId": "europe-5",
@@ -9123,7 +7564,7 @@
     "hubId": "hub:europe-5:chance-2",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH2"
+    "boardCode": "CHA2"
   },
   {
     "worldId": "europe-5",
@@ -9637,7 +8078,7 @@
     "hubId": "hub:europe-5:community-chest-2",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CS2"
+    "boardCode": "CHE2"
   },
   {
     "worldId": "europe-5",
@@ -9997,7 +8438,7 @@
     "hubId": "hub:asia-1:community-chest",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CST"
+    "boardCode": "CHE"
   },
   {
     "worldId": "asia-1",
@@ -10197,7 +8638,7 @@
     "hubId": "hub:asia-1:chance",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH"
+    "boardCode": "CHA"
   },
   {
     "worldId": "asia-1",
@@ -10363,7 +8804,7 @@
       "symbol"
     ],
     "landmarkCategory": "Culture",
-    "boardCode": "CHE"
+    "boardCode": "CH2"
   },
   {
     "worldId": "asia-1",
@@ -10704,7 +9145,7 @@
     "hubId": "hub:asia-1:chance-2",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH2"
+    "boardCode": "CHA2"
   },
   {
     "worldId": "asia-1",
@@ -11138,7 +9579,7 @@
     "hubId": "hub:asia-1:community-chest-2",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CS2"
+    "boardCode": "CHE2"
   },
   {
     "worldId": "asia-1",
@@ -11496,7 +9937,7 @@
     "hubId": "hub:asia-2:community-chest",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CST"
+    "boardCode": "CHE"
   },
   {
     "worldId": "asia-2",
@@ -11693,7 +10134,7 @@
     "hubId": "hub:asia-2:chance",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH"
+    "boardCode": "CHA"
   },
   {
     "worldId": "asia-2",
@@ -12200,7 +10641,7 @@
     "hubId": "hub:asia-2:chance-2",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH2"
+    "boardCode": "CHA2"
   },
   {
     "worldId": "asia-2",
@@ -12644,7 +11085,7 @@
     "hubId": "hub:asia-2:community-chest-2",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CS2"
+    "boardCode": "CHE2"
   },
   {
     "worldId": "asia-2",
@@ -13006,7 +11447,7 @@
     "hubId": "hub:north-america-1:community-chest",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CST"
+    "boardCode": "CHE"
   },
   {
     "worldId": "north-america-1",
@@ -13275,7 +11716,7 @@
     "hubId": "hub:north-america-1:chance",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH"
+    "boardCode": "CHA"
   },
   {
     "worldId": "north-america-1",
@@ -13881,7 +12322,7 @@
     "hubId": "hub:north-america-1:chance-2",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH2"
+    "boardCode": "CHA2"
   },
   {
     "worldId": "north-america-1",
@@ -14493,7 +12934,7 @@
     "hubId": "hub:north-america-1:community-chest-2",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CS2"
+    "boardCode": "CHE2"
   },
   {
     "worldId": "north-america-1",
@@ -14801,7 +13242,7 @@
     "hubId": "hub:south-america-1:community-chest",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CST"
+    "boardCode": "CHE"
   },
   {
     "worldId": "south-america-1",
@@ -14949,7 +13390,7 @@
     "hubId": "hub:south-america-1:chance",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH"
+    "boardCode": "CHA"
   },
   {
     "worldId": "south-america-1",
@@ -15415,7 +13856,7 @@
     "hubId": "hub:south-america-1:chance-2",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH2"
+    "boardCode": "CHA2"
   },
   {
     "worldId": "south-america-1",
@@ -15788,7 +14229,7 @@
     "hubId": "hub:south-america-1:community-chest-2",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CS2"
+    "boardCode": "CHE2"
   },
   {
     "worldId": "south-america-1",
@@ -16100,7 +14541,7 @@
     "hubId": "hub:middle-east-1:community-chest",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CST"
+    "boardCode": "CHE"
   },
   {
     "worldId": "middle-east-1",
@@ -16318,7 +14759,7 @@
     "hubId": "hub:middle-east-1:chance",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH"
+    "boardCode": "CHA"
   },
   {
     "worldId": "middle-east-1",
@@ -16822,7 +15263,7 @@
     "hubId": "hub:middle-east-1:chance-2",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH2"
+    "boardCode": "CHA2"
   },
   {
     "worldId": "middle-east-1",
@@ -17335,7 +15776,7 @@
     "hubId": "hub:middle-east-1:community-chest-2",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CS2"
+    "boardCode": "CHE2"
   },
   {
     "worldId": "middle-east-1",
@@ -17594,7 +16035,7 @@
     "hubId": "hub:oceania-1:community-chest",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CST"
+    "boardCode": "CHE"
   },
   {
     "worldId": "oceania-1",
@@ -17818,7 +16259,7 @@
     "hubId": "hub:oceania-1:chance",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH"
+    "boardCode": "CHA"
   },
   {
     "worldId": "oceania-1",
@@ -18158,7 +16599,7 @@
     "hubId": "hub:oceania-1:chance-2",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH2"
+    "boardCode": "CHA2"
   },
   {
     "worldId": "oceania-1",
@@ -18518,7 +16959,7 @@
     "hubId": "hub:central-america-1:community-chest",
     "enterRadius": 1.8,
     "description": "Special space: community_chest.",
-    "boardCode": "CST"
+    "boardCode": "CHE"
   },
   {
     "worldId": "central-america-1",
@@ -18741,7 +17182,7 @@
     "hubId": "hub:central-america-1:chance",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH"
+    "boardCode": "CHA"
   },
   {
     "worldId": "central-america-1",
@@ -19083,7 +17524,7 @@
     "hubId": "hub:central-america-1:chance-2",
     "enterRadius": 1.8,
     "description": "Special space: chance.",
-    "boardCode": "CH2"
+    "boardCode": "CHA2"
   },
   {
     "worldId": "central-america-1",
@@ -19354,5 +17795,1519 @@
     ],
     "landmarkCategory": "Culture",
     "boardCode": "WIL"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "go",
+    "name": "GO — African Gateway",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "special",
+    "boardIndex": 0,
+    "price": 0,
+    "rents": [],
+    "colorGroup": null,
+    "specialType": "go",
+    "map": {
+      "x": 24.0,
+      "z": 24,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/arrow-narrow-right.svg"
+    },
+    "hubId": "hub:africa-1:go",
+    "enterRadius": 1.8,
+    "description": "Special space: go.",
+    "passBonus": 200,
+    "boardCode": "GO"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "accra",
+    "name": "Accra",
+    "countryCode": "GH",
+    "region": "West Africa",
+    "kind": "property",
+    "boardIndex": 1,
+    "price": 60,
+    "rents": [
+      2,
+      10,
+      30,
+      90,
+      160,
+      250
+    ],
+    "houseCost": 50,
+    "colorGroup": "brown",
+    "map": {
+      "x": 21.6,
+      "z": 24,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/gh-accra.svg"
+    },
+    "hubId": "hub:africa-1:accra",
+    "enterRadius": 2.0,
+    "svgcities": "Accra",
+    "description": "Accra is the vibrant capital of Ghana, home to the iconic Independence Arch at Black Star Square. Built in 1961 to commemorate Ghana's independence as the first sub-Saharan African nation to gain…",
+    "svgcitiesPath": "public/icons/gh-accra.svg",
+    "svgcitiesUrl": "https://svgcities.com/gh/accra",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Accra Independence Arch",
+    "about": "Accra is the vibrant capital of Ghana, home to the iconic Independence Arch at Black Star Square. Built in 1961 to commemorate Ghana's independence as the first sub-Saharan African nation to gain freedom from colonial rule, the arch draws inspiration from the Arc de Triomphe. Crowned with a black star — Ghana's national symbol of African emancipation — the monument stands at the heart of Independence Square, the country's largest public gathering space and a powerful symbol of pan-African pride.",
+    "aboutShort": "Accra is the vibrant capital of Ghana, home to the iconic Independence Arch at Black Star Square. Built in 1961 to commemorate Ghana's independence as the…",
+    "tags": [
+      "independence-arch",
+      "black-star-square",
+      "freedom",
+      "monument",
+      "independence"
+    ],
+    "landmarkCategory": "Landmarks",
+    "boardCode": "ACC"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "community-chest",
+    "name": "Community Chest",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "special",
+    "boardIndex": 2,
+    "price": 0,
+    "rents": [],
+    "colorGroup": null,
+    "specialType": "community_chest",
+    "map": {
+      "x": 19.2,
+      "z": 24,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/treasure-chest.svg"
+    },
+    "hubId": "hub:africa-1:community-chest",
+    "enterRadius": 1.8,
+    "description": "Community Chest",
+    "boardCode": "CHE"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "antananarivo",
+    "name": "Antananarivo",
+    "countryCode": "MG",
+    "region": "East Africa",
+    "kind": "property",
+    "boardIndex": 3,
+    "price": 60,
+    "rents": [
+      4,
+      20,
+      60,
+      180,
+      320,
+      450
+    ],
+    "houseCost": 50,
+    "colorGroup": "brown",
+    "map": {
+      "x": 16.8,
+      "z": 24,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/mg-antananarivo.svg"
+    },
+    "hubId": "hub:africa-1:antananarivo",
+    "enterRadius": 2.0,
+    "svgcities": "Antananarivo",
+    "description": "Antananarivo is the capital and largest city of Madagascar, known for its historic royal palace complex and rich cultural heritage. The city combines traditional Malagasy culture with colonial…",
+    "svgcitiesPath": "public/icons/mg-antananarivo.svg",
+    "svgcitiesUrl": "https://svgcities.com/mg/antananarivo",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Antananarivo Palace",
+    "about": "Antananarivo is the capital and largest city of Madagascar, known for its historic royal palace complex and rich cultural heritage. The city combines traditional Malagasy culture with colonial architecture, featuring the iconic Rova palace complex and the vibrant Analakely market district.",
+    "aboutShort": "Antananarivo is the capital and largest city of Madagascar, known for its historic royal palace complex and rich cultural heritage. The city combines…",
+    "tags": [
+      "palace",
+      "royal",
+      "historic"
+    ],
+    "landmarkCategory": "Landmarks",
+    "boardCode": "ANT"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "tax-income",
+    "name": "Income Tax",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "special",
+    "boardIndex": 4,
+    "price": 0,
+    "rents": [],
+    "colorGroup": null,
+    "specialType": "tax",
+    "map": {
+      "x": 14.399999999999999,
+      "z": 24,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/tax.svg"
+    },
+    "hubId": "hub:africa-1:tax-income",
+    "enterRadius": 1.8,
+    "description": "Special space: tax.",
+    "taxAmount": 200,
+    "boardCode": "TAX"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "rail-1",
+    "name": "Cairo International Airport",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "railroad",
+    "boardIndex": 5,
+    "price": 200,
+    "rents": [
+      25,
+      50,
+      100,
+      200
+    ],
+    "colorGroup": null,
+    "map": {
+      "x": 12.0,
+      "z": 24,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/plane-tilt.svg"
+    },
+    "hubId": "hub:africa-1:rail-1",
+    "enterRadius": 2.5,
+    "description": "Cairo International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "CAI",
+    "aboutShort": "Cairo International Airport (CAI)"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "asmara",
+    "name": "Asmara",
+    "countryCode": "ER",
+    "region": "East Africa",
+    "kind": "property",
+    "boardIndex": 6,
+    "price": 100,
+    "rents": [
+      6,
+      30,
+      90,
+      270,
+      400,
+      550
+    ],
+    "houseCost": 50,
+    "colorGroup": "lightblue",
+    "map": {
+      "x": 9.600000000000001,
+      "z": 24,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/er-asmara.svg"
+    },
+    "hubId": "hub:africa-1:asmara",
+    "enterRadius": 2.0,
+    "svgcities": "Asmara",
+    "description": "Asmara is the capital of Eritrea, a UNESCO World Heritage city celebrated as Africa's modernist capital. The Fiat Tagliero Building, designed by Italian engineer Giuseppe Pettazzi and completed in…",
+    "svgcitiesPath": "public/icons/er-asmara.svg",
+    "svgcitiesUrl": "https://svgcities.com/er/asmara",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Asmara Fiat Tagliero Building",
+    "about": "Asmara is the capital of Eritrea, a UNESCO World Heritage city celebrated as Africa's modernist capital. The Fiat Tagliero Building, designed by Italian engineer Giuseppe Pettazzi and completed in 1938, is its most iconic landmark — a futurist service station shaped like a soaring airplane, with two cantilevered concrete wings stretching 15 meters on each side with no supporting columns. A masterpiece of Italian Rationalist architecture, the building stands as a symbol of Asmara's unique blend of modernist heritage and highland African identity.",
+    "aboutShort": "Asmara is the capital of Eritrea, a UNESCO World Heritage city celebrated as Africa's modernist capital. The Fiat Tagliero Building, designed by Italian…",
+    "symbolStory": "Completed in 1938 to a design by the Italian engineer Giuseppe Pettazzi, this former service station on Asmara's Sematat Avenue became a landmark almost immediately because of its Futurist form: a central tower flanked by two concrete wings roughly thirty metres long that project without visible supports. A widely repeated story holds that colonial officials insisted on props beneath the cantilevers and that Pettazzi forced their removal at gunpoint, or by standing underneath himself; this account is anecdotal and unverified. The building continued as a filling station for decades and now features in Eritrean tourism imagery and stamps, and it stands among the structures cited when UNESCO inscribed \"Asmara: A Modernist African City\" as a World Heritage site in 2017.",
+    "tags": [
+      "modernist",
+      "futurist",
+      "architecture",
+      "italian",
+      "heritage"
+    ],
+    "landmarkCategory": "Buildings",
+    "boardCode": "ASM"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "chance",
+    "name": "Chance",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "special",
+    "boardIndex": 7,
+    "price": 0,
+    "rents": [],
+    "colorGroup": null,
+    "specialType": "chance",
+    "map": {
+      "x": 7.200000000000003,
+      "z": 24,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/question-mark.svg"
+    },
+    "hubId": "hub:africa-1:chance",
+    "enterRadius": 1.8,
+    "description": "Chance",
+    "boardCode": "CHA"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "benghazi",
+    "name": "Benghazi",
+    "countryCode": "LY",
+    "region": "North Africa",
+    "kind": "property",
+    "boardIndex": 8,
+    "price": 100,
+    "rents": [
+      6,
+      30,
+      90,
+      270,
+      400,
+      550
+    ],
+    "houseCost": 50,
+    "colorGroup": "lightblue",
+    "map": {
+      "x": 4.799999999999997,
+      "z": 24,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/ly-benghazi.svg"
+    },
+    "hubId": "hub:africa-1:benghazi",
+    "enterRadius": 2.0,
+    "svgcities": "Benghazi",
+    "description": "Benghazi is the second-largest city in Libya, known for its iconic Benghazi Lighthouse (Fanar Benghazi) - a historic coastal landmark. The city combines Mediterranean charm with rich cultural…",
+    "svgcitiesPath": "public/icons/ly-benghazi.svg",
+    "svgcitiesUrl": "https://svgcities.com/ly/benghazi",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Benghazi Lighthouse",
+    "about": "Benghazi is the second-largest city in Libya, known for its iconic Benghazi Lighthouse (Fanar Benghazi) - a historic coastal landmark. The city combines Mediterranean charm with rich cultural heritage, featuring the beautiful Mediterranean coastline, historic architecture, the famous Benghazi University, and vibrant local markets.",
+    "aboutShort": "Benghazi is the second-largest city in Libya, known for its iconic Benghazi Lighthouse (Fanar Benghazi) - a historic coastal landmark. The city combines…",
+    "tags": [
+      "lighthouse",
+      "fanar",
+      "coastal",
+      "historic"
+    ],
+    "landmarkCategory": "Landmarks",
+    "boardCode": "BEN"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "cairo",
+    "name": "Cairo",
+    "countryCode": "EG",
+    "region": "North Africa",
+    "kind": "property",
+    "boardIndex": 9,
+    "price": 120,
+    "rents": [
+      8,
+      40,
+      100,
+      300,
+      450,
+      600
+    ],
+    "houseCost": 50,
+    "colorGroup": "lightblue",
+    "map": {
+      "x": 2.3999999999999986,
+      "z": 24,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/eg-cairo.svg"
+    },
+    "hubId": "hub:africa-1:cairo",
+    "enterRadius": 2.0,
+    "svgcities": "Cairo",
+    "description": "Cairo is the capital and largest city of Egypt, known for its ancient pyramids, the Great Sphinx, and rich Islamic heritage. The city combines ancient wonders with modern urban development, featuring…",
+    "svgcitiesPath": "public/icons/eg-cairo.svg",
+    "svgcitiesUrl": "https://svgcities.com/eg/cairo",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Cairo Pyramids",
+    "about": "Cairo is the capital and largest city of Egypt, known for its ancient pyramids, the Great Sphinx, and rich Islamic heritage. The city combines ancient wonders with modern urban development, featuring the iconic Giza pyramids and historic Islamic architecture.",
+    "aboutShort": "Cairo is the capital and largest city of Egypt, known for its ancient pyramids, the Great Sphinx, and rich Islamic heritage. The city combines ancient wonders…",
+    "symbolStory": "Standing on the Giza plateau on the west bank of the Nile, the three large pyramids were raised during Egypt's Fourth Dynasty around 2600–2500 BCE for the kings Khufu, Khafre and Menkaure, roughly sixteen centuries before the Fatimid general Jawhar founded al-Qahira in 969 CE. The city later grew westward until Giza became part of the Cairo metropolitan area, so the tombs now sit at the edge of its suburbs. UNESCO listed them in 1979 as part of \"Memphis and its Necropolis,\" and they remain Egypt's main tourist draw, with the Grand Egyptian Museum built nearby. Herodotus's claim that Khufu used slave labour is disputed; evidence points to organised, paid work crews.",
+    "tags": [
+      "pyramids",
+      "ancient",
+      "historic"
+    ],
+    "landmarkCategory": "Landmarks",
+    "boardCode": "CAR"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "jail",
+    "name": "Jail — Just Visiting",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "special",
+    "boardIndex": 10,
+    "price": 0,
+    "rents": [],
+    "colorGroup": null,
+    "specialType": "jail",
+    "map": {
+      "x": 0.0,
+      "z": 24,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/prison.svg"
+    },
+    "hubId": "hub:africa-1:jail",
+    "enterRadius": 1.8,
+    "description": "Special space: jail.",
+    "boardCode": "JAL"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "cape-town",
+    "name": "Cape Town",
+    "countryCode": "ZA",
+    "region": "Southern Africa",
+    "kind": "property",
+    "boardIndex": 11,
+    "price": 140,
+    "rents": [
+      10,
+      50,
+      150,
+      450,
+      625,
+      750
+    ],
+    "houseCost": 100,
+    "colorGroup": "pink",
+    "map": {
+      "x": 0,
+      "z": 21.6,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/za-cape-town.svg"
+    },
+    "hubId": "hub:africa-1:cape-town",
+    "enterRadius": 2.0,
+    "svgcities": "Cape Town",
+    "description": "Cape Town is the legislative capital of South Africa, known for its iconic Table Mountain and stunning natural beauty. The city combines African culture with modern development, featuring the Cape of…",
+    "svgcitiesPath": "public/icons/za-cape-town.svg",
+    "svgcitiesUrl": "https://svgcities.com/za/cape-town",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Cape Town Table Mountain",
+    "about": "Cape Town is the legislative capital of South Africa, known for its iconic Table Mountain and stunning natural beauty. The city combines African culture with modern development, featuring the Cape of Good Hope, Robben Island, and vibrant multicultural scene.",
+    "aboutShort": "Cape Town is the legislative capital of South Africa, known for its iconic Table Mountain and stunning natural beauty. The city combines African culture with…",
+    "tags": [
+      "mountain",
+      "table mountain",
+      "natural"
+    ],
+    "landmarkCategory": "Landmarks",
+    "boardCode": "CPT"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "utility-power",
+    "name": "Africa Power Grid",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "utility",
+    "boardIndex": 12,
+    "price": 150,
+    "rents": [],
+    "utilityMultiplier": [
+      4,
+      10
+    ],
+    "colorGroup": null,
+    "map": {
+      "x": 0,
+      "z": 19.2,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/bolt.svg"
+    },
+    "hubId": "hub:africa-1:utility-power",
+    "enterRadius": 2.0,
+    "description": "Electric utility — rent is dice × multiplier.",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "ELC"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "casablanca",
+    "name": "Casablanca",
+    "countryCode": "MA",
+    "region": "North Africa",
+    "kind": "property",
+    "boardIndex": 13,
+    "price": 140,
+    "rents": [
+      10,
+      50,
+      150,
+      450,
+      625,
+      750
+    ],
+    "houseCost": 100,
+    "colorGroup": "pink",
+    "map": {
+      "x": 0,
+      "z": 16.8,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/ma-casablanca.svg"
+    },
+    "hubId": "hub:africa-1:casablanca",
+    "enterRadius": 2.0,
+    "svgcities": "Casablanca",
+    "description": "Casablanca is the largest city in Morocco, known for its iconic Hassan II Mosque with its distinctive minaret. The city combines traditional Moroccan culture with modern development, featuring the…",
+    "svgcitiesPath": "public/icons/ma-casablanca.svg",
+    "svgcitiesUrl": "https://svgcities.com/ma/casablanca",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Casablanca Hassan II Minaret",
+    "about": "Casablanca is the largest city in Morocco, known for its iconic Hassan II Mosque with its distinctive minaret. The city combines traditional Moroccan culture with modern development, featuring the historic medina, the modern Corniche waterfront, and the impressive Hassan II Mosque complex.",
+    "aboutShort": "Casablanca is the largest city in Morocco, known for its iconic Hassan II Mosque with its distinctive minaret. The city combines traditional Moroccan culture…",
+    "tags": [
+      "minaret",
+      "mosque",
+      "modern"
+    ],
+    "landmarkCategory": "Landmarks",
+    "boardCode": "CAS"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "dakar",
+    "name": "Dakar",
+    "countryCode": "SN",
+    "region": "West Africa",
+    "kind": "property",
+    "boardIndex": 14,
+    "price": 160,
+    "rents": [
+      12,
+      60,
+      180,
+      500,
+      700,
+      900
+    ],
+    "houseCost": 100,
+    "colorGroup": "pink",
+    "map": {
+      "x": 0,
+      "z": 14.399999999999999,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/sn-dakar.svg"
+    },
+    "hubId": "hub:africa-1:dakar",
+    "enterRadius": 2.0,
+    "svgcities": "Dakar",
+    "description": "Dakar is the capital and largest city of Senegal, home to the iconic African Renaissance Monument - a 49-meter bronze statue that stands as the tallest statue in Africa. Built in 2010, this striking…",
+    "svgcitiesPath": "public/icons/sn-dakar.svg",
+    "svgcitiesUrl": "https://svgcities.com/sn/dakar",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "African Renaissance Monument",
+    "about": "Dakar is the capital and largest city of Senegal, home to the iconic African Renaissance Monument - a 49-meter bronze statue that stands as the tallest statue in Africa. Built in 2010, this striking monument depicts a family emerging from a mountain and symbolizes Africa's liberation from centuries of colonialism and slavery, representing hope, progress, and the rebirth of the African continent.",
+    "aboutShort": "Dakar is the capital and largest city of Senegal, home to the iconic African Renaissance Monument - a 49-meter bronze statue that stands as the tallest statue…",
+    "tags": [
+      "monument",
+      "statue",
+      "modern",
+      "african",
+      "independence"
+    ],
+    "landmarkCategory": "Landmarks",
+    "boardCode": "DAK"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "rail-2",
+    "name": "Jomo Kenyatta International Airport",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "railroad",
+    "boardIndex": 15,
+    "price": 200,
+    "rents": [
+      25,
+      50,
+      100,
+      200
+    ],
+    "colorGroup": null,
+    "map": {
+      "x": 0,
+      "z": 12.0,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/plane-tilt.svg"
+    },
+    "hubId": "hub:africa-1:rail-2",
+    "enterRadius": 2.5,
+    "description": "Jomo Kenyatta International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "NBO",
+    "aboutShort": "Jomo Kenyatta International Airport (NBO)"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "fez",
+    "name": "Fez",
+    "countryCode": "MA",
+    "region": "North Africa",
+    "kind": "property",
+    "boardIndex": 16,
+    "price": 180,
+    "rents": [
+      14,
+      70,
+      200,
+      550,
+      750,
+      950
+    ],
+    "houseCost": 100,
+    "colorGroup": "orange",
+    "map": {
+      "x": 0,
+      "z": 9.600000000000001,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/ma-fez.svg"
+    },
+    "hubId": "hub:africa-1:fez",
+    "enterRadius": 2.0,
+    "svgcities": "Fez",
+    "description": "Fez is one of Morocco's oldest and most important cities, known for its traditional Moroccan fez hat and rich cultural heritage. The city combines medieval architecture with vibrant culture…",
+    "svgcitiesPath": "public/icons/ma-fez.svg",
+    "svgcitiesUrl": "https://svgcities.com/ma/fez",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Fez Moroccan Hat",
+    "about": "Fez is one of Morocco's oldest and most important cities, known for its traditional Moroccan fez hat and rich cultural heritage. The city combines medieval architecture with vibrant culture, featuring the famous Fes el-Bali medina (a UNESCO World Heritage site), the beautiful Al-Qarawiyyin University (the world's oldest university), and the iconic tanneries.",
+    "aboutShort": "Fez is one of Morocco's oldest and most important cities, known for its traditional Moroccan fez hat and rich cultural heritage. The city combines medieval…",
+    "symbolStory": "Named after the city itself, the brimless red felt cap known in English as the \"fez\" is linked to Fez through its long-standing reputation for producing and dyeing such headgear, though the often-repeated story that its crimson colour came from a berry dye unique to the city is traditional rather than documented. The cap spread widely after Sultan Mahmud II's clothing reforms of the 1820s made it standard dress across the Ottoman Empire, which is also why Turkey banned it under the Hat Law of 1925. In Morocco, where it is usually called the tarbouch, it remains formal and ceremonial wear, and Fez artisans still market it as a product tied to the city's name.",
+    "tags": [
+      "fez",
+      "hat",
+      "moroccan",
+      "traditional",
+      "cultural"
+    ],
+    "landmarkCategory": "Culture",
+    "boardCode": "FEZ"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "community-chest-2",
+    "name": "Community Chest",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "special",
+    "boardIndex": 17,
+    "price": 0,
+    "rents": [],
+    "colorGroup": null,
+    "specialType": "community_chest",
+    "map": {
+      "x": 0,
+      "z": 7.200000000000003,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/treasure-chest.svg"
+    },
+    "hubId": "hub:africa-1:community-chest-2",
+    "enterRadius": 1.8,
+    "description": "Community Chest",
+    "boardCode": "CHE2"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "kigali",
+    "name": "Kigali",
+    "countryCode": "RW",
+    "region": "East Africa",
+    "kind": "property",
+    "boardIndex": 18,
+    "price": 180,
+    "rents": [
+      14,
+      70,
+      200,
+      550,
+      750,
+      950
+    ],
+    "houseCost": 100,
+    "colorGroup": "orange",
+    "map": {
+      "x": 0,
+      "z": 4.799999999999997,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/rw-kigali.svg"
+    },
+    "hubId": "hub:africa-1:kigali",
+    "enterRadius": 2.0,
+    "svgcities": "Kigali",
+    "description": "Kigali is the clean, green capital of Rwanda, crowned by the striking Kigali Convention Centre and its luminous dome that has become the city's defining silhouette. Completed in 2016, the complex…",
+    "svgcitiesPath": "public/icons/rw-kigali.svg",
+    "svgcitiesUrl": "https://svgcities.com/rw/kigali",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Kigali Convention Centre",
+    "about": "Kigali is the clean, green capital of Rwanda, crowned by the striking Kigali Convention Centre and its luminous dome that has become the city's defining silhouette. Completed in 2016, the complex rises on a hilltop overlooking the city of a thousand hills, its sweeping dome inspired by the traditional Rwandan king's palace. Illuminated at night in shifting colors, the KCC symbolizes Rwanda's extraordinary transformation and forward-looking ambition, serving as East Africa's premier conference destination and a beacon of the nation's renaissance.",
+    "aboutShort": "Kigali is the clean, green capital of Rwanda, crowned by the striking Kigali Convention Centre and its luminous dome that has become the city's defining…",
+    "tags": [
+      "convention-centre",
+      "dome",
+      "modern",
+      "architecture",
+      "development"
+    ],
+    "landmarkCategory": "Buildings",
+    "boardCode": "KIG"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "lagos",
+    "name": "Lagos",
+    "countryCode": "NG",
+    "region": "West Africa",
+    "kind": "property",
+    "boardIndex": 19,
+    "price": 200,
+    "rents": [
+      16,
+      80,
+      220,
+      600,
+      800,
+      1000
+    ],
+    "houseCost": 100,
+    "colorGroup": "orange",
+    "map": {
+      "x": 0,
+      "z": 2.3999999999999986,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/ng-lagos.svg"
+    },
+    "hubId": "hub:africa-1:lagos",
+    "enterRadius": 2.0,
+    "svgcities": "Lagos",
+    "description": "Lagos is the largest city and economic hub of Nigeria, known for its modern infrastructure including iconic bridges, bustling port, and vibrant culture. The city combines traditional Nigerian culture…",
+    "svgcitiesPath": "public/icons/ng-lagos.svg",
+    "svgcitiesUrl": "https://svgcities.com/ng/lagos",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Lagos Bridge",
+    "about": "Lagos is the largest city and economic hub of Nigeria, known for its modern infrastructure including iconic bridges, bustling port, and vibrant culture. The city combines traditional Nigerian culture with contemporary development, featuring the Third Mainland Bridge, Victoria Island, and dynamic street life.",
+    "aboutShort": "Lagos is the largest city and economic hub of Nigeria, known for its modern infrastructure including iconic bridges, bustling port, and vibrant culture. The…",
+    "tags": [
+      "bridge",
+      "modern",
+      "infrastructure"
+    ],
+    "landmarkCategory": "Landmarks",
+    "boardCode": "LOS"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "free-parking",
+    "name": "Layover",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "special",
+    "boardIndex": 20,
+    "price": 0,
+    "rents": [],
+    "colorGroup": null,
+    "specialType": "free_parking",
+    "map": {
+      "x": 0,
+      "z": 0.0,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/parking.svg"
+    },
+    "hubId": "hub:africa-1:free-parking",
+    "enterRadius": 1.8,
+    "description": "Layover",
+    "boardCode": "P",
+    "aboutShort": "Layover — free rest stop"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "lalibela",
+    "name": "Lalibela",
+    "countryCode": "ET",
+    "region": "East Africa",
+    "kind": "property",
+    "boardIndex": 21,
+    "price": 220,
+    "rents": [
+      18,
+      90,
+      250,
+      700,
+      875,
+      1050
+    ],
+    "houseCost": 150,
+    "colorGroup": "red",
+    "map": {
+      "x": 2.4000000000000004,
+      "z": 0,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/et-lalibela.svg"
+    },
+    "hubId": "hub:africa-1:lalibela",
+    "enterRadius": 2.0,
+    "svgcities": "Lalibela",
+    "description": "Lalibela is home to the famous rock-hewn churches, including the iconic Church of Saint George carved in the shape of a cross. These UNESCO World Heritage churches represent one of Ethiopia's most…",
+    "svgcitiesPath": "public/icons/et-lalibela.svg",
+    "svgcitiesUrl": "https://svgcities.com/et/lalibela",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Lalibela Cross Church",
+    "about": "Lalibela is home to the famous rock-hewn churches, including the iconic Church of Saint George carved in the shape of a cross. These UNESCO World Heritage churches represent one of Ethiopia's most sacred pilgrimage sites and showcase the remarkable architectural achievements of medieval Ethiopian Orthodox Christianity.",
+    "aboutShort": "Lalibela is home to the famous rock-hewn churches, including the iconic Church of Saint George carved in the shape of a cross. These UNESCO World Heritage…",
+    "tags": [
+      "church",
+      "cross",
+      "orthodox",
+      "ethiopian",
+      "pilgrimage",
+      "heritage"
+    ],
+    "landmarkCategory": "Religion",
+    "boardCode": "LAL"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "chance-2",
+    "name": "Chance",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "special",
+    "boardIndex": 22,
+    "price": 0,
+    "rents": [],
+    "colorGroup": null,
+    "specialType": "chance",
+    "map": {
+      "x": 4.800000000000001,
+      "z": 0,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/question-mark.svg"
+    },
+    "hubId": "hub:africa-1:chance-2",
+    "enterRadius": 1.8,
+    "description": "Chance",
+    "boardCode": "CHA2"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "maputo",
+    "name": "Maputo",
+    "countryCode": "MZ",
+    "region": "Southern Africa",
+    "kind": "property",
+    "boardIndex": 23,
+    "price": 220,
+    "rents": [
+      18,
+      90,
+      250,
+      700,
+      875,
+      1050
+    ],
+    "houseCost": 150,
+    "colorGroup": "red",
+    "map": {
+      "x": 7.199999999999999,
+      "z": 0,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/mz-maputo.svg"
+    },
+    "hubId": "hub:africa-1:maputo",
+    "enterRadius": 2.0,
+    "svgcities": "Maputo",
+    "description": "Maputo is the capital of Mozambique, a coastal city inseparable from its legendary piri-piri prawns. Grilled over charcoal and drenched in a fiery marinade of bird's-eye chillies, garlic, and citrus…",
+    "svgcitiesPath": "public/icons/mz-maputo.svg",
+    "svgcitiesUrl": "https://svgcities.com/mz/maputo",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Maputo Piri-Piri Prawns",
+    "about": "Maputo is the capital of Mozambique, a coastal city inseparable from its legendary piri-piri prawns. Grilled over charcoal and drenched in a fiery marinade of bird's-eye chillies, garlic, and citrus, these giant prawns are Mozambique's most celebrated dish — a tradition born where the Indian Ocean's rich fishing grounds meet centuries of Portuguese and East African culinary influence. Savored at open-air seafood markets and beachside restaurants, Maputo's peri-peri prawns have become an icon of Mozambican identity and one of Africa's great gastronomic experiences.",
+    "aboutShort": "Maputo is the capital of Mozambique, a coastal city inseparable from its legendary piri-piri prawns. Grilled over charcoal and drenched in a fiery marinade of…",
+    "tags": [
+      "piri-piri",
+      "peri-peri",
+      "prawns",
+      "shrimp",
+      "cuisine",
+      "seafood"
+    ],
+    "landmarkCategory": "Culture",
+    "boardCode": "MAP"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "marrakesh",
+    "name": "Marrakesh",
+    "countryCode": "MA",
+    "region": "North Africa",
+    "kind": "property",
+    "boardIndex": 24,
+    "price": 240,
+    "rents": [
+      20,
+      100,
+      300,
+      750,
+      925,
+      1100
+    ],
+    "houseCost": 150,
+    "colorGroup": "red",
+    "map": {
+      "x": 9.600000000000001,
+      "z": 0,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/ma-marrakesh.svg"
+    },
+    "hubId": "hub:africa-1:marrakesh",
+    "enterRadius": 2.0,
+    "svgcities": "Marrakesh",
+    "description": "Marrakesh is a historic city in Morocco, known for its iconic Koutoubia Mosque and vibrant medina. The city combines traditional Moroccan culture with historic architecture, featuring the famous…",
+    "svgcitiesPath": "public/icons/ma-marrakesh.svg",
+    "svgcitiesUrl": "https://svgcities.com/ma/marrakesh",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Marrakesh Koutoubia Mosque",
+    "about": "Marrakesh is a historic city in Morocco, known for its iconic Koutoubia Mosque and vibrant medina. The city combines traditional Moroccan culture with historic architecture, featuring the famous Jemaa el-Fnaa square, historic palaces, and the Atlas Mountains backdrop.",
+    "aboutShort": "Marrakesh is a historic city in Morocco, known for its iconic Koutoubia Mosque and vibrant medina. The city combines traditional Moroccan culture with historic…",
+    "tags": [
+      "mosque",
+      "minaret",
+      "historic"
+    ],
+    "landmarkCategory": "Landmarks",
+    "boardCode": "MAR"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "rail-3",
+    "name": "O.R. Tambo International Airport",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "railroad",
+    "boardIndex": 25,
+    "price": 200,
+    "rents": [
+      25,
+      50,
+      100,
+      200
+    ],
+    "colorGroup": null,
+    "map": {
+      "x": 12.0,
+      "z": 0,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/plane-tilt.svg"
+    },
+    "hubId": "hub:africa-1:rail-3",
+    "enterRadius": 2.5,
+    "description": "O.R. Tambo International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "JNB",
+    "aboutShort": "O.R. Tambo International Airport (JNB)"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "maseru",
+    "name": "Maseru",
+    "countryCode": "LS",
+    "region": "Southern Africa",
+    "kind": "property",
+    "boardIndex": 26,
+    "price": 260,
+    "rents": [
+      22,
+      110,
+      330,
+      800,
+      975,
+      1150
+    ],
+    "houseCost": 150,
+    "colorGroup": "yellow",
+    "map": {
+      "x": 14.399999999999999,
+      "z": 0,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/ls-maseru.svg"
+    },
+    "hubId": "hub:africa-1:maseru",
+    "enterRadius": 2.0,
+    "svgcities": "Maseru",
+    "description": "Maseru is the capital of Lesotho, home to the iconic Basotho Hat (Mokorotlo) monument - a distinctive conical straw hat that has become the national symbol of the Mountain Kingdom. This traditional…",
+    "svgcitiesPath": "public/icons/ls-maseru.svg",
+    "svgcitiesUrl": "https://svgcities.com/ls/maseru",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Maseru Basotho Hat Monument",
+    "about": "Maseru is the capital of Lesotho, home to the iconic Basotho Hat (Mokorotlo) monument - a distinctive conical straw hat that has become the national symbol of the Mountain Kingdom. This traditional headwear, inspired by the shape of Mount Qiloane, represents Basotho cultural identity and pride. The monument celebrates Lesotho's unique heritage as Africa's only country entirely above 1,000 meters, where the Mokorotlo remains an everyday symbol of national identity.",
+    "aboutShort": "Maseru is the capital of Lesotho, home to the iconic Basotho Hat (Mokorotlo) monument - a distinctive conical straw hat that has become the national symbol of…",
+    "tags": [
+      "mokorotlo",
+      "basotho-hat",
+      "traditional",
+      "monument",
+      "national-symbol"
+    ],
+    "landmarkCategory": "Culture",
+    "boardCode": "MAS"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "meroe",
+    "name": "Meroë",
+    "countryCode": "SD",
+    "region": "North Africa",
+    "kind": "property",
+    "boardIndex": 27,
+    "price": 260,
+    "rents": [
+      22,
+      110,
+      330,
+      800,
+      975,
+      1150
+    ],
+    "houseCost": 150,
+    "colorGroup": "yellow",
+    "map": {
+      "x": 16.799999999999997,
+      "z": 0,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/sd-meroe.svg"
+    },
+    "hubId": "hub:africa-1:meroe",
+    "enterRadius": 2.0,
+    "svgcities": "Meroë",
+    "description": "Meroë is an ancient city on the east bank of the Nile in Sudan, once the royal seat of the Kingdom of Kush. Its Nubian pyramids — smaller, steeper, and more numerous than those of Egypt — rise from…",
+    "svgcitiesPath": "public/icons/sd-meroe.svg",
+    "svgcitiesUrl": "https://svgcities.com/sd/meroe",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Meroë Nubian Pyramids",
+    "about": "Meroë is an ancient city on the east bank of the Nile in Sudan, once the royal seat of the Kingdom of Kush. Its Nubian pyramids — smaller, steeper, and more numerous than those of Egypt — rise from the desert in three royal cemeteries where Kushite kings and queens were entombed between roughly 300 BCE and 350 CE. A UNESCO World Heritage site, the pyramids of Meroë are a striking reminder that Africa's pyramid-building civilization stretched far up the Nile, rivaling its northern neighbor in both power and craftsmanship.",
+    "aboutShort": "Meroë is an ancient city on the east bank of the Nile in Sudan, once the royal seat of the Kingdom of Kush. Its Nubian pyramids — smaller, steeper, and more…",
+    "tags": [
+      "pyramids",
+      "nubian",
+      "ancient",
+      "unesco",
+      "kingdom"
+    ],
+    "landmarkCategory": "Landmarks",
+    "boardCode": "MER"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "utility-water",
+    "name": "Africa Water Works",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "utility",
+    "boardIndex": 28,
+    "price": 150,
+    "rents": [],
+    "utilityMultiplier": [
+      4,
+      10
+    ],
+    "colorGroup": null,
+    "map": {
+      "x": 19.200000000000003,
+      "z": 0,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/droplet.svg"
+    },
+    "hubId": "hub:africa-1:utility-water",
+    "enterRadius": 2.0,
+    "description": "Water utility — rent is dice × multiplier.",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "WTR"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "nairobi",
+    "name": "Nairobi",
+    "countryCode": "KE",
+    "region": "East Africa",
+    "kind": "property",
+    "boardIndex": 29,
+    "price": 280,
+    "rents": [
+      24,
+      120,
+      360,
+      850,
+      1025,
+      1200
+    ],
+    "houseCost": 150,
+    "colorGroup": "yellow",
+    "map": {
+      "x": 21.6,
+      "z": 0,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/ke-nairobi.svg"
+    },
+    "hubId": "hub:africa-1:nairobi",
+    "enterRadius": 2.0,
+    "svgcities": "Nairobi",
+    "description": "Nairobi is the capital and largest city of Kenya, featuring the iconic Kenyatta International Convention Centre (KICC) tower. This distinctive 28-story cylindrical tower with its unique architectural…",
+    "svgcitiesPath": "public/icons/ke-nairobi.svg",
+    "svgcitiesUrl": "https://svgcities.com/ke/nairobi",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "KICC Tower",
+    "about": "Nairobi is the capital and largest city of Kenya, featuring the iconic Kenyatta International Convention Centre (KICC) tower. This distinctive 28-story cylindrical tower with its unique architectural design has defined Nairobi's skyline since 1973, serving as a symbol of Kenya's post-independence development and its role as East Africa's premier business and conference hub.",
+    "aboutShort": "Nairobi is the capital and largest city of Kenya, featuring the iconic Kenyatta International Convention Centre (KICC) tower. This distinctive 28-story…",
+    "tags": [
+      "tower",
+      "skyscraper",
+      "modern",
+      "conference",
+      "iconic"
+    ],
+    "landmarkCategory": "Buildings",
+    "boardCode": "NAI"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "go-to-jail",
+    "name": "Go to Jail",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "special",
+    "boardIndex": 30,
+    "price": 0,
+    "rents": [],
+    "colorGroup": null,
+    "specialType": "go_to_jail",
+    "map": {
+      "x": 24.0,
+      "z": 0,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/prison.svg"
+    },
+    "hubId": "hub:africa-1:go-to-jail",
+    "enterRadius": 1.8,
+    "description": "Special space: go_to_jail.",
+    "boardCode": "GTJ"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "ouagadougou",
+    "name": "Ouagadougou",
+    "countryCode": "BF",
+    "region": "West Africa",
+    "kind": "property",
+    "boardIndex": 31,
+    "price": 300,
+    "rents": [
+      26,
+      130,
+      390,
+      900,
+      1100,
+      1275
+    ],
+    "houseCost": 200,
+    "colorGroup": "green",
+    "map": {
+      "x": 24,
+      "z": 2.4000000000000004,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/bf-ouagadougou.svg"
+    },
+    "hubId": "hub:africa-1:ouagadougou",
+    "enterRadius": 2.0,
+    "svgcities": "Ouagadougou",
+    "description": "Ouagadougou is the capital of Burkina Faso, host of the legendary SIAO (Salon International de l'Artisanat de Ouagadougou) — Africa's largest arts and crafts fair. The event's iconic mask symbol…",
+    "svgcitiesPath": "public/icons/bf-ouagadougou.svg",
+    "svgcitiesUrl": "https://svgcities.com/bf/ouagadougou",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Ouagadougou SIAO Mask",
+    "about": "Ouagadougou is the capital of Burkina Faso, host of the legendary SIAO (Salon International de l'Artisanat de Ouagadougou) — Africa's largest arts and crafts fair. The event's iconic mask symbol draws on the region's rich tradition of ceremonial masks used by the Mossi, Bobo, and Bwa peoples in rituals, harvest celebrations, and spiritual ceremonies. These intricately carved and painted masks represent the soul of West African artistic expression, making Ouagadougou a global hub for African craft and cultural exchange.",
+    "aboutShort": "Ouagadougou is the capital of Burkina Faso, host of the legendary SIAO (Salon International de l'Artisanat de Ouagadougou) — Africa's largest arts and crafts…",
+    "tags": [
+      "siao",
+      "mask",
+      "african-art",
+      "craft",
+      "festival",
+      "traditional"
+    ],
+    "landmarkCategory": "Culture",
+    "boardCode": "OUA"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "port-louis",
+    "name": "Port Louis",
+    "countryCode": "MU",
+    "region": "East Africa",
+    "kind": "property",
+    "boardIndex": 32,
+    "price": 300,
+    "rents": [
+      26,
+      130,
+      390,
+      900,
+      1100,
+      1275
+    ],
+    "houseCost": 200,
+    "colorGroup": "green",
+    "map": {
+      "x": 24,
+      "z": 4.800000000000001,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/mu-port-louis.svg"
+    },
+    "hubId": "hub:africa-1:port-louis",
+    "enterRadius": 2.0,
+    "svgcities": "Port Louis",
+    "description": "Port Louis is the capital of Mauritius, an island nation forever linked to the dodo — the flightless bird that became history's most famous symbol of extinction. Endemic to Mauritius and last sighted…",
+    "svgcitiesPath": "public/icons/mu-port-louis.svg",
+    "svgcitiesUrl": "https://svgcities.com/mu/port-louis",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Port Louis Dodo",
+    "about": "Port Louis is the capital of Mauritius, an island nation forever linked to the dodo — the flightless bird that became history's most famous symbol of extinction. Endemic to Mauritius and last sighted around 1681, the plump, fearless dodo has transcended its tragic fate to become the proud national emblem, appearing on the Mauritian coat of arms, currency, and countless souvenirs. Its silhouette evokes both a cautionary tale of human impact on nature and a celebration of Mauritius's unique natural heritage.",
+    "aboutShort": "Port Louis is the capital of Mauritius, an island nation forever linked to the dodo — the flightless bird that became history's most famous symbol of…",
+    "tags": [
+      "dodo",
+      "extinct",
+      "bird",
+      "national-symbol",
+      "wildlife"
+    ],
+    "landmarkCategory": "Culture",
+    "boardCode": "POR"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "community-chest-3",
+    "name": "Community Chest",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "special",
+    "boardIndex": 33,
+    "price": 0,
+    "rents": [],
+    "colorGroup": null,
+    "specialType": "community_chest",
+    "map": {
+      "x": 0,
+      "z": 7.200000000000003,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/treasure-chest.svg"
+    },
+    "hubId": "hub:africa-1:community-chest-3",
+    "enterRadius": 1.8,
+    "description": "Community Chest",
+    "boardCode": "CHE3"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "timbuktu",
+    "name": "Timbuktu",
+    "countryCode": "ML",
+    "region": "West Africa",
+    "kind": "property",
+    "boardIndex": 34,
+    "price": 350,
+    "rents": [
+      35,
+      175,
+      500,
+      1100,
+      1300,
+      1500
+    ],
+    "houseCost": 200,
+    "colorGroup": "darkblue",
+    "map": {
+      "x": 24,
+      "z": 12.0,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/ml-timbuktu.svg"
+    },
+    "hubId": "hub:africa-1:timbuktu",
+    "enterRadius": 2.0,
+    "svgcities": "Timbuktu",
+    "description": "Timbuktu is a legendary city on the southern edge of the Sahara in Mali, for centuries the crossroads of Trans-Saharan trade and Islamic scholarship. Camel caravans laden with salt from Taoudenni…",
+    "svgcitiesPath": "public/icons/ml-timbuktu.svg",
+    "svgcitiesUrl": "https://svgcities.com/ml/timbuktu",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Timbuktu Camel Caravan",
+    "about": "Timbuktu is a legendary city on the southern edge of the Sahara in Mali, for centuries the crossroads of Trans-Saharan trade and Islamic scholarship. Camel caravans laden with salt from Taoudenni, gold from the Sahel, and manuscripts bound for the city's fabled libraries converged here from across North and West Africa, making Timbuktu a byword for the ends of the earth. The silhouette of the caravan still symbolizes this golden age — when the city was a vital hub of commerce, learning, and cultural exchange across the desert.",
+    "aboutShort": "Timbuktu is a legendary city on the southern edge of the Sahara in Mali, for centuries the crossroads of Trans-Saharan trade and Islamic scholarship. Camel…",
+    "tags": [
+      "camel",
+      "caravan",
+      "sahara",
+      "trade",
+      "historic"
+    ],
+    "landmarkCategory": "Culture",
+    "boardCode": "TIM"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "rail-4",
+    "name": "Murtala Muhammed International Airport",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "railroad",
+    "boardIndex": 35,
+    "price": 200,
+    "rents": [
+      25,
+      50,
+      100,
+      200
+    ],
+    "colorGroup": null,
+    "map": {
+      "x": 24,
+      "z": 9.600000000000001,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/plane-tilt.svg"
+    },
+    "hubId": "hub:africa-1:rail-4",
+    "enterRadius": 2.5,
+    "description": "Murtala Muhammed International Airport",
+    "attribution": "Icons by Tabler Icons — https://tabler.io/icons — MIT License (https://github.com/tabler/tabler-icons/blob/main/LICENSE)",
+    "boardCode": "MM",
+    "aboutShort": "Murtala Muhammed International Airport (MM)"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "chance-3",
+    "name": "Chance",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "special",
+    "boardIndex": 36,
+    "price": 0,
+    "rents": [],
+    "colorGroup": null,
+    "specialType": "chance",
+    "map": {
+      "x": 4.800000000000001,
+      "z": 0,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/question-mark.svg"
+    },
+    "hubId": "hub:africa-1:chance-3",
+    "enterRadius": 1.8,
+    "description": "Chance",
+    "boardCode": "CHA3"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "tunis",
+    "name": "Tunis",
+    "countryCode": "TN",
+    "region": "North Africa",
+    "kind": "property",
+    "boardIndex": 37,
+    "price": 400,
+    "rents": [
+      50,
+      200,
+      600,
+      1400,
+      1700,
+      2000
+    ],
+    "houseCost": 200,
+    "colorGroup": "darkblue",
+    "map": {
+      "x": 24,
+      "z": 16.799999999999997,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/tn-tunis.svg"
+    },
+    "hubId": "hub:africa-1:tunis",
+    "enterRadius": 2.0,
+    "svgcities": "Tunis",
+    "description": "Tunis is the capital of Tunisia, home to the iconic Bab el Bhar (Porte de France) — the historic gateway that once marked the boundary between the ancient medina and the modern French colonial city…",
+    "svgcitiesPath": "public/icons/tn-tunis.svg",
+    "svgcitiesUrl": "https://svgcities.com/tn/tunis",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Bab el Bhar",
+    "about": "Tunis is the capital of Tunisia, home to the iconic Bab el Bhar (Porte de France) — the historic gateway that once marked the boundary between the ancient medina and the modern French colonial city. Built during the Ottoman era and later renamed by the French, this grand archway stands as a symbol of Tunis's layered history, where Carthaginian, Arab, Ottoman, and French influences merge into one of North Africa's most captivating capitals.",
+    "aboutShort": "Tunis is the capital of Tunisia, home to the iconic Bab el Bhar (Porte de France) — the historic gateway that once marked the boundary between the ancient…",
+    "symbolStory": "Standing at the eastern edge of the medina of Tunis, the arch known as Bab el Bhar, or \"Gate of the Sea,\" took its name from the route it once opened toward the harbour on the Lake of Tunis and the Gulf beyond. As a main entry point to the medina, it controlled access to the souks and served roles in trade, customs and defence. Sources disagree on its origins, placing the first gate variously in the Aghlabid or Hafsid periods, and dating the present single arch with crenellated parapet to a mid-19th-century rebuilding often attributed to Ahmed Bey after 1848; these accounts are not firmly established. Under the French protectorate it was called Porte de France, entrance to the European quarter, and the Arabic name returned after independence. It now marks the boundary between the medina and the modern city.",
+    "tags": [
+      "gate",
+      "porte-de-france",
+      "historic",
+      "medina",
+      "colonial"
+    ],
+    "landmarkCategory": "Landmarks",
+    "boardCode": "TUN"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "tax-luxury",
+    "name": "Luxury Tax",
+    "countryCode": "XX",
+    "region": "Africa",
+    "kind": "special",
+    "boardIndex": 38,
+    "price": 0,
+    "rents": [],
+    "colorGroup": null,
+    "specialType": "tax",
+    "map": {
+      "x": 24,
+      "z": 14.399999999999999,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/generic/tax.svg"
+    },
+    "hubId": "hub:africa-1:tax-luxury",
+    "enterRadius": 1.8,
+    "description": "Special space: tax.",
+    "taxAmount": 100,
+    "boardCode": "LTX"
+  },
+  {
+    "worldId": "africa-1",
+    "slug": "yamoussoukro",
+    "name": "Yamoussoukro",
+    "countryCode": "CI",
+    "region": "West Africa",
+    "kind": "property",
+    "boardIndex": 39,
+    "price": 340,
+    "rents": [
+      26,
+      130,
+      390,
+      900,
+      1100,
+      1275
+    ],
+    "houseCost": 200,
+    "colorGroup": "violet",
+    "map": {
+      "x": 24,
+      "z": 21.6,
+      "scale": 1
+    },
+    "assets": {
+      "icon": "city-icons/icons/ci-yamoussoukro.svg"
+    },
+    "hubId": "hub:africa-1:yamoussoukro",
+    "enterRadius": 2.0,
+    "svgcities": "Yamoussoukro",
+    "description": "Yamoussoukro is the political capital of Côte d'Ivoire, the birthplace of founding president Félix Houphouët-Boigny. Around the artificial lake surrounding the Presidential Palace lives a famous…",
+    "svgcitiesPath": "public/icons/ci-yamoussoukro.svg",
+    "svgcitiesUrl": "https://svgcities.com/ci/yamoussoukro",
+    "attribution": "City Icons by Studio Partdirector — https://svgcities.com — licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "symbol": "Yamoussoukro Presidential Crocodiles",
+    "about": "Yamoussoukro is the political capital of Côte d'Ivoire, the birthplace of founding president Félix Houphouët-Boigny. Around the artificial lake surrounding the Presidential Palace lives a famous colony of sacred crocodiles, introduced by the president and long fed by a dedicated keeper in a ritual that drew visitors from around the world. Seen as guardians of the palace and tied to local spiritual traditions, the Yamoussoukro crocodiles have become one of the city's most recognizable symbols, a living emblem beside the palace and the monumental Basilica of Our Lady of Peace.",
+    "aboutShort": "Yamoussoukro is the political capital of Côte d'Ivoire, the birthplace of founding president Félix Houphouët-Boigny. Around the artificial lake surrounding the…",
+    "tags": [
+      "crocodiles",
+      "presidential",
+      "lake",
+      "sacred",
+      "capital"
+    ],
+    "landmarkCategory": "Landmarks",
+    "boardCode": "YAM"
   }
 ]

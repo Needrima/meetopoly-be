@@ -350,8 +350,8 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 | **4.0** | Landscape shell: 1:1 board placeholder + panel; reachable from home                        | Ring, walk      |
 | **4.1** | Empty ring of slots from `boardIndex` (geometry only)                                      | Colors, icons   |
 | **4.2** | Color bands + kind styling                                                                 | Icons, walk     |
-| **4.3** | Icons + short names from `useLocations('africa-1')`                                        | Walk, Enter     |
-| **4.4** | Center brand + Chance/Chest deck shapes (obstacles reserved)                               | Movement        |
+| **4.3** | Icons + `boardCode` / styling from `useLocations('africa-1')`                               | Walk, Enter     |
+| **4.4** | ✅ Center brand + Chance/Chest deck shapes (`layout.decks` obstacles reserved)              | Movement        |
 | **4.5** | Local avatar (pod + initial) + PanResponder joystick in panel BR + edge/deck/pin collision | Enter, net      |
 | **4.6** | Walk-near Enter for property \| railroad \| utility → hub placeholder                      | SFU             |
 | **4.7** | Local/debug **pins** on GO (and optional other indices)                                    | Full game rules |

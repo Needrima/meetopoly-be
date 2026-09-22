@@ -27,7 +27,7 @@ Filter in app/API by `worldId`. **Gameplay v1 ships `africa-1` first**; other Wo
 
 | worldId                 | Cities (approx) | Board spaces | Notes                                                    |
 | ----------------------- | --------------- | ------------ | -------------------------------------------------------- |
-| `africa-1`              | 24              | 40           | **Ship first** — classic even sides (corners 0/10/20/30) |
+| `africa-1`              | 22              | 40           | **Ship first** — classic Chance/Chest at 7/22/36 and 2/17/33; corners 0/10/20/30 |
 | `europe-1` … `europe-5` | 26 each         | 42 each      | Alphabetical packs from SVGCities Europe                 |
 | `asia-1`, `asia-2`      | 24 each         | 38 each      | Split Asia pool                                          |
 | `north-america-1`       | 30              | 46           | Full NA pool                                             |
@@ -43,6 +43,7 @@ City icons: [svgcities.com](https://svgcities.com/) / [anto1/city-icons](https:/
 - `worldId` — board pack
 - `kind`: `property` (city) \| `railroad` \| `utility` \| `special`
 - `boardIndex` — logical track order (game pin)
+- `boardCode` — short tile label unique within `worldId` (Chance: `CHA`/`CHA2`/…; Chest: `CHE`/`CHE2`/… — board UI always shows **CHA** / **CHE**)
 - `map.x` / `map.z` — overworld placement (tune in Phase 4)
 - `assets.icon` — billboard art path relative to `meetopoly-mobile/` (cities: `city-icons/icons/{cc}-{slug}.svg`; airports/utilities: `city-icons/generic/*.svg`)
 - `svgcities` — display name from SVGCities
