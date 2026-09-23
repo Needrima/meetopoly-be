@@ -20,6 +20,8 @@ var (
 	ErrNotYourTurn   = errors.New("not your turn")
 	ErrNotPlayer     = errors.New("not a player in this game")
 	ErrInactive      = errors.New("game is not active")
+	ErrMustEndTurn   = errors.New("must end turn before rolling again")
+	ErrMustRoll      = errors.New("must roll before ending turn")
 )
 
 // SeatInput is a seated lobby player used to bootstrap a game.
@@ -40,17 +42,20 @@ type PlayerView struct {
 	PinColor   string `json:"pinColor"`
 }
 
-// LastRollView is the public last-dice snapshot (Phase 6.1).
+// LastRollView is the public last-dice snapshot.
 type LastRollView struct {
-	UserID       string `json:"userId"`
-	Username     string `json:"username"`
-	Die1         int    `json:"die1"`
-	Die2         int    `json:"die2"`
-	Total        int    `json:"total"`
-	FromIndex    int    `json:"fromIndex"`
-	ToIndex      int    `json:"toIndex"`
-	PassedGo     bool   `json:"passedGo"`
-	PassGoAmount int    `json:"passGoAmount"`
+	UserID        string `json:"userId"`
+	Username      string `json:"username"`
+	Die1          int    `json:"die1"`
+	Die2          int    `json:"die2"`
+	Total         int    `json:"total"`
+	FromIndex     int    `json:"fromIndex"`
+	ToIndex       int    `json:"toIndex"`
+	PassedGo      bool   `json:"passedGo"`
+	PassGoAmount  int    `json:"passGoAmount"`
+	IsDoubles     bool   `json:"isDoubles"`
+	DoublesStreak int    `json:"doublesStreak"`
+	ThirdDoubles  bool   `json:"thirdDoubles"`
 }
 
 // View is the public game snapshot.
@@ -65,7 +70,23 @@ type View struct {
 	CurrentUsername string        `json:"currentUsername"`
 	PassGoBonus     int           `json:"passGoBonus"`
 	Currency        string        `json:"currency"`
+	TurnPhase       string        `json:"turnPhase"`
+	DoublesStreak   int           `json:"doublesStreak"`
+	CanRoll         bool          `json:"canRoll"`
+	CanEndTurn      bool          `json:"canEndTurn"`
 	LastRoll        *LastRollView `json:"lastRoll"`
+}
+
+// Event is pushed to WebSocket subscribers (Phase 6 realtime).
+type Event struct {
+	Type  string `json:"type"` // state | error | pong
+	Game  *View  `json:"game,omitempty"`
+	Error string `json:"error,omitempty"`
+}
+
+// Broadcaster fans game events to WS clients.
+type Broadcaster interface {
+	Broadcast(gameID string, ev Event)
 }
 
 // Service is the game application port.
@@ -74,26 +95,40 @@ type Service interface {
 	Get(ctx context.Context, gameID string) (*View, error)
 	GetByTableID(ctx context.Context, tableID string) (*View, error)
 	Roll(ctx context.Context, gameID, userID string) (*View, error)
+	EndTurn(ctx context.Context, gameID, userID string) (*View, error)
+	SetBroadcaster(b Broadcaster)
 }
 
-// Classic Monopoly token-ish palette for pins (hex).
 var pinPalette = []string{
-	"#ED1B24", // red
-	"#0072BB", // dark blue
-	"#1FB25A", // green
-	"#F7941D", // orange
-	"#D93A96", // pink
-	"#FEF200", // yellow
+	"#ED1B24",
+	"#0072BB",
+	"#1FB25A",
+	"#F7941D",
+	"#D93A96",
+	"#FEF200",
 }
 
 type service struct {
-	repo gamerepo.Repository
-	mu   sync.Mutex
+	repo  gamerepo.Repository
+	mu    sync.Mutex
+	bcast Broadcaster
 }
 
 // New builds a game Service.
 func New(repo gamerepo.Repository) Service {
 	return &service{repo: repo}
+}
+
+func (s *service) SetBroadcaster(b Broadcaster) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.bcast = b
+}
+
+func (s *service) broadcast(gameID string, ev Event) {
+	if s.bcast != nil {
+		s.bcast.Broadcast(gameID, ev)
+	}
 }
 
 func (s *service) CreateFromSeats(ctx context.Context, tableID, worldID string, seats []SeatInput) (*View, error) {
@@ -136,15 +171,17 @@ func (s *service) CreateFromSeats(ctx context.Context, tableID, worldID string, 
 	}
 
 	g := &gamerepo.Game{
-		ID:          primitive.NewObjectID().Hex(),
-		TableID:     tableID,
-		WorldID:     worldID,
-		Status:      gamerepo.StatusActive,
-		Players:     players,
-		CurrentTurn: 0,
-		PassGoBonus: gamerepo.PassGoBonus,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		ID:            primitive.NewObjectID().Hex(),
+		TableID:       tableID,
+		WorldID:       worldID,
+		Status:        gamerepo.StatusActive,
+		Players:       players,
+		CurrentTurn:   0,
+		PassGoBonus:   gamerepo.PassGoBonus,
+		TurnPhase:     gamerepo.TurnPhaseAwaitingRoll,
+		DoublesStreak: 0,
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}
 	if err := s.repo.Insert(ctx, g); err != nil {
 		if existing, findErr := s.repo.FindByTableID(ctx, tableID); findErr == nil {
@@ -163,6 +200,7 @@ func (s *service) Get(ctx context.Context, gameID string) (*View, error) {
 		}
 		return nil, err
 	}
+	normalizeTurnPhase(g)
 	return toView(g), nil
 }
 
@@ -174,6 +212,7 @@ func (s *service) GetByTableID(ctx context.Context, tableID string) (*View, erro
 		}
 		return nil, err
 	}
+	normalizeTurnPhase(g)
 	return toView(g), nil
 }
 
@@ -191,7 +230,121 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 	if g.Status != gamerepo.StatusActive {
 		return nil, ErrInactive
 	}
+	normalizeTurnPhase(g)
 
+	playerIdx, err := requireCurrentPlayer(g, userID)
+	if err != nil {
+		return nil, err
+	}
+	if g.TurnPhase != gamerepo.TurnPhaseAwaitingRoll {
+		return nil, ErrMustEndTurn
+	}
+
+	die1 := rollDie()
+	die2 := rollDie()
+	total := die1 + die2
+	isDoubles := die1 == die2
+	from := g.Players[playerIdx].BoardIndex
+
+	thirdDoubles := false
+	to := from
+	passedGo := false
+	passAmt := 0
+
+	if isDoubles {
+		g.DoublesStreak++
+	} else {
+		g.DoublesStreak = 0
+	}
+
+	if isDoubles && g.DoublesStreak >= 3 {
+		// Official: go to Jail without completing the third move (Jail = Phase 12).
+		// Phase 6.2: skip movement and require End turn.
+		thirdDoubles = true
+		to = from
+		g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	} else {
+		to = (from + total) % gamerepo.BoardSpaceCount
+		passedGo = from+total >= gamerepo.BoardSpaceCount
+		if passedGo {
+			passAmt = g.PassGoBonus
+			if passAmt <= 0 {
+				passAmt = gamerepo.PassGoBonus
+			}
+			g.Players[playerIdx].Cash += passAmt
+		}
+		g.Players[playerIdx].BoardIndex = to
+		if isDoubles {
+			g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+		} else {
+			g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+		}
+	}
+
+	g.LastRoll = &gamerepo.LastRoll{
+		UserID:        userID,
+		Username:      g.Players[playerIdx].Username,
+		Die1:          die1,
+		Die2:          die2,
+		Total:         total,
+		FromIndex:     from,
+		ToIndex:       to,
+		PassedGo:      passedGo,
+		PassGoAmount:  passAmt,
+		IsDoubles:     isDoubles,
+		DoublesStreak: g.DoublesStreak,
+		ThirdDoubles:  thirdDoubles,
+	}
+	g.UpdatedAt = time.Now().UTC()
+
+	if err := s.repo.Update(ctx, g); err != nil {
+		return nil, err
+	}
+	view := toView(g)
+	s.broadcast(gameID, Event{Type: "state", Game: view})
+	return view, nil
+}
+
+func (s *service) EndTurn(ctx context.Context, gameID, userID string) (*View, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	g, err := s.repo.FindByID(ctx, gameID)
+	if err != nil {
+		if errors.Is(err, gamerepo.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return nil, ErrInactive
+	}
+	normalizeTurnPhase(g)
+
+	if _, err := requireCurrentPlayer(g, userID); err != nil {
+		return nil, err
+	}
+	if g.TurnPhase != gamerepo.TurnPhaseAwaitingEnd {
+		return nil, ErrMustRoll
+	}
+
+	n := len(g.Players)
+	if n > 0 {
+		g.CurrentTurn = (g.CurrentTurn + 1) % n
+	}
+	g.DoublesStreak = 0
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+	g.UpdatedAt = time.Now().UTC()
+
+	if err := s.repo.Update(ctx, g); err != nil {
+		return nil, err
+	}
+	view := toView(g)
+	s.broadcast(gameID, Event{Type: "state", Game: view})
+	return view, nil
+}
+
+func requireCurrentPlayer(g *gamerepo.Game, userID string) (int, error) {
 	playerIdx := -1
 	for i := range g.Players {
 		if g.Players[i].UserID == userID {
@@ -200,50 +353,20 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 		}
 	}
 	if playerIdx < 0 {
-		return nil, ErrNotPlayer
+		return -1, ErrNotPlayer
 	}
 	if g.Players[playerIdx].TurnOrder != g.CurrentTurn {
-		return nil, ErrNotYourTurn
+		return -1, ErrNotYourTurn
 	}
+	return playerIdx, nil
+}
 
-	die1 := rollDie()
-	die2 := rollDie()
-	total := die1 + die2
-	from := g.Players[playerIdx].BoardIndex
-	to := (from + total) % gamerepo.BoardSpaceCount
-	passedGo := from+total >= gamerepo.BoardSpaceCount
-	passAmt := 0
-	if passedGo {
-		passAmt = g.PassGoBonus
-		if passAmt <= 0 {
-			passAmt = gamerepo.PassGoBonus
-		}
-		g.Players[playerIdx].Cash += passAmt
+func normalizeTurnPhase(g *gamerepo.Game) {
+	if g.TurnPhase == gamerepo.TurnPhaseAwaitingRoll || g.TurnPhase == gamerepo.TurnPhaseAwaitingEnd {
+		return
 	}
-	g.Players[playerIdx].BoardIndex = to
-	g.LastRoll = &gamerepo.LastRoll{
-		UserID:       userID,
-		Username:     g.Players[playerIdx].Username,
-		Die1:         die1,
-		Die2:         die2,
-		Total:        total,
-		FromIndex:    from,
-		ToIndex:      to,
-		PassedGo:     passedGo,
-		PassGoAmount: passAmt,
-	}
-
-	// Phase 6.1: doubles do not grant an extra roll; auto-advance (End arrives in 6.4).
-	n := len(g.Players)
-	if n > 0 {
-		g.CurrentTurn = (g.CurrentTurn + 1) % n
-	}
-	g.UpdatedAt = time.Now().UTC()
-
-	if err := s.repo.Update(ctx, g); err != nil {
-		return nil, err
-	}
-	return toView(g), nil
+	// Legacy 6.1 docs (auto-advance): treat as start-of-turn roll.
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
 }
 
 func rollDie() int {
@@ -255,6 +378,7 @@ func rollDie() int {
 }
 
 func toView(g *gamerepo.Game) *View {
+	normalizeTurnPhase(g)
 	players := make([]PlayerView, len(g.Players))
 	currentUserID := ""
 	currentUsername := ""
@@ -276,17 +400,21 @@ func toView(g *gamerepo.Game) *View {
 	var last *LastRollView
 	if g.LastRoll != nil {
 		last = &LastRollView{
-			UserID:       g.LastRoll.UserID,
-			Username:     g.LastRoll.Username,
-			Die1:         g.LastRoll.Die1,
-			Die2:         g.LastRoll.Die2,
-			Total:        g.LastRoll.Total,
-			FromIndex:    g.LastRoll.FromIndex,
-			ToIndex:      g.LastRoll.ToIndex,
-			PassedGo:     g.LastRoll.PassedGo,
-			PassGoAmount: g.LastRoll.PassGoAmount,
+			UserID:        g.LastRoll.UserID,
+			Username:      g.LastRoll.Username,
+			Die1:          g.LastRoll.Die1,
+			Die2:          g.LastRoll.Die2,
+			Total:         g.LastRoll.Total,
+			FromIndex:     g.LastRoll.FromIndex,
+			ToIndex:       g.LastRoll.ToIndex,
+			PassedGo:      g.LastRoll.PassedGo,
+			PassGoAmount:  g.LastRoll.PassGoAmount,
+			IsDoubles:     g.LastRoll.IsDoubles,
+			DoublesStreak: g.LastRoll.DoublesStreak,
+			ThirdDoubles:  g.LastRoll.ThirdDoubles,
 		}
 	}
+	phase := g.TurnPhase
 	return &View{
 		ID:              g.ID,
 		TableID:         g.TableID,
@@ -298,6 +426,10 @@ func toView(g *gamerepo.Game) *View {
 		CurrentUsername: currentUsername,
 		PassGoBonus:     g.PassGoBonus,
 		Currency:        "MeetCoin",
+		TurnPhase:       phase,
+		DoublesStreak:   g.DoublesStreak,
+		CanRoll:         phase == gamerepo.TurnPhaseAwaitingRoll,
+		CanEndTurn:      phase == gamerepo.TurnPhaseAwaitingEnd,
 		LastRoll:        last,
 	}
 }

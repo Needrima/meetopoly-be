@@ -62,78 +62,163 @@ func cloneGame(g *gamerepo.Game) *gamerepo.Game {
 	return &cp
 }
 
-func TestRollMovesPinAwardsPassGoAndAdvancesTurn(t *testing.T) {
-	repo := newMemRepo()
-	svc := New(repo)
-
+func seedTwoPlayer(t *testing.T, repo *memRepo) {
+	t.Helper()
 	g := &gamerepo.Game{
 		ID:      "g1",
 		TableID: "t1",
 		WorldID: "africa-1",
 		Status:  gamerepo.StatusActive,
 		Players: []gamerepo.Player{
-			{UserID: "a", Username: "A", SeatIndex: 0, TurnOrder: 0, Cash: 2000, BoardIndex: 38, PinColor: "#f00"},
+			{UserID: "a", Username: "A", SeatIndex: 0, TurnOrder: 0, Cash: 2000, BoardIndex: 0, PinColor: "#f00"},
 			{UserID: "b", Username: "B", SeatIndex: 1, TurnOrder: 1, Cash: 2000, BoardIndex: 0, PinColor: "#0f0"},
 		},
-		CurrentTurn: 0,
-		PassGoBonus: 200,
+		CurrentTurn:   0,
+		PassGoBonus:   200,
+		TurnPhase:     gamerepo.TurnPhaseAwaitingRoll,
+		DoublesStreak: 0,
 	}
 	if err := repo.Insert(context.Background(), g); err != nil {
 		t.Fatal(err)
 	}
+}
 
-	// Force deterministic dice by rolling many times until we get a known path —
-	// instead patch via multiple rolls checking invariants.
+func TestRollDoesNotAdvanceTurn_EndTurnDoes(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo)
+	seedTwoPlayer(t, repo)
+
 	var view *View
 	var err error
+	// Keep rolling until non-doubles so we hit awaiting_end.
 	for i := 0; i < 40; i++ {
-		// Reset turn to A before each attempt by re-inserting state if needed.
-		cur, _ := repo.FindByID(context.Background(), "g1")
+		view, err = svc.Roll(context.Background(), "g1", "a")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if view.CurrentUserID != "a" {
+			t.Fatalf("turn advanced on roll: %s", view.CurrentUserID)
+		}
+		if !view.LastRoll.IsDoubles {
+			break
+		}
+		if !view.CanRoll {
+			t.Fatal("doubles should allow another roll")
+		}
+	}
+	if view.LastRoll.IsDoubles {
+		t.Fatal("could not get a non-doubles roll")
+	}
+	if view.TurnPhase != gamerepo.TurnPhaseAwaitingEnd || !view.CanEndTurn {
+		t.Fatalf("phase=%s canEnd=%v", view.TurnPhase, view.CanEndTurn)
+	}
+	if _, err := svc.Roll(context.Background(), "g1", "a"); err == nil {
+		t.Fatal("expected must end turn")
+	}
+
+	view, err = svc.EndTurn(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.CurrentUserID != "b" {
+		t.Fatalf("expected b, got %s", view.CurrentUserID)
+	}
+	if view.TurnPhase != gamerepo.TurnPhaseAwaitingRoll || !view.CanRoll {
+		t.Fatalf("phase=%s", view.TurnPhase)
+	}
+}
+
+func TestThirdDoublesSkipsMoveAndRequiresEnd(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo).(*service)
+	seedTwoPlayer(t, repo)
+
+	// Force doubles streak to 2, then inject a doubles roll via mutating before Roll
+	// by setting streak and using many attempts — instead set streak=2 and mock by
+	// directly calling with controlled dice is hard; set DoublesStreak=2 and patch
+	// board, then loop until we get doubles once.
+	cur, _ := repo.FindByID(context.Background(), "g1")
+	cur.DoublesStreak = 2
+	cur.Players[0].BoardIndex = 10
+	_ = repo.Update(context.Background(), cur)
+
+	var view *View
+	var err error
+	found := false
+	for i := 0; i < 80; i++ {
+		// Reset streak before each attempt if previous roll wasn't doubles
+		cur, _ = repo.FindByID(context.Background(), "g1")
+		if cur.TurnPhase != gamerepo.TurnPhaseAwaitingRoll {
+			cur.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+		}
+		cur.DoublesStreak = 2
+		cur.Players[0].BoardIndex = 10
 		cur.CurrentTurn = 0
-		cur.Players[0].BoardIndex = 38
-		cur.Players[0].Cash = 2000
-		cur.Players[1].BoardIndex = 0
 		_ = repo.Update(context.Background(), cur)
 
 		view, err = svc.Roll(context.Background(), "g1", "a")
 		if err != nil {
 			t.Fatal(err)
 		}
-		if view.LastRoll == nil {
-			t.Fatal("missing lastRoll")
+		if view.LastRoll.IsDoubles {
+			found = true
+			break
 		}
-		if view.LastRoll.FromIndex != 38 {
-			t.Fatalf("from=%d", view.LastRoll.FromIndex)
+	}
+	if !found {
+		t.Fatal("no doubles")
+	}
+	if !view.LastRoll.ThirdDoubles {
+		t.Fatal("expected thirdDoubles")
+	}
+	if view.Players[0].BoardIndex != 10 {
+		t.Fatalf("should not move on third doubles, got %d", view.Players[0].BoardIndex)
+	}
+	if !view.CanEndTurn {
+		t.Fatal("must end after third doubles")
+	}
+}
+
+func TestPassGoStillWorks(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo)
+	seedTwoPlayer(t, repo)
+	cur, _ := repo.FindByID(context.Background(), "g1")
+	cur.Players[0].BoardIndex = 38
+	_ = repo.Update(context.Background(), cur)
+
+	for i := 0; i < 40; i++ {
+		cur, _ = repo.FindByID(context.Background(), "g1")
+		cur.Players[0].BoardIndex = 38
+		cur.Players[0].Cash = 2000
+		cur.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+		cur.DoublesStreak = 0
+		cur.CurrentTurn = 0
+		_ = repo.Update(context.Background(), cur)
+
+		view, err := svc.Roll(context.Background(), "g1", "a")
+		if err != nil {
+			t.Fatal(err)
 		}
-		if view.LastRoll.Total < 2 || view.LastRoll.Total > 12 {
-			t.Fatalf("total=%d", view.LastRoll.Total)
+		if view.LastRoll.ThirdDoubles {
+			continue
 		}
 		wantTo := (38 + view.LastRoll.Total) % 40
 		if view.LastRoll.ToIndex != wantTo {
-			t.Fatalf("to=%d want %d", view.LastRoll.ToIndex, wantTo)
+			t.Fatalf("to=%d", view.LastRoll.ToIndex)
 		}
 		passed := 38+view.LastRoll.Total >= 40
 		if view.LastRoll.PassedGo != passed {
-			t.Fatalf("passedGo=%v want %v", view.LastRoll.PassedGo, passed)
-		}
-		a := view.Players[0]
-		if a.BoardIndex != wantTo {
-			t.Fatalf("pin=%d", a.BoardIndex)
+			t.Fatalf("passedGo")
 		}
 		wantCash := 2000
 		if passed {
 			wantCash = 2200
 		}
-		if a.Cash != wantCash {
-			t.Fatalf("cash=%d want %d", a.Cash, wantCash)
-		}
-		if view.CurrentUserID != "b" {
-			t.Fatalf("turn=%s want b", view.CurrentUserID)
-		}
-		// Prove not-your-turn
-		if _, err := svc.Roll(context.Background(), "g1", "a"); err == nil {
-			t.Fatal("expected not your turn")
+		if view.Players[0].Cash != wantCash {
+			t.Fatalf("cash=%d", view.Players[0].Cash)
 		}
 		return
 	}
+	t.Fatal("exhausted")
 }

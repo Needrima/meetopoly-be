@@ -28,6 +28,7 @@ type Deps struct {
 	Tables    tablesvc.Service
 	Games     gamesvc.Service
 	TableWS   *wsadapter.Hub
+	GameWS    *wsadapter.GameHub
 }
 
 // NewRouter builds the chi router for HTTP adapters.
@@ -69,10 +70,14 @@ func NewRouter(deps Deps) http.Handler {
 
 		r.Get("/games/{gameId}", handleGetGame(deps.Games))
 		r.Post("/games/{gameId}/roll", handleRollDice(deps.Games))
+		r.Post("/games/{gameId}/end-turn", handleEndTurn(deps.Games))
 	})
 
 	if deps.TableWS != nil {
 		r.Get("/ws/tables/{tableId}", deps.TableWS.HandleTable)
+	}
+	if deps.GameWS != nil {
+		r.Get("/ws/games/{gameId}", deps.GameWS.HandleGame)
 	}
 
 	return r

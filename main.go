@@ -110,7 +110,9 @@ func main() {
 		DisconnectHold: 45 * time.Second,
 	})
 	tableSvc.SetGameStarter(gamesvc.TableBridge{Games: gameSvc})
-	tableWS := wsadapter.NewHub(tableSvc, httpadapter.ResolveWSUser(authSvc))
+	resolveUser := httpadapter.ResolveWSUser(authSvc)
+	tableWS := wsadapter.NewHub(tableSvc, resolveUser)
+	gameWS := wsadapter.NewGameHub(gameSvc, resolveUser)
 	healthSvc := health.New(
 		health.NewMongoPinger(mongoClient),
 		health.NewRedisPinger(redisClient),
@@ -127,6 +129,7 @@ func main() {
 			Tables:    tableSvc,
 			Games:     gameSvc,
 			TableWS:   tableWS,
+			GameWS:    gameWS,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 	}

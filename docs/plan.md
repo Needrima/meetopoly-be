@@ -506,7 +506,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 | ----- | --------- | ----- |
 | **6.0** | ✅ Create `games` on all-Ready; `GET /games/{id}`; pins on GO; MeetCoin HUD + toast; `gameId` nav | Dice, buy, timer |
 | **6.1** | ✅ Dice + pin move + pass-GO; tile-by-tile motion; auto-advance (interim) | Buy, rent, End UI |
-| **6.2** | Explicit **End** + **doubles** re-roll; stop auto-advance after roll | Buy, auction, Jail |
+| **6.2** | ✅ Explicit **End** + **doubles** re-roll; stop auto-advance after roll | Buy, auction, Jail |
 | **6.3** | 5-min turn timer + skip | Hubs / presence |
 | **6.4** | **Buy at list price** for unowned city / airport / utility; ownership on game doc | Auction (→ Phase 13); if player skips buy, property stays unowned until 13 |
 | **6.5** | **Rent** (+ tax to Bank; own tile = noop); classic rail/util formulas | Houses, mortgage, cards |
@@ -524,7 +524,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 1. HUD: MeetCoin + turn — **6.0**; timer — **6.3**
 2. Actions: Roll — **6.1**; End — **6.2**; Buy — **6.4**; (Auction UI — Phase 13)
 3. Pins from game state — **6.0**; animate — **6.1**
-4. `useGame` + poll/refetch — **6.0+**
+4. `useGame` + **game WebSocket** (`/ws/games/{id}`) into Query cache; slow HTTP poll only if socket down — **6.0+**
 
 **Exit criteria**
 
@@ -533,7 +533,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 - [ ] Server is source of truth (client cannot forge money / position)
 - [x] **6.0:** lobby start creates game; snapshot (2000, pins on GO, turn = seat 0)
 - [x] **6.1:** roll + tile walk + pass GO +200; interim auto-advance
-
+- [x] **6.2:** End turn + doubles re-roll; third doubles skips move (Jail later)
 ---
 
 ### Phase 7 — Dual presence + board/hub avatar sync (DataChannels)
@@ -753,3 +753,5 @@ Only when the user asks:
 | 2026-09-23 | Fix lobby matchmaking: never persist `starting` without game; abandon broken half-starts on Join |
 | 2026-09-23 | **6.1:** Roll 2d6 + move + pass-GO; HTTP roll + poll; Reanimated tile-by-tile pins; auto-advance turn |
 | 2026-09-23 | Rules alignment: Phase 6 = movement+turn loop first; official Buy→Auction stays Phase 13; Free Parking noop; MeetCoin 2000/200 |
+| 2026-09-23 | **6.2:** `end-turn` + doubles re-roll; `turnPhase` awaiting_roll/end; third doubles no move |
+| 2026-09-23 | **Game WS:** `/ws/games/{id}` push on roll/end-turn; mobile drops 2s poll (5s fallback if socket down) |

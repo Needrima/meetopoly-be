@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.6.0
+  version: 0.7.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -582,6 +582,8 @@ paths:
       description: |
         Authoritative game state (players, MeetCoin balances, pin boardIndex, whose turn).
         Created when a lobby reaches all-Ready (Phase 6.0).
+        Live updates: connect to `GET /ws/games/{gameId}?token=` (same auth as table lobby WS);
+        server pushes `{ "type": "state", "game": Game }` after roll / end-turn.
       tags:
         - Games
       security:
@@ -617,8 +619,9 @@ paths:
       operationId: rollDice
       summary: Roll dice on your turn
       description: |
-        Server rolls 2d6, moves the caller's pin, awards pass-GO MeetCoin when applicable,
-        then advances turn (Phase 6.1 — doubles do not re-roll; explicit End is 6.4).
+        Server rolls 2d6 and moves the caller's pin (unless third consecutive doubles).
+        Awards pass-GO MeetCoin when applicable. Does **not** advance turn (Phase 6.2).
+        Doubles → may roll again; non-doubles or third doubles → must `end-turn`.
       tags:
         - Games
       security:
@@ -655,7 +658,56 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "409":
-          description: Not your turn or inactive
+          description: Not your turn, must end turn first, or inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /games/{gameId}/end-turn:
+    post:
+      operationId: endTurn
+      summary: End your turn
+      description: |
+        Advances to the next seat (Phase 6.2). Allowed only when `turnPhase` is `awaiting_end`
+        (after a non-doubles roll, or after third consecutive doubles).
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Not your turn, must roll first, or inactive
           content:
             application/json:
               schema:
@@ -1156,6 +1208,9 @@ components:
         - toIndex
         - passedGo
         - passGoAmount
+        - isDoubles
+        - doublesStreak
+        - thirdDoubles
       properties:
         userId:
           type: string
@@ -1180,6 +1235,14 @@ components:
         passGoAmount:
           type: integer
           description: MeetCoin awarded this roll for passing/landing on GO
+        isDoubles:
+          type: boolean
+        doublesStreak:
+          type: integer
+          description: Consecutive doubles count after this roll (1–3)
+        thirdDoubles:
+          type: boolean
+          description: True when movement was skipped (Jail deferred to Phase 12)
     Game:
       type: object
       additionalProperties: false
@@ -1194,6 +1257,10 @@ components:
         - currentUsername
         - passGoBonus
         - currency
+        - turnPhase
+        - doublesStreak
+        - canRoll
+        - canEndTurn
       properties:
         id:
           type: string
@@ -1221,6 +1288,15 @@ components:
         currency:
           type: string
           example: MeetCoin
+        turnPhase:
+          type: string
+          enum: [awaiting_roll, awaiting_end]
+        doublesStreak:
+          type: integer
+        canRoll:
+          type: boolean
+        canEndTurn:
+          type: boolean
         lastRoll:
           nullable: true
           allOf:
