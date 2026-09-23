@@ -498,42 +498,48 @@ Roll → move (+pass GO if applicable) → resolve space →
   if doubles (and not 3rd): may Roll again → else End → next seat
 ```
 
-**6.1 interim:** turn currently **auto-advances** after roll so multi-device testing works. Replace with End + doubles in **6.2**.
-
 **Sub-phases (ship one at a time)**
 
 | Slice | Done when | Avoid |
 | ----- | --------- | ----- |
 | **6.0** | ✅ Create `games` on all-Ready; `GET /games/{id}`; pins on GO; MeetCoin HUD + toast; `gameId` nav | Dice, buy, timer |
 | **6.1** | ✅ Dice + pin move + pass-GO; tile-by-tile motion; auto-advance (interim) | Buy, rent, End UI |
-| **6.2** | ✅ Explicit **End** + **doubles** re-roll; stop auto-advance after roll | Buy, auction, Jail |
+| **6.2** | ✅ Explicit **End** + **doubles** re-roll; stop auto-advance after roll; **game WS** push | Buy, auction, Jail |
+| **6.2b** | ✅ Dice **roll animation** (Moti) on all devices when `lastRoll` updates; hold pin walk until dice land | Timer, buy, Lottie pack unless asked |
 | **6.3** | 5-min turn timer + skip | Hubs / presence |
 | **6.4** | **Buy at list price** for unowned city / airport / utility; ownership on game doc | Auction (→ Phase 13); if player skips buy, property stays unowned until 13 |
 | **6.5** | **Rent** (+ tax to Bank; own tile = noop); classic rail/util formulas | Houses, mortgage, cards |
+
+**6.2b notes (client-only)**
+
+- Server already authorizes faces (`die1`/`die2`) and pushes via `/ws/games/{id}`.
+- Do **not** stream animation frames over the network — each client plays the same local tumble that **lands on** the server values.
+- Gate pin tile-walk until the dice finish (~0.8–1.5s). Key off `lastRoll` so reconnects do not replay forever.
 
 **Backend**
 
 1. `services/game` state machine — **6.0+**
 2. Persist `games` — **6.0**; ownership fields when **6.4**
 3. Redis turn deadlines — **6.3**
-4. WS / HTTP events as slices need (`diceRolled`, later `propertyBought`, `rentPaid`, …)
+4. Game WS push on roll / end-turn — **done**; later events (`propertyBought`, `rentPaid`, …) as slices need
 5. Table bridge: all-Ready → game — **6.0**
 
 **Mobile**
 
 1. HUD: MeetCoin + turn — **6.0**; timer — **6.3**
 2. Actions: Roll — **6.1**; End — **6.2**; Buy — **6.4**; (Auction UI — Phase 13)
-3. Pins from game state — **6.0**; animate — **6.1**
-4. `useGame` + **game WebSocket** (`/ws/games/{id}`) into Query cache; slow HTTP poll only if socket down — **6.0+**
+3. Pins from game state — **6.0**; animate tile-walk — **6.1**; dice tumble — **6.2b**
+4. `useGame` + **game WebSocket** (`/ws/games/{id}`) into Query cache; slow HTTP poll only if socket down — **done**
 
 **Exit criteria**
 
-- [ ] Movement + End + doubles + timer playable for 2–6
+- [ ] Movement + End + doubles + dice anim + timer playable for 2–6
 - [ ] Buy + rent when 6.4–6.5 done (auction still Phase 13)
 - [ ] Server is source of truth (client cannot forge money / position)
 - [x] **6.0:** lobby start creates game; snapshot (2000, pins on GO, turn = seat 0)
 - [x] **6.1:** roll + tile walk + pass GO +200; interim auto-advance
-- [x] **6.2:** End turn + doubles re-roll; third doubles skips move (Jail later)
+- [x] **6.2:** End turn + doubles re-roll; third doubles skips move (Jail later); game WS
+- [x] **6.2b:** synced dice roll animation; pin walk waits for dice to land
 ---
 
 ### Phase 7 — Dual presence + board/hub avatar sync (DataChannels)
@@ -755,3 +761,5 @@ Only when the user asks:
 | 2026-09-23 | Rules alignment: Phase 6 = movement+turn loop first; official Buy→Auction stays Phase 13; Free Parking noop; MeetCoin 2000/200 |
 | 2026-09-23 | **6.2:** `end-turn` + doubles re-roll; `turnPhase` awaiting_roll/end; third doubles no move |
 | 2026-09-23 | **Game WS:** `/ws/games/{id}` push on roll/end-turn; mobile drops 2s poll (5s fallback if socket down) |
+| 2026-09-23 | **6.2b** added: synced dice roll animation (client Moti/Reanimated on `lastRoll`; pin walk waits) |
+| 2026-09-23 | **6.2b:** Moti dice overlay + `useDiceRollMotion`; pin `holdWalk` until tumble settles |
