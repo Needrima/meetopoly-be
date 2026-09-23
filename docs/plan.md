@@ -340,23 +340,23 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 1. **40** `africa-1` spaces; corners at boardIndex **0 / 10 / 20 / 30** (even sides like classic Monopoly).
 2. Joystick lives in **panel bottom-right** (not over the board art).
 3. Right panel in Phase 4 = nearby location + Enter (+ joystick); **no** turn/money chrome (Phase 6).
-4. Keep **health home** until **4.7**; board via “Open board”.
+4. Keep **health home** until **4.8**; board via “Open board” until then.
 5. Phase 4 is **local only** (one avatar); remote avatar sync = Phase 7.
 
 **Mobile — incremental slices (implement one at a time)**
 
-| Slice   | Done when                                                                                  | Avoid           |
-| ------- | ------------------------------------------------------------------------------------------ | --------------- |
-| **4.0** | Landscape shell: 1:1 board placeholder + panel; reachable from home                        | Ring, walk      |
-| **4.1** | Empty ring of slots from `boardIndex` (geometry only)                                      | Colors, icons   |
-| **4.2** | Color bands + kind styling                                                                 | Icons, walk     |
-| **4.3** | Icons + `boardCode` / styling from `useLocations('africa-1')`                               | Walk, Enter     |
-| **4.4** | ✅ Center brand + Chance/Chest deck shapes (`layout.decks` obstacles reserved)              | Movement        |
-| **4.5** | ✅ Local avatar (pod + 1-letter) + joystick BR + edge/deck hard + pin soft; pin on GO       | Enter, net      |
-| **4.6** | ✅ Walk-near Enter (nearest glow) + Details `InfoModal` + hub placeholder + BoardSession   | SFU             |
-| **4.7** | Extra debug pins / multi-pin layout (local pin on GO already in 4.5)                       | Full game rules |
-| **4.8** | Board as home + ⋯ menu (Locations / logout; health `__DEV__`)                              | —               |
-| **4.9** | Polish: attribution, side-length pass, feel; tick Phase 4 exit criteria                    | New features    |
+| Slice   | Done when                                                                                | Avoid           |
+| ------- | ---------------------------------------------------------------------------------------- | --------------- |
+| **4.0** | Landscape shell: 1:1 board placeholder + panel; reachable from home                      | Ring, walk      |
+| **4.1** | Empty ring of slots from `boardIndex` (geometry only)                                    | Colors, icons   |
+| **4.2** | Color bands + kind styling                                                               | Icons, walk     |
+| **4.3** | Icons + `boardCode` / styling from `useLocations('africa-1')`                            | Walk, Enter     |
+| **4.4** | ✅ Center brand + Chance/Chest deck shapes (`layout.decks` obstacles reserved)           | Movement        |
+| **4.5** | ✅ Local avatar (pod + 1-letter) + joystick BR + edge/deck hard + pin soft; pin on GO    | Enter, net      |
+| **4.6** | ✅ Walk-near Enter (nearest glow) + Details `InfoModal` + hub placeholder + BoardSession | SFU             |
+| **4.7** | ✅ **DEV** multi-pin fan on GO (distinct colors; soft collide all); local pin from 4.5   | Full game rules |
+| **4.8** | Board as home + ⋯ menu (Locations / logout; health `__DEV__`)                            | —               |
+| **4.9** | Polish: attribution, side-length pass, feel; tick Phase 4 exit criteria                  | New features    |
 
 **Suggested files**
 
