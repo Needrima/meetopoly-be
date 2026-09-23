@@ -14,6 +14,7 @@ go run ./cmd/seed-locations -file seeds/locations.json
 
 Uses `MONGO_URI` / `MONGO_DATABASE` from env (defaults: `mongodb://127.0.0.1:27017`, `meetopoly`). Replaces all documents in `locations`, then ensures indexes on `(worldId, boardIndex)` and unique `(worldId, slug)`.
 
+Offline JSON editors (no Mongo): `cmd/remap-locations`, `cmd/polish-locations` — see **Seed tooling** below.
 ### Board template (all worlds)
 
 Every `worldId` is a **classic 40-space** Monopoly ring:
@@ -68,8 +69,19 @@ City icons: [svgcities.com](https://svgcities.com/) / [anto1/city-icons](https:/
 
 See `docs/plan.md` Phases 3–4 and skill `product.md` Worlds table.
 
-### Remap script
+### Seed tooling (Go)
+
+From `meetopoly-be/`:
 
 ```bash
-python3 seeds/scripts/remap_all_worlds_classic_40.py
+# Rebuild every world to classic 40 (Chance/Chest/tax/rails/utils + colorGroups)
+go run ./cmd/remap-locations -file seeds/locations.json
+
+# Named airports, prison/tax icons, unique boardCodes within each world
+go run ./cmd/polish-locations -file seeds/locations.json
+
+# Push JSON → Mongo
+go run ./cmd/seed-locations -file seeds/locations.json
 ```
+
+Typical order after editing board data: `remap-locations` → `polish-locations` → `seed-locations`.
