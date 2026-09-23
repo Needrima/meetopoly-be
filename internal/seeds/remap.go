@@ -462,19 +462,11 @@ func uniqueBoardCodes(docs []LocationDoc) {
 	sort.Slice(chests, func(i, j int) bool {
 		return docs[chests[i]].BoardIndex < docs[chests[j]].BoardIndex
 	})
-	for i, idx := range chances {
-		if i == 0 {
-			docs[idx].BoardCode = take("CHA")
-		} else {
-			docs[idx].BoardCode = take(fmt.Sprintf("CHA%d", i+1))
-		}
+	for _, idx := range chances {
+		docs[idx].BoardCode = "CHA"
 	}
-	for i, idx := range chests {
-		if i == 0 {
-			docs[idx].BoardCode = take("CHE")
-		} else {
-			docs[idx].BoardCode = take(fmt.Sprintf("CHE%d", i+1))
-		}
+	for _, idx := range chests {
+		docs[idx].BoardCode = "CHE"
 	}
 
 	for i := range docs {
@@ -485,6 +477,10 @@ func uniqueBoardCodes(docs []LocationDoc) {
 
 	seen := map[string]struct{}{}
 	for i := range docs {
+		st := specialType(docs[i])
+		if st == "chance" || st == "community_chest" {
+			continue
+		}
 		code := docs[i].BoardCode
 		if code == "" {
 			code = "X"
@@ -503,23 +499,27 @@ func validateClassicWorld(docs []LocationDoc) error {
 		return fmt.Errorf("want 40 spaces, got %d", len(docs))
 	}
 	slugs := map[string]struct{}{}
-	codes := map[string]struct{}{}
 	var chanceIdx, chestIdx []int
 	for _, d := range docs {
 		if _, ok := slugs[d.Slug]; ok {
 			return fmt.Errorf("duplicate slug %q", d.Slug)
 		}
 		slugs[d.Slug] = struct{}{}
-		if _, ok := codes[d.BoardCode]; ok {
-			return fmt.Errorf("duplicate boardCode %q", d.BoardCode)
-		}
-		codes[d.BoardCode] = struct{}{}
 		switch specialType(d) {
 		case "chance":
 			chanceIdx = append(chanceIdx, d.BoardIndex)
+			if d.BoardCode != "CHA" {
+				return fmt.Errorf("chance %q boardCode %q want CHA", d.Slug, d.BoardCode)
+			}
 		case "community_chest":
 			chestIdx = append(chestIdx, d.BoardIndex)
+			if d.BoardCode != "CHE" {
+				return fmt.Errorf("chest %q boardCode %q want CHE", d.Slug, d.BoardCode)
+			}
 		}
+	}
+	if err := validateBoardCodes(docs); err != nil {
+		return err
 	}
 	sort.Ints(chanceIdx)
 	sort.Ints(chestIdx)

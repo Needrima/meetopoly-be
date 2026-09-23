@@ -15,7 +15,8 @@ go run ./cmd/seed-locations -file seeds/locations.json
 Uses `MONGO_URI` / `MONGO_DATABASE` from env (defaults: `mongodb://127.0.0.1:27017`, `meetopoly`). Replaces all documents in `locations`, then ensures indexes on `(worldId, boardIndex)` and unique `(worldId, slug)`.
 
 Offline JSON editors (no Mongo): `cmd/remap-locations`, `cmd/polish-locations` — see **Seed tooling** below.
- have any w### Board template (all worlds)
+
+### Board template (all worlds)
 
 Every `worldId` is a **classic 40-space** Monopoly ring:
 
@@ -29,9 +30,9 @@ Every `worldId` is a **classic 40-space** Monopoly ring:
 | Power / Water | `12`, `28` |
 | Properties | 22 city slots |
 
-`boardCode` is unique within `worldId` (`CHA`/`CHA2`/…, `CHE`/`CHE2`/…). The mobile board always displays Chance as **CHA** and Chest as **CHE**.
+`boardCode` for cities is unique among **properties** within a `worldId` (letter alternates on collision — never `LA2`). Chance / Chest always use **CHA** / **CHE** (duplicates OK). A city may share a code with an airport (e.g. Atlanta `ATL` + airport `ATL`); the plane icon and Details disambiguate. The mobile board always displays Chance as **CHA** and Chest as **CHE**.
 
-If a continent has extra cities after filling 22: leftovers **&lt; 15** stay unused until a future `-2` pack; **≥ 15** can form a `-2` pack padded with repeats from `-1` (same continent). Short packs pad with in-world repeats (`slug-rN`) to reach 22.with color and 
+If a continent has extra cities after filling 22: leftovers **&lt; 15** stay unused until a future `-2` pack; **≥ 15** can form a `-2` pack padded with repeats from `-1` (same continent). Short packs pad with in-world repeats (`slug-rN`) to reach 22.
 
 ### Worlds in this file
 
@@ -55,7 +56,7 @@ City icons: [svgcities.com](https://svgcities.com/) / [anto1/city-icons](https:/
 - `worldId` — board pack
 - `kind`: `property` (city) \| `railroad` \| `utility` \| `special`
 - `boardIndex` — logical track order (game pin)
-- `boardCode` — short tile label unique within `worldId`
+- `boardCode` — short tile label (cities unique among properties; CHA/CHE shared; city may match airport IATA)
 - `map.x` / `map.z` — overworld placement
 - `assets.icon` — art path relative to `meetopoly-mobile/`
 - `hubId` — hub room key
@@ -77,7 +78,7 @@ From `meetopoly-be/`:
 # Rebuild every world to classic 40 (Chance/Chest/tax/rails/utils + colorGroups)
 go run ./cmd/remap-locations -file seeds/locations.json
 
-# Named airports, prison/tax icons, unique boardCodes within each world
+# Named airports, prison/tax icons, city boardCodes (letter alternates; CHA/CHE shared)
 go run ./cmd/polish-locations -file seeds/locations.json
 
 # Push JSON → Mongo

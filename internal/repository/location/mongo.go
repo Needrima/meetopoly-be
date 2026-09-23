@@ -68,6 +68,9 @@ func NewMongoRepository(db *mongo.Database) *MongoRepository {
 }
 
 func (r *MongoRepository) EnsureIndexes(ctx context.Context) error {
+	// Older unique (worldId, boardCode) blocked CHA/CHE shares and city+airport IATA.
+	_, _ = r.col.Indexes().DropOne(ctx, "worldId_1_boardCode_1")
+
 	models := []mongo.IndexModel{
 		{
 			Keys: bson.D{{Key: "worldId", Value: 1}, {Key: "boardIndex", Value: 1}},
