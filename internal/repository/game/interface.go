@@ -14,6 +14,9 @@ const (
 	GoBoardIndex    = 0
 	BoardSpaceCount = 40
 
+	// TimeBankDuration — Phase 6.3b per-player bank (drains on their turn only).
+	TimeBankDuration = 45 * time.Minute
+
 	// TurnPhaseAwaitingRoll — current player may roll (start of turn or after doubles).
 	TurnPhaseAwaitingRoll = "awaiting_roll"
 	// TurnPhaseAwaitingEnd — current player must End (non-doubles roll, or third doubles).
@@ -29,8 +32,10 @@ type Player struct {
 	Cash       int    `bson:"cash" json:"cash"`
 	BoardIndex int    `bson:"boardIndex" json:"boardIndex"`
 	PinColor   string `bson:"pinColor" json:"pinColor"`
-	// Resigned — left mid-game (Phase 6.2c); skipped for turns. Assets frozen until Phase 14.
+	// Resigned — left mid-game or time-bank eliminated; skipped for turns. Assets frozen until Phase 14.
 	Resigned bool `bson:"resigned,omitempty" json:"resigned,omitempty"`
+	// TimeRemainingMs — personal time bank left when their clock was last paused (Phase 6.3b).
+	TimeRemainingMs int64 `bson:"timeRemainingMs" json:"timeRemainingMs"`
 }
 
 // LastRoll is the most recent dice result (Phase 6.1+).
@@ -64,11 +69,13 @@ type Game struct {
 	// DoublesStreak — consecutive doubles this turn (0–3).
 	DoublesStreak int       `bson:"doublesStreak" json:"doublesStreak"`
 	LastRoll      *LastRoll `bson:"lastRoll,omitempty" json:"lastRoll,omitempty"`
-	// WinnerUserID — set when StatusFinished (Phase 6.2c last player standing).
-	WinnerUserID   string    `bson:"winnerUserId,omitempty" json:"winnerUserId,omitempty"`
-	WinnerUsername string    `bson:"winnerUsername,omitempty" json:"winnerUsername,omitempty"`
-	CreatedAt      time.Time `bson:"createdAt" json:"createdAt"`
-	UpdatedAt      time.Time `bson:"updatedAt" json:"updatedAt"`
+	// WinnerUserID — set when StatusFinished (last player standing).
+	WinnerUserID   string `bson:"winnerUserId,omitempty" json:"winnerUserId,omitempty"`
+	WinnerUsername string `bson:"winnerUsername,omitempty" json:"winnerUsername,omitempty"`
+	// TurnStartedAt — when the current player's bank started draining (Phase 6.3b).
+	TurnStartedAt time.Time `bson:"turnStartedAt,omitempty" json:"turnStartedAt,omitempty"`
+	CreatedAt     time.Time `bson:"createdAt" json:"createdAt"`
+	UpdatedAt     time.Time `bson:"updatedAt" json:"updatedAt"`
 }
 
 // Repository persists games.

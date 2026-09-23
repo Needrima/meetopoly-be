@@ -3,6 +3,7 @@ package game
 import (
 	"context"
 	"testing"
+	"time"
 
 	gamerepo "meetopoly-be/internal/repository/game"
 )
@@ -64,19 +65,21 @@ func cloneGame(g *gamerepo.Game) *gamerepo.Game {
 
 func seedTwoPlayer(t *testing.T, repo *memRepo) {
 	t.Helper()
+	bank := gamerepo.TimeBankDuration.Milliseconds()
 	g := &gamerepo.Game{
 		ID:      "g1",
 		TableID: "t1",
 		WorldID: "africa-1",
 		Status:  gamerepo.StatusActive,
 		Players: []gamerepo.Player{
-			{UserID: "a", Username: "A", SeatIndex: 0, TurnOrder: 0, Cash: 2000, BoardIndex: 0, PinColor: "#f00"},
-			{UserID: "b", Username: "B", SeatIndex: 1, TurnOrder: 1, Cash: 2000, BoardIndex: 0, PinColor: "#0f0"},
+			{UserID: "a", Username: "A", SeatIndex: 0, TurnOrder: 0, Cash: 2000, BoardIndex: 0, PinColor: "#f00", TimeRemainingMs: bank},
+			{UserID: "b", Username: "B", SeatIndex: 1, TurnOrder: 1, Cash: 2000, BoardIndex: 0, PinColor: "#0f0", TimeRemainingMs: bank},
 		},
 		CurrentTurn:   0,
 		PassGoBonus:   200,
 		TurnPhase:     gamerepo.TurnPhaseAwaitingRoll,
 		DoublesStreak: 0,
+		TurnStartedAt: time.Now().UTC(),
 	}
 	if err := repo.Insert(context.Background(), g); err != nil {
 		t.Fatal(err)
@@ -249,19 +252,21 @@ func TestResignLastPlayerWins(t *testing.T) {
 func TestResignAdvancesTurnWhenCurrentLeaves(t *testing.T) {
 	repo := newMemRepo()
 	svc := New(repo)
+	bank := gamerepo.TimeBankDuration.Milliseconds()
 	g := &gamerepo.Game{
 		ID:      "g2",
 		TableID: "t2",
 		WorldID: "africa-1",
 		Status:  gamerepo.StatusActive,
 		Players: []gamerepo.Player{
-			{UserID: "a", Username: "A", SeatIndex: 0, TurnOrder: 0, Cash: 2000, BoardIndex: 0, PinColor: "#f00"},
-			{UserID: "b", Username: "B", SeatIndex: 1, TurnOrder: 1, Cash: 2000, BoardIndex: 0, PinColor: "#0f0"},
-			{UserID: "c", Username: "C", SeatIndex: 2, TurnOrder: 2, Cash: 2000, BoardIndex: 0, PinColor: "#00f"},
+			{UserID: "a", Username: "A", SeatIndex: 0, TurnOrder: 0, Cash: 2000, BoardIndex: 0, PinColor: "#f00", TimeRemainingMs: bank},
+			{UserID: "b", Username: "B", SeatIndex: 1, TurnOrder: 1, Cash: 2000, BoardIndex: 0, PinColor: "#0f0", TimeRemainingMs: bank},
+			{UserID: "c", Username: "C", SeatIndex: 2, TurnOrder: 2, Cash: 2000, BoardIndex: 0, PinColor: "#00f", TimeRemainingMs: bank},
 		},
-		CurrentTurn: 0,
-		PassGoBonus: 200,
-		TurnPhase:   gamerepo.TurnPhaseAwaitingRoll,
+		CurrentTurn:   0,
+		PassGoBonus:   200,
+		TurnPhase:     gamerepo.TurnPhaseAwaitingRoll,
+		TurnStartedAt: time.Now().UTC(),
 	}
 	if err := repo.Insert(context.Background(), g); err != nil {
 		t.Fatal(err)
@@ -276,5 +281,73 @@ func TestResignAdvancesTurnWhenCurrentLeaves(t *testing.T) {
 	}
 	if view.CurrentUserID != "b" {
 		t.Fatalf("current=%s", view.CurrentUserID)
+	}
+}
+
+func TestTimeBankExhaustedEliminatesPlayer(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo)
+	bank := gamerepo.TimeBankDuration.Milliseconds()
+	g := &gamerepo.Game{
+		ID:      "g1",
+		TableID: "t1",
+		WorldID: "africa-1",
+		Status:  gamerepo.StatusActive,
+		Players: []gamerepo.Player{
+			{UserID: "a", Username: "A", SeatIndex: 0, TurnOrder: 0, Cash: 2000, BoardIndex: 0, PinColor: "#f00", TimeRemainingMs: 500},
+			{UserID: "b", Username: "B", SeatIndex: 1, TurnOrder: 1, Cash: 2000, BoardIndex: 0, PinColor: "#0f0", TimeRemainingMs: bank},
+		},
+		CurrentTurn:   0,
+		PassGoBonus:   200,
+		TurnPhase:     gamerepo.TurnPhaseAwaitingRoll,
+		TurnStartedAt: time.Now().UTC().Add(-2 * time.Second),
+	}
+	if err := repo.Insert(context.Background(), g); err != nil {
+		t.Fatal(err)
+	}
+
+	view, err := svc.Get(context.Background(), "g1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !view.Players[0].Resigned {
+		t.Fatal("a should be eliminated")
+	}
+	if view.Status != gamerepo.StatusFinished {
+		t.Fatalf("status=%s want finished (last player wins)", view.Status)
+	}
+	if view.WinnerUserID != "b" {
+		t.Fatalf("winner=%s", view.WinnerUserID)
+	}
+}
+
+func TestEndTurnPausesBankAndStartsNext(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo)
+	seedTwoPlayer(t, repo)
+
+	g, err := repo.FindByID(context.Background(), "g1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	g.TurnStartedAt = time.Now().UTC().Add(-5 * time.Second)
+	startBank := g.Players[0].TimeRemainingMs
+	if err := repo.Update(context.Background(), g); err != nil {
+		t.Fatal(err)
+	}
+
+	view, err := svc.EndTurn(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.CurrentUserID != "b" {
+		t.Fatalf("current=%s", view.CurrentUserID)
+	}
+	if view.Players[0].TimeRemainingMs >= startBank {
+		t.Fatalf("a bank should have drained: %d >= %d", view.Players[0].TimeRemainingMs, startBank)
+	}
+	if view.TurnStartedAt == "" {
+		t.Fatal("expected turnStartedAt for b")
 	}
 }

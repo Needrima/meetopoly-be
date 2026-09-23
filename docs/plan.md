@@ -18,7 +18,7 @@ Meetopoly is a **mobile-first**, worldwide social property game:
   - **Social avatar** — walks the **whole board** (ring + center); pod + face callout (initial now, photo later).
 - **Enter hub:** walk near a property / railroad / utility → Enter prompt (not tap-only).
 - **Worlds:** board packs (`africa-1` first, **40** spaces — classic equal sides). Cities from [svgcities.com](https://svgcities.com/); more Worlds later.
-- **Tables:** **2–6** players (pins pack up to 6 on one square — prefer **2×3** grid when crowded); **5-minute** turn timer or lose turn; notify players in hubs with a compact turn sheet.
+- **Tables:** **2–6** players (pins pack up to 6 on one square — prefer **2×3** grid when crowded); **45-minute per-player time bank** (drains on your turn only; bank = 0 → eliminate); extra pause rules → Phase 13; notify players in hubs with a compact turn sheet.
 - **Signed-in funnel (long-term):** menu home → **Play** → pick **World** → lobby → **Start** → board. Phase 4 Play goes **straight to board** (no lobby yet).
 - **Content:** `seeds/locations.json` → Mongo; `worldId` filter. (**Locations** = board spaces; **World** = which board pack to play.)
 - **Realtime:** Pion SFU; board + hub presence; **voice later**. Lobby seating = **WebSocket** (not WebRTC).
@@ -159,7 +159,7 @@ Per player in `games`:
 ### 3.4 Redis (planned uses)
 
 - Session / refresh tokens (if used)
-- Turn deadline timestamps (`table:{id}:turnDeadline`)
+- Turn time bank on `games.players[].timeRemainingMs` (+ `turnStartedAt` while current) — Phase **6.3** / **6.3b**; Redis mirror optional later
 - Hot presence keys optional (else SFU + service memory for v1 — decide at presence phase)
 
 ---
@@ -468,7 +468,7 @@ Menu → Play → World picker → Lobby (matchmaking pool) → all Ready (≥2)
 
 ### Phase 6 — Game M1: movement + turn loop (authoritative), then light economy
 
-**Goal:** Authoritative dice, pin movement, pass-GO income, turn order, **5-minute timer**. Property **buy / rent** follow once the movement loop is solid. Hubs/presence stay Phase 7+.
+**Goal:** Authoritative dice, pin movement, pass-GO income, turn order, **per-player time bank**. Property **buy / rent** follow once the movement loop is solid. Hubs/presence stay Phase 7+.
 
 **Rules source:** classic Monopoly (see `meetopoly-mobile/resources/Monopoly_Complete_Rules_Guide.pdf`). Meetopoly keeps its own economy numbers and phased delivery — do **not** reshape phases just to match the booklet order.
 
@@ -507,9 +507,21 @@ Roll → move (+pass GO if applicable) → resolve space →
 | **6.2** | ✅ Explicit **End** + **doubles** re-roll; stop auto-advance after roll; **game WS** push | Buy, auction, Jail |
 | **6.2b** | ✅ Dice **roll animation** (Moti) on all devices when `lastRoll` updates; hold pin walk until dice land | Timer, buy, Lottie pack unless asked |
 | **6.2c** | Leave board = **resign** (confirm); notify via game WS; last active player **wins** | Full bankruptcy asset transfer (→ Phase 14); app-kill hold |
-| **6.3** | 5-min turn timer + skip | Hubs / presence |
+| **6.3** | ✅ Interim **3-min** per-turn AFK (`turnDeadline`) — **superseded by 6.3b** | — |
+| **6.3b** | ✅ **45-min per-player time bank**; drain only on your turn; bank = 0 → eliminate; all banks on every HUD | Phase 13 pause actions (auction/trade/…); hubs |
 | **6.4** | **Buy at list price** for unowned city / airport / utility; ownership on game doc | Auction (→ Phase 13); if player skips buy, property stays unowned until 13 |
 | **6.5** | **Rent** (+ tax to Bank; own tile = noop); classic rail/util formulas | Houses, mortgage, cards |
+
+**6.3b notes — time bank (locked)**
+
+- **Bank:** each player starts with **45 minutes** (`timeRemainingMs` / display `mm:ss`). Same for 2–6 seats (no per-table scaling for v1).
+- **Runs** only while that player is **current** (their turn). **Pauses** for everyone else (not their turn).
+- **Does not reset** between turns — leftover bank carries forward until the game ends or they are eliminated.
+- **Bank hits 0:** **auto-eliminate** (same outcome family as resign: `resigned` / out, skip turns, assets frozen until Phase 14). If one active player remains → they win (`status: finished`).
+- **HUD (all devices):** show **every** player's remaining bank (not only local). Active player's bank ticks live; others show paused remainder.
+- **Transport:** server is source of truth; debit on turn boundaries / tick; push via game WS. Clients display only.
+- **Phase 13 (later):** list additional situations that **pause** the current player's bank (auction, open trade, raise-funds, …) without resetting it. Until then, the **only** pause rule is “not your turn.”
+- **Interim 6.3** (`turnDeadline` 3‑min skip) remains in code until **6.3b** ships; then remove / replace.
 
 **6.2c notes**
 
@@ -528,20 +540,21 @@ Roll → move (+pass GO if applicable) → resolve space →
 
 1. `services/game` state machine — **6.0+**
 2. Persist `games` — **6.0**; ownership fields when **6.4**
-3. Redis turn deadlines — **6.3**
+3. Per-player time bank on game doc — **6.3b** (replaces interim `turnDeadline`); Redis mirror optional later
 4. Game WS push on roll / end-turn — **done**; later events (`propertyBought`, `rentPaid`, …) as slices need
 5. Table bridge: all-Ready → game — **6.0**
 
 **Mobile**
 
-1. HUD: MeetCoin + turn — **6.0**; timer — **6.3**
+1. HUD: MeetCoin + turn — **6.0**; **all players’ banks** ticking/paused — **6.3b**
 2. Actions: Roll — **6.1**; End — **6.2**; Buy — **6.4**; (Auction UI — Phase 13)
 3. Pins from game state — **6.0**; animate tile-walk — **6.1**; dice tumble — **6.2b**
 4. `useGame` + **game WebSocket** (`/ws/games/{id}`) into Query cache; slow HTTP poll only if socket down — **done**
+5. **Transport lock:** **HTTP = commands** (roll / end-turn / resign / buy); **WS = state fan-out**. Do not move mutations to WS for “performance” — see changelog / Phase 6 notes.
 
 **Exit criteria**
 
-- [ ] Movement + End + doubles + dice anim + timer playable for 2–6
+- [ ] Movement + End + doubles + dice anim + time bank playable for 2–6
 - [ ] Buy + rent when 6.4–6.5 done (auction still Phase 13)
 - [ ] Server is source of truth (client cannot forge money / position)
 - [x] **6.0:** lobby start creates game; snapshot (2000, pins on GO, turn = seat 0)
@@ -549,6 +562,8 @@ Roll → move (+pass GO if applicable) → resolve space →
 - [x] **6.2:** End turn + doubles re-roll; third doubles skips move (Jail later); game WS
 - [x] **6.2b:** synced dice roll animation; pin walk waits for dice to land
 - [x] **6.2c:** resign on Leave + last-player-wins
+- [x] **6.3:** interim 3-min AFK (superseded)
+- [x] **6.3b:** 45-min bank; eliminate at 0; all banks on HUD
 ---
 
 ### Phase 7 — Dual presence + board/hub avatar sync (DataChannels)
@@ -649,7 +664,19 @@ Roll → move (+pass GO if applicable) → resolve space →
 
 **Official alignment:** Players may trade deeds, cash, and Get Out of Jail Free cards. **When a player lands on unowned property and does not buy at list price, the Bank auctions it immediately** — all players may bid (including the one who declined). Also: house-shortage auctions if not done in M2; bankruptcy-to-bank may re-auction deeds (coord with Phase 14).
 
-**Exit criteria:** Multi-property / cash trades; **auction when purchase declined** (completes the official unowned-land rule started in Phase 6.4 buy).
+**Time bank pauses (encompassing — locked here)**
+
+Baseline (**6.3b**): each player has a **45-minute** bank that drains **only on their turn** and **auto-eliminates at 0**. Until this phase, the only pause is “not your turn.”
+
+When buy / auction / trade / debt flows exist, **also pause** (do not reset) the relevant bank(s) during:
+
+- **Bank auction** (prefer a short shared auction sub-clock so bid time does not eat personal banks unfairly)
+- **Open trade offers** awaiting accept/decline
+- **Forced raise-funds** before bankruptcy (coord Phase 14)
+
+Document the exact pause list in this phase’s implementation notes; do not invent pauses ad hoc in earlier slices.
+
+**Exit criteria:** Multi-property / cash trades; **auction when purchase declined** (completes the official unowned-land rule started in Phase 6.4 buy); bank pause list enforced with those flows.
 
 ---
 
@@ -773,3 +800,6 @@ Only when the user asks:
 | 2026-09-23 | **6.2b** added: synced dice roll animation (client Moti/Reanimated on `lastRoll`; pin walk waits) |
 | 2026-09-23 | **6.2b:** Moti dice overlay + `useDiceRollMotion`; pin `holdWalk` until tumble settles |
 | 2026-09-23 | **6.2c:** Leave = resign (confirm); last active player wins; `POST /games/{id}/resign` |
+| 2026-09-23 | **Timer:** 5→**3 min** AFK in 6.3; encompassing pause/sub-clock rules locked under **Phase 13** |
+| 2026-09-23 | **Timer 6.3b (locked):** **45 min/player** bank; drains on turn only; **0 → eliminate**; all banks on every HUD; Phase 13 adds auction/trade/raise-funds pauses. Interim 3‑min AFK superseded. HTTP commands + WS fan-out kept for scale. |
+| 2026-09-23 | **6.3b shipped:** `timeRemainingMs` + `turnStartedAt`; bank drain/eliminate; HUD all banks |

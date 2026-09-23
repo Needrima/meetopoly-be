@@ -34,14 +34,15 @@ type SeatInput struct {
 
 // PlayerView is the public player shape.
 type PlayerView struct {
-	UserID     string `json:"userId"`
-	Username   string `json:"username"`
-	SeatIndex  int    `json:"seatIndex"`
-	TurnOrder  int    `json:"turnOrder"`
-	Cash       int    `json:"cash"`
-	BoardIndex int    `json:"boardIndex"`
-	PinColor   string `json:"pinColor"`
-	Resigned   bool   `json:"resigned"`
+	UserID          string `json:"userId"`
+	Username        string `json:"username"`
+	SeatIndex       int    `json:"seatIndex"`
+	TurnOrder       int    `json:"turnOrder"`
+	Cash            int    `json:"cash"`
+	BoardIndex      int    `json:"boardIndex"`
+	PinColor        string `json:"pinColor"`
+	Resigned        bool   `json:"resigned"`
+	TimeRemainingMs int64  `json:"timeRemainingMs"`
 }
 
 // LastRollView is the public last-dice snapshot.
@@ -79,6 +80,8 @@ type View struct {
 	LastRoll        *LastRollView `json:"lastRoll"`
 	WinnerUserID    string        `json:"winnerUserId,omitempty"`
 	WinnerUsername  string        `json:"winnerUsername,omitempty"`
+	// TurnStartedAt — RFC3339 UTC; current player's bank drains from this instant.
+	TurnStartedAt string `json:"turnStartedAt,omitempty"`
 }
 
 // Event is pushed to WebSocket subscribers (Phase 6 realtime).
@@ -114,14 +117,18 @@ var pinPalette = []string{
 }
 
 type service struct {
-	repo  gamerepo.Repository
-	mu    sync.Mutex
-	bcast Broadcaster
+	repo       gamerepo.Repository
+	mu         sync.Mutex
+	bcast      Broadcaster
+	bankTimers map[string]*time.Timer
 }
 
 // New builds a game Service.
 func New(repo gamerepo.Repository) Service {
-	return &service{repo: repo}
+	return &service{
+		repo:       repo,
+		bankTimers: make(map[string]*time.Timer),
+	}
 }
 
 func (s *service) SetBroadcaster(b Broadcaster) {
@@ -158,6 +165,7 @@ func (s *service) CreateFromSeats(ctx context.Context, tableID, worldID string, 
 	})
 
 	now := time.Now().UTC()
+	bankMs := gamerepo.TimeBankDuration.Milliseconds()
 	players := make([]gamerepo.Player, 0, len(occupied))
 	for i, seat := range occupied {
 		name := seat.Username
@@ -165,13 +173,14 @@ func (s *service) CreateFromSeats(ctx context.Context, tableID, worldID string, 
 			name = "Player"
 		}
 		players = append(players, gamerepo.Player{
-			UserID:     seat.UserID,
-			Username:   name,
-			SeatIndex:  seat.SeatIndex,
-			TurnOrder:  i,
-			Cash:       gamerepo.StartingCash,
-			BoardIndex: gamerepo.GoBoardIndex,
-			PinColor:   pinPalette[i%len(pinPalette)],
+			UserID:          seat.UserID,
+			Username:        name,
+			SeatIndex:       seat.SeatIndex,
+			TurnOrder:       i,
+			Cash:            gamerepo.StartingCash,
+			BoardIndex:      gamerepo.GoBoardIndex,
+			PinColor:        pinPalette[i%len(pinPalette)],
+			TimeRemainingMs: bankMs,
 		})
 	}
 
@@ -185,10 +194,13 @@ func (s *service) CreateFromSeats(ctx context.Context, tableID, worldID string, 
 		PassGoBonus:   gamerepo.PassGoBonus,
 		TurnPhase:     gamerepo.TurnPhaseAwaitingRoll,
 		DoublesStreak: 0,
+		TurnStartedAt: now,
 		CreatedAt:     now,
 		UpdatedAt:     now,
 	}
+	s.armBankTimerLocked(g)
 	if err := s.repo.Insert(ctx, g); err != nil {
+		s.cancelBankTimerLocked(g.ID)
 		if existing, findErr := s.repo.FindByTableID(ctx, tableID); findErr == nil {
 			return toView(existing), nil
 		}
@@ -198,6 +210,9 @@ func (s *service) CreateFromSeats(ctx context.Context, tableID, worldID string, 
 }
 
 func (s *service) Get(ctx context.Context, gameID string) (*View, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	g, err := s.repo.FindByID(ctx, gameID)
 	if err != nil {
 		if errors.Is(err, gamerepo.ErrNotFound) {
@@ -205,11 +220,20 @@ func (s *service) Get(ctx context.Context, gameID string) (*View, error) {
 		}
 		return nil, err
 	}
-	normalizeTurnPhase(g)
+	if changed, err := s.syncTimeBankLocked(ctx, g); err != nil {
+		return nil, err
+	} else if changed {
+		return toView(g), nil
+	}
+	s.ensureBanksLocked(g)
+	s.armBankTimerLocked(g)
 	return toView(g), nil
 }
 
 func (s *service) GetByTableID(ctx context.Context, tableID string) (*View, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	g, err := s.repo.FindByTableID(ctx, tableID)
 	if err != nil {
 		if errors.Is(err, gamerepo.ErrNotFound) {
@@ -217,7 +241,13 @@ func (s *service) GetByTableID(ctx context.Context, tableID string) (*View, erro
 		}
 		return nil, err
 	}
-	normalizeTurnPhase(g)
+	if changed, err := s.syncTimeBankLocked(ctx, g); err != nil {
+		return nil, err
+	} else if changed {
+		return toView(g), nil
+	}
+	s.ensureBanksLocked(g)
+	s.armBankTimerLocked(g)
 	return toView(g), nil
 }
 
@@ -236,6 +266,12 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 		return nil, ErrInactive
 	}
 	normalizeTurnPhase(g)
+	if _, err := s.syncTimeBankLocked(ctx, g); err != nil {
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return toView(g), nil
+	}
 
 	playerIdx, err := requireCurrentPlayer(g, userID)
 	if err != nil {
@@ -263,8 +299,6 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 	}
 
 	if isDoubles && g.DoublesStreak >= 3 {
-		// Official: go to Jail without completing the third move (Jail = Phase 12).
-		// Phase 6.2: skip movement and require End turn.
 		thirdDoubles = true
 		to = from
 		g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
@@ -325,6 +359,12 @@ func (s *service) EndTurn(ctx context.Context, gameID, userID string) (*View, er
 		return nil, ErrInactive
 	}
 	normalizeTurnPhase(g)
+	if _, err := s.syncTimeBankLocked(ctx, g); err != nil {
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return toView(g), nil
+	}
 
 	if _, err := requireCurrentPlayer(g, userID); err != nil {
 		return nil, err
@@ -333,12 +373,25 @@ func (s *service) EndTurn(ctx context.Context, gameID, userID string) (*View, er
 		return nil, ErrMustRoll
 	}
 
-	n := len(g.Players)
-	if n > 0 {
+	s.pauseCurrentBankLocked(g)
+	curIdx := currentPlayerIndex(g)
+	if curIdx >= 0 && g.Players[curIdx].TimeRemainingMs <= 0 {
+		g.Players[curIdx].Resigned = true
+		g.Players[curIdx].TimeRemainingMs = 0
+		if finishIfOneActive(g) {
+			s.clearBankClockLocked(g)
+		} else {
+			advanceToNextActive(g)
+			g.DoublesStreak = 0
+			g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+			s.startCurrentBankLocked(g)
+		}
+	} else {
 		advanceToNextActive(g)
+		g.DoublesStreak = 0
+		g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+		s.startCurrentBankLocked(g)
 	}
-	g.DoublesStreak = 0
-	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
 	g.UpdatedAt = time.Now().UTC()
 
 	if err := s.repo.Update(ctx, g); err != nil {
@@ -350,7 +403,6 @@ func (s *service) EndTurn(ctx context.Context, gameID, userID string) (*View, er
 }
 
 // Resign marks the caller as out (Phase 6.2c). Leaving the board mid-game is resigning.
-// If only one active player remains, they win and the game finishes.
 func (s *service) Resign(ctx context.Context, gameID, userID string) (*View, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -366,6 +418,12 @@ func (s *service) Resign(ctx context.Context, gameID, userID string) (*View, err
 		return nil, ErrInactive
 	}
 	normalizeTurnPhase(g)
+	if _, err := s.syncTimeBankLocked(ctx, g); err != nil {
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return toView(g), nil
+	}
 
 	playerIdx := -1
 	for i := range g.Players {
@@ -381,15 +439,19 @@ func (s *service) Resign(ctx context.Context, gameID, userID string) (*View, err
 		return nil, ErrAlreadyOut
 	}
 
-	g.Players[playerIdx].Resigned = true
 	wasCurrent := g.Players[playerIdx].TurnOrder == g.CurrentTurn
+	if wasCurrent {
+		s.pauseCurrentBankLocked(g)
+	}
+	g.Players[playerIdx].Resigned = true
 
 	if finishIfOneActive(g) {
-		// winner set
+		s.clearBankClockLocked(g)
 	} else if wasCurrent {
 		advanceToNextActive(g)
 		g.DoublesStreak = 0
 		g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+		s.startCurrentBankLocked(g)
 	}
 
 	g.UpdatedAt = time.Now().UTC()
@@ -430,6 +492,15 @@ func playerByTurnOrder(g *gamerepo.Game, turnOrder int) *gamerepo.Player {
 	return nil
 }
 
+func currentPlayerIndex(g *gamerepo.Game) int {
+	for i := range g.Players {
+		if g.Players[i].TurnOrder == g.CurrentTurn {
+			return i
+		}
+	}
+	return -1
+}
+
 func advanceToNextActive(g *gamerepo.Game) {
 	n := len(g.Players)
 	if n == 0 {
@@ -444,7 +515,6 @@ func advanceToNextActive(g *gamerepo.Game) {
 	}
 }
 
-// finishIfOneActive sets finished + winner when exactly one active player remains.
 func finishIfOneActive(g *gamerepo.Game) bool {
 	var winner *gamerepo.Player
 	active := 0
@@ -463,6 +533,7 @@ func finishIfOneActive(g *gamerepo.Game) bool {
 	g.WinnerUsername = winner.Username
 	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
 	g.DoublesStreak = 0
+	g.TurnStartedAt = time.Time{}
 	return true
 }
 
@@ -470,8 +541,150 @@ func normalizeTurnPhase(g *gamerepo.Game) {
 	if g.TurnPhase == gamerepo.TurnPhaseAwaitingRoll || g.TurnPhase == gamerepo.TurnPhaseAwaitingEnd {
 		return
 	}
-	// Legacy 6.1 docs (auto-advance): treat as start-of-turn roll.
 	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+}
+
+func (s *service) ensureBanksLocked(g *gamerepo.Game) {
+	bankMs := gamerepo.TimeBankDuration.Milliseconds()
+	anyPositive := false
+	for i := range g.Players {
+		if g.Players[i].TimeRemainingMs > 0 {
+			anyPositive = true
+			break
+		}
+	}
+	if !anyPositive {
+		for i := range g.Players {
+			if g.Players[i].Resigned {
+				continue
+			}
+			g.Players[i].TimeRemainingMs = bankMs
+		}
+	}
+	if g.Status == gamerepo.StatusActive && g.TurnStartedAt.IsZero() {
+		g.TurnStartedAt = time.Now().UTC()
+	}
+}
+
+// pauseCurrentBankLocked deducts elapsed time from the current player and clears turn start.
+func (s *service) pauseCurrentBankLocked(g *gamerepo.Game) {
+	idx := currentPlayerIndex(g)
+	if idx < 0 || g.Players[idx].Resigned || g.TurnStartedAt.IsZero() {
+		g.TurnStartedAt = time.Time{}
+		return
+	}
+	elapsed := time.Since(g.TurnStartedAt)
+	if elapsed < 0 {
+		elapsed = 0
+	}
+	left := g.Players[idx].TimeRemainingMs - elapsed.Milliseconds()
+	if left < 0 {
+		left = 0
+	}
+	g.Players[idx].TimeRemainingMs = left
+	g.TurnStartedAt = time.Time{}
+}
+
+func (s *service) startCurrentBankLocked(g *gamerepo.Game) {
+	if g.Status != gamerepo.StatusActive {
+		s.clearBankClockLocked(g)
+		return
+	}
+	g.TurnStartedAt = time.Now().UTC()
+	s.armBankTimerLocked(g)
+}
+
+func (s *service) clearBankClockLocked(g *gamerepo.Game) {
+	g.TurnStartedAt = time.Time{}
+	s.cancelBankTimerLocked(g.ID)
+}
+
+// syncTimeBankLocked applies elapsed drain; eliminates current player if bank hit 0.
+// Returns true when the document was mutated and persisted.
+func (s *service) syncTimeBankLocked(ctx context.Context, g *gamerepo.Game) (bool, error) {
+	normalizeTurnPhase(g)
+	s.ensureBanksLocked(g)
+	if g.Status != gamerepo.StatusActive {
+		return false, nil
+	}
+
+	changed := false
+	for {
+		idx := currentPlayerIndex(g)
+		if idx < 0 || g.Players[idx].Resigned || g.TurnStartedAt.IsZero() {
+			break
+		}
+		elapsed := time.Since(g.TurnStartedAt)
+		if elapsed < 0 {
+			elapsed = 0
+		}
+		if elapsed.Milliseconds() < g.Players[idx].TimeRemainingMs {
+			s.armBankTimerLocked(g)
+			break
+		}
+
+		g.Players[idx].TimeRemainingMs = 0
+		g.Players[idx].Resigned = true
+		g.TurnStartedAt = time.Time{}
+		changed = true
+
+		if finishIfOneActive(g) {
+			s.clearBankClockLocked(g)
+			break
+		}
+		advanceToNextActive(g)
+		g.DoublesStreak = 0
+		g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+		s.startCurrentBankLocked(g)
+	}
+
+	if !changed {
+		return false, nil
+	}
+	g.UpdatedAt = time.Now().UTC()
+	if err := s.repo.Update(ctx, g); err != nil {
+		return false, err
+	}
+	s.broadcast(g.ID, Event{Type: "state", Game: toView(g)})
+	return true, nil
+}
+
+func (s *service) armBankTimerLocked(g *gamerepo.Game) {
+	s.cancelBankTimerLocked(g.ID)
+	if g.Status != gamerepo.StatusActive || g.TurnStartedAt.IsZero() {
+		return
+	}
+	idx := currentPlayerIndex(g)
+	if idx < 0 || g.Players[idx].Resigned {
+		return
+	}
+	left := g.Players[idx].TimeRemainingMs - time.Since(g.TurnStartedAt).Milliseconds()
+	if left < 0 {
+		left = 0
+	}
+	delay := time.Duration(left) * time.Millisecond
+	gameID := g.ID
+	s.bankTimers[gameID] = time.AfterFunc(delay, func() {
+		_ = s.onBankExpired(context.Background(), gameID)
+	})
+}
+
+func (s *service) cancelBankTimerLocked(gameID string) {
+	if t, ok := s.bankTimers[gameID]; ok {
+		t.Stop()
+		delete(s.bankTimers, gameID)
+	}
+}
+
+func (s *service) onBankExpired(ctx context.Context, gameID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	g, err := s.repo.FindByID(ctx, gameID)
+	if err != nil {
+		return err
+	}
+	_, err = s.syncTimeBankLocked(ctx, g)
+	return err
 }
 
 func rollDie() int {
@@ -482,21 +695,40 @@ func rollDie() int {
 	return int(b[0]%6) + 1
 }
 
+func liveRemainingMs(g *gamerepo.Game, p gamerepo.Player, now time.Time) int64 {
+	if p.Resigned {
+		return 0
+	}
+	left := p.TimeRemainingMs
+	if g.Status == gamerepo.StatusActive &&
+		!g.TurnStartedAt.IsZero() &&
+		p.TurnOrder == g.CurrentTurn {
+		elapsed := now.Sub(g.TurnStartedAt).Milliseconds()
+		left -= elapsed
+	}
+	if left < 0 {
+		return 0
+	}
+	return left
+}
+
 func toView(g *gamerepo.Game) *View {
 	normalizeTurnPhase(g)
+	now := time.Now().UTC()
 	players := make([]PlayerView, len(g.Players))
 	currentUserID := ""
 	currentUsername := ""
 	for i, p := range g.Players {
 		players[i] = PlayerView{
-			UserID:     p.UserID,
-			Username:   p.Username,
-			SeatIndex:  p.SeatIndex,
-			TurnOrder:  p.TurnOrder,
-			Cash:       p.Cash,
-			BoardIndex: p.BoardIndex,
-			PinColor:   p.PinColor,
-			Resigned:   p.Resigned,
+			UserID:          p.UserID,
+			Username:        p.Username,
+			SeatIndex:       p.SeatIndex,
+			TurnOrder:       p.TurnOrder,
+			Cash:            p.Cash,
+			BoardIndex:      p.BoardIndex,
+			PinColor:        p.PinColor,
+			Resigned:        p.Resigned,
+			TimeRemainingMs: liveRemainingMs(g, p, now),
 		}
 		if !p.Resigned && p.TurnOrder == g.CurrentTurn {
 			currentUserID = p.UserID
@@ -522,6 +754,10 @@ func toView(g *gamerepo.Game) *View {
 	}
 	phase := g.TurnPhase
 	active := g.Status == gamerepo.StatusActive
+	started := ""
+	if active && !g.TurnStartedAt.IsZero() {
+		started = g.TurnStartedAt.UTC().Format(time.RFC3339Nano)
+	}
 	return &View{
 		ID:              g.ID,
 		TableID:         g.TableID,
@@ -540,5 +776,6 @@ func toView(g *gamerepo.Game) *View {
 		LastRoll:        last,
 		WinnerUserID:    g.WinnerUserID,
 		WinnerUsername:  g.WinnerUsername,
+		TurnStartedAt:   started,
 	}
 }

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.8.0
+  version: 0.10.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -1229,6 +1229,7 @@ components:
         - boardIndex
         - pinColor
         - resigned
+        - timeRemainingMs
       properties:
         userId:
           type: string
@@ -1249,7 +1250,14 @@ components:
           description: Hex accent for the pin
         resigned:
           type: boolean
-          description: Left mid-game (Phase 6.2c); skipped for turns
+          description: Left mid-game or time-bank eliminated; skipped for turns
+        timeRemainingMs:
+          type: integer
+          format: int64
+          description: |
+            Personal time bank remaining in milliseconds (Phase 6.3b).
+            For the current player this is live (bank minus elapsed on this turn).
+            For others it is the paused remainder. Starts at 45 minutes.
     GameLastRoll:
       type: object
       additionalProperties: false
@@ -1362,6 +1370,12 @@ components:
         winnerUsername:
           type: string
           description: Display name of the winner
+        turnStartedAt:
+          type: string
+          format: date-time
+          description: |
+            UTC instant when the current player's time bank started draining (Phase 6.3b).
+            Omitted when finished or clock paused. Clients may tick locally from this + timeRemainingMs.
     LocationsResponse:
       type: object
       additionalProperties: false
