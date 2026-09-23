@@ -68,6 +68,7 @@ func NewRouter(deps Deps) http.Handler {
 		r.Post("/tables/{tableId}/leave", handleLeaveTable(deps.Tables))
 
 		r.Get("/games/{gameId}", handleGetGame(deps.Games))
+		r.Post("/games/{gameId}/roll", handleRollDice(deps.Games))
 	})
 
 	if deps.TableWS != nil {

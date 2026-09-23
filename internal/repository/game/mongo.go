@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -41,6 +42,18 @@ func (r *MongoRepository) Insert(ctx context.Context, g *Game) error {
 	_, err := r.col.InsertOne(ctx, g)
 	if err != nil {
 		return fmt.Errorf("insert game: %w", err)
+	}
+	return nil
+}
+
+func (r *MongoRepository) Update(ctx context.Context, g *Game) error {
+	g.UpdatedAt = time.Now().UTC()
+	res, err := r.col.ReplaceOne(ctx, bson.M{"_id": g.ID}, g)
+	if err != nil {
+		return fmt.Errorf("update game: %w", err)
+	}
+	if res.MatchedCount == 0 {
+		return ErrNotFound
 	}
 	return nil
 }

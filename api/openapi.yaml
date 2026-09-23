@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.5.0
+  version: 0.6.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -612,6 +612,55 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /games/{gameId}/roll:
+    post:
+      operationId: rollDice
+      summary: Roll dice on your turn
+      description: |
+        Server rolls 2d6, moves the caller's pin, awards pass-GO MeetCoin when applicable,
+        then advances turn (Phase 6.1 — doubles do not re-roll; explicit End is 6.4).
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Not your turn or inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /locations:
     get:
       operationId: listLocations
@@ -1094,6 +1143,43 @@ components:
         pinColor:
           type: string
           description: Hex accent for the pin
+    GameLastRoll:
+      type: object
+      additionalProperties: false
+      required:
+        - userId
+        - username
+        - die1
+        - die2
+        - total
+        - fromIndex
+        - toIndex
+        - passedGo
+        - passGoAmount
+      properties:
+        userId:
+          type: string
+        username:
+          type: string
+        die1:
+          type: integer
+          minimum: 1
+          maximum: 6
+        die2:
+          type: integer
+          minimum: 1
+          maximum: 6
+        total:
+          type: integer
+        fromIndex:
+          type: integer
+        toIndex:
+          type: integer
+        passedGo:
+          type: boolean
+        passGoAmount:
+          type: integer
+          description: MeetCoin awarded this roll for passing/landing on GO
     Game:
       type: object
       additionalProperties: false
@@ -1131,10 +1217,14 @@ components:
           type: string
         passGoBonus:
           type: integer
-          description: MeetCoin granted when passing GO (applied in later slices)
+          description: MeetCoin granted when passing GO
         currency:
           type: string
           example: MeetCoin
+        lastRoll:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/GameLastRoll"
     LocationsResponse:
       type: object
       additionalProperties: false

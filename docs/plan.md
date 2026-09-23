@@ -490,7 +490,7 @@ Menu → Play → World picker → Lobby (matchmaking pool) → all Ready (≥2)
 | Slice | Done when | Avoid |
 | ----- | --------- | ----- |
 | **6.0** | ✅ Create `games` on all-Ready; `GET /games/{id}`; board pins on GO; MeetCoin HUD + toast; navigate with `gameId` | Dice, buy, timer |
-| **6.1** | Dice roll + pin move + pass-GO cash (server truth) | Buy/rent UI |
+| **6.1** | ✅ Dice roll + pin move + pass-GO cash (server truth); tile-by-tile pin motion; auto-advance turn | Buy/rent UI |
 | **6.2** | Buy / decline unowned property | Trading |
 | **6.3** | Rent payment on land | Houses |
 | **6.4** | Explicit End turn + doubles re-roll | Timer |
@@ -518,6 +518,7 @@ Menu → Play → World picker → Lobby (matchmaking pool) → all Ready (≥2)
 - [ ] Timer skip works
 - [ ] Server is source of truth (client cannot forge money)
 - [x] **6.0:** lobby start creates game; board loads snapshot (balances 2000, pins on GO, turn = seat 0)
+- [x] **6.1:** `POST /games/{id}/roll`; pin walks tile-by-tile; pass GO +200; turn advances (doubles/End → 6.4)
 
 ---
 
@@ -728,3 +729,4 @@ Only when the user asks:
 | 2026-09-23 | **Phase 6 split:** 6.0–6.5; M1 MeetCoin locks (2000 / pass GO 200 / seat-order / symbol HUD) |
 | 2026-09-23 | **6.0:** `games` repo+svc; create on all-Ready; `GET /games/{id}`; board HUD+pins+toast |
 | 2026-09-23 | Fix lobby matchmaking: never persist `starting` without game; abandon broken half-starts on Join |
+| 2026-09-23 | **6.1:** Roll 2d6 + move + pass-GO; HTTP roll + poll; Reanimated tile-by-tile pins; auto-advance turn |
