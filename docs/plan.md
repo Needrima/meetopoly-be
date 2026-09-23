@@ -361,7 +361,7 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 | **4.6** | ✅ Walk-near Enter (nearest glow) + Details `InfoModal` + hub placeholder + BoardSession   | SFU             |
 | **4.7** | ✅ __DEV__ multi-pin fan on GO (distinct colors; soft collide all); local pin from 4.5     | Full game rules |
 | **4.8** | ✅ Menu home + board ⋯ (Leave / logout; health+locations `__DEV__`); block board back       | Lobby, WS, RTC  |
-| **4.9** | Polish: attribution, side-length pass, feel; tick Phase 4 exit criteria                    | New features    |
+| **4.9** | ✅ Polish: attribution, Reanimated avatar, side-length, chrome; Phase 4 exit criteria       | New features    |
 
 **4.8 detail (locked)**
 
@@ -370,6 +370,13 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 - **Board panel top:** **⋯** menu — **Leave** (→ menu home), **Log out**; in `__DEV__`: **Health**, **Locations** list.
 - Remove on-board **Back** Pressable. `BackHandler` + `gestureEnabled: false` (or equivalent) so hardware/swipe back cannot leave the board; hub **Leave** stays explicit.
 - Settings / About: placeholder screens or short modals are enough for 4.8.
+
+**4.9 detail (locked)**
+
+- Attribution: **About** credits + per-location `attribution` on Details `InfoModal` / hub when present.
+- Walk feel: avatar position via **Reanimated** shared values (UI thread); JS owns collision + nearby; `BOARD_WALK` constants stay code-only until Settings.
+- Light side-length: label/icon scale tweaks; `React.memo` on `BoardTile`.
+- Chrome: drop leftover Phase 4.x labels from play surfaces.
 
 **Suggested files**
 
@@ -389,7 +396,7 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 - [x] Walk near city/air/utility → Enter → hub placeholder → Leave → board
 - [x] Joystick usable from panel bottom-right; board stays 1:1 dominant
 - [x] Signed-in **menu home**; Play opens board; board leave only via **⋯**; system/gesture back blocked on board
-- [ ] Smooth on a mid-range phone (2D Views/SVG; no GL requirement)
+- [x] Smooth walk on mid-range targets (Reanimated avatar pose; memoized tiles; no per-frame React setState)
 
 **Note on later phases:** Phase 5 adds World picker + lobby before board. Phase 7 syncs **board** avatar positions (and hub poses). Pins stay authoritative via game WS. Rolling moves pins without forcing avatars.
 
@@ -397,39 +404,65 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 ### Phase 5 — Tables lobby (2–6) + WebSocket basics
 
-**Goal:** Real play funnel into a table: pick **World** → lobby seats → host **Start** → board. Presence of seated players over **WebSocket** (not WebRTC).
+**Goal:** Play funnel: pick **World** → matchmaking lobby → **all Ready** → board. Seat sync eventually over **WebSocket** (not WebRTC). Ship a **mobile stub** first (5.0–5.5), then replace with real table HTTP/WS (5.6).
 
 **Funnel (locked)**
 
 ```text
-Menu → Play → World picker → Lobby (2–6 seats) → Start → Board
+Menu → Play → World picker → Lobby (matchmaking pool) → all Ready (≥2) → Board
 ```
 
-- **World** = board pack (`africa-1`, …). Do **not** confuse with **Locations** (individual board spaces / seed rows).
-- Capacity **2–6** (pins: up to 6 on one square; prefer **2×3** grid when crowded — implement packing with game pins in Phase 6 UI if not already).
-- Optional **local stub** before WS is live: `setInterval` (or similar) fake seat fills so Start can be tested single-device; replace with real WS as soon as table adapter exists.
-- **WebRTC** is **not** for lobby seating — reserved for board/hub presence (Phase 7) and voice (Phase 10).
+**Locks (Phase 5)**
 
-**Backend**
+| Topic | Decision |
+| ----- | -------- |
+| Matchmaking | Pick World → join waiting pool for that World (no invite codes in v1 stub) |
+| Worlds list | All worlds from `GET /worlds` |
+| Capacity | **2–6** hard cap |
+| Ready | Disabled until ≥2 seated; toggle Ready anytime; bots auto-Ready after a short delay |
+| New joiner | Keep existing Readys; newcomer starts unready |
+| Start | When **every seated** player is Ready and count ≥2 → board (no separate Start/host) |
+| Leave | Voluntary Leave frees seat immediately |
+| Disconnect | Hold seat ~30–60s then free (stub timing OK) |
+| Transport | Lobby seating = **WebSocket** later; stub is local-only until **5.6** |
+| WebRTC | Not for lobby — Phase 7+ |
+
+- **World** = board pack (`africa-1`, …). Do **not** confuse with **Locations** (board spaces).
+- Pins packing **2×3** when 6 on one square → Phase 6 UI if needed.
+
+**Mobile — incremental slices (implement + test one at a time)**
+
+| Slice | Done when | Avoid |
+| ----- | --------- | ----- |
+| **5.0** | ✅ World picker from `useWorlds`; Play → picker; select World; temp Continue → board with `worldId` | Lobby, bots, Ready |
+| **5.1** | Lobby shell route for `worldId`; 6 seat slots UI; Leave → picker | Matchmaking logic, bots |
+| **5.2** | Local stub: enter pool as local seat; waiting copy until ≥2 | Bots, Ready, WS |
+| **5.3** | Slow fake joiners toward 6 (cap); newcomer unready rule | Ready start, WS |
+| **5.4** | Ready toggle (≥2); bots delayed auto-Ready; all Ready → board | Real WS |
+| **5.5** | Disconnect-hold stub (30–60s); polish lobby chrome | Backend |
+| **5.6** | Real `services/table` + WS matchmaking replaces local stub | Game M1 rules |
+
+**Backend (primarily 5.6)**
 
 1. `services/table` + repos
-2. WebSocket adapter: join lobby, seat updates
-3. OpenAPI for create/list/join table (HTTP) + WS event list in plan/OpenAPI extensions
-4. Enforce 2–6 players; host starts game when ready
+2. WebSocket adapter: join pool/lobby, seat + ready updates
+3. OpenAPI create/join/list + WS events
+4. Enforce 2–6; start when all Ready
 
-**Mobile**
+**Suggested mobile files**
 
-1. World picker + lobby screens under `(app)/`
-2. `hooks/useTable`, `hooks/useTableSocket`
-3. Write WS events into TanStack cache
-4. Wire menu **Play** through this funnel (replacing Phase 4 direct → board)
+- `(app)/worlds.tsx` — World picker (5.0)
+- `(app)/lobby/[worldId].tsx` — lobby (5.1+)
+- `hooks/useLobbyStub.ts` — local seats/bots/ready until 5.6
+- Later: `hooks/useTable`, `hooks/useTableSocket`
 
 **Exit criteria**
 
-- [ ] Menu Play → World → lobby → Start → board (or local stub seats until WS ready)
-- [ ] Two devices/users can join one table and see each other seated
-- [ ] Cannot start with &lt;2 or &gt;6
-- [ ] Disconnect handling stubbed (ask for exact policy when implementing)
+- [ ] Menu Play → World → lobby → all Ready → board (stub OK through 5.5)
+- [ ] Seats capped at 6; cannot start with &lt;2
+- [ ] Ready UI shows who is ready; start only when all seated are Ready
+- [ ] Two devices can share a lobby via WS (5.6)
+- [ ] Disconnect hold stubbed (30–60s)
 
 ---
 
@@ -655,3 +688,5 @@ Only when the user asks:
 | 2026-09-21 | Signup resume after password: `/auth/signup/status` + login `needsProfile`                                        |
 | 2026-09-21 | Phase 3: locations Mongo + seed CLI; Bearer `/worlds` + `/locations` (+ by id/slug); mobile `(app)/locations`     |
 | 2026-09-23 | **4.8:** menu home (not board-as-home); board leave via ⋯ + back lock; lobby/World funnel → Phase 5; 2–6 pins 2×3 |
+| 2026-09-23 | **4.9:** Reanimated avatar walk; attribution; BoardTile memo; Phase 4 exit criteria ticked |
+| 2026-09-23 | **Phase 5 split:** sub-phases 5.0–5.6; matchmaking + all-Ready locks; stub before WS |
