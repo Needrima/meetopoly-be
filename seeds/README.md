@@ -15,7 +15,7 @@ go run ./cmd/seed-locations -file seeds/locations.json
 Uses `MONGO_URI` / `MONGO_DATABASE` from env (defaults: `mongodb://127.0.0.1:27017`, `meetopoly`). Replaces all documents in `locations`, then ensures indexes on `(worldId, boardIndex)` and unique `(worldId, slug)`.
 
 Offline JSON editors (no Mongo): `cmd/remap-locations`, `cmd/polish-locations` — see **Seed tooling** below.
-### Board template (all worlds)
+ have any w### Board template (all worlds)
 
 Every `worldId` is a **classic 40-space** Monopoly ring:
 
@@ -31,7 +31,7 @@ Every `worldId` is a **classic 40-space** Monopoly ring:
 
 `boardCode` is unique within `worldId` (`CHA`/`CHA2`/…, `CHE`/`CHE2`/…). The mobile board always displays Chance as **CHA** and Chest as **CHE**.
 
-If a continent has extra cities after filling 22: leftovers **&lt; 15** stay unused until a future `-2` pack; **≥ 15** can form a `-2` pack padded with repeats from `-1` (same continent). Short packs pad with in-world repeats (`slug-rN`) to reach 22.
+If a continent has extra cities after filling 22: leftovers **&lt; 15** stay unused until a future `-2` pack; **≥ 15** can form a `-2` pack padded with repeats from `-1` (same continent). Short packs pad with in-world repeats (`slug-rN`) to reach 22.with color and 
 
 ### Worlds in this file
 

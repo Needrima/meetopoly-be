@@ -352,8 +352,8 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 | **4.2** | Color bands + kind styling                                                                 | Icons, walk     |
 | **4.3** | Icons + `boardCode` / styling from `useLocations('africa-1')`                               | Walk, Enter     |
 | **4.4** | ✅ Center brand + Chance/Chest deck shapes (`layout.decks` obstacles reserved)              | Movement        |
-| **4.5** | ✅ Local avatar (pod + 2-letter) + joystick BR + edge/deck hard + pin soft; pin on GO       | Enter, net      |
-| **4.6** | Walk-near Enter for property \| railroad \| utility → hub placeholder                      | SFU             |
+| **4.5** | ✅ Local avatar (pod + 1-letter) + joystick BR + edge/deck hard + pin soft; pin on GO       | Enter, net      |
+| **4.6** | ✅ Walk-near Enter (nearest glow) + Details `InfoModal` + hub placeholder + BoardSession   | SFU             |
 | **4.7** | Extra debug pins / multi-pin layout (local pin on GO already in 4.5)                       | Full game rules |
 | **4.8** | Board as home + ⋯ menu (Locations / logout; health `__DEV__`)                              | —               |
 | **4.9** | Polish: attribution, side-length pass, feel; tick Phase 4 exit criteria                    | New features    |
@@ -373,7 +373,7 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 - [x] `africa-1` readable 2D ring + center decks; icons + color groups
 - [x] Local avatar walks board; blocked by outer edge + center Chance/Chest decks; soft vs pins
 - [x] Ring Chance/Chest tiles remain walkable
-- [ ] Walk near city/air/utility → Enter → hub placeholder → Leave → board
+- [x] Walk near city/air/utility → Enter → hub placeholder → Leave → board
 - [x] Joystick usable from panel bottom-right; board stays 1:1 dominant
 - [ ] Smooth on a mid-range phone (2D Views/SVG; no GL requirement)
 
