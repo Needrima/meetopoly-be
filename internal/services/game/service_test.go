@@ -2,6 +2,7 @@ package game
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -56,6 +57,7 @@ func (m *memRepo) FindByTableID(_ context.Context, tableID string) (*gamerepo.Ga
 func cloneGame(g *gamerepo.Game) *gamerepo.Game {
 	cp := *g
 	cp.Players = append([]gamerepo.Player(nil), g.Players...)
+	cp.Deeds = append([]gamerepo.Deed(nil), g.Deeds...)
 	if g.LastRoll != nil {
 		lr := *g.LastRoll
 		cp.LastRoll = &lr
@@ -88,7 +90,7 @@ func seedTwoPlayer(t *testing.T, repo *memRepo) {
 
 func TestRollDoesNotAdvanceTurn_EndTurnDoes(t *testing.T) {
 	repo := newMemRepo()
-	svc := New(repo)
+	svc := New(repo, nil)
 	seedTwoPlayer(t, repo)
 
 	var view *View
@@ -133,7 +135,7 @@ func TestRollDoesNotAdvanceTurn_EndTurnDoes(t *testing.T) {
 
 func TestThirdDoublesSkipsMoveAndRequiresEnd(t *testing.T) {
 	repo := newMemRepo()
-	svc := New(repo).(*service)
+	svc := New(repo, nil)
 	seedTwoPlayer(t, repo)
 
 	// Force doubles streak to 2, then inject a doubles roll via mutating before Roll
@@ -184,7 +186,7 @@ func TestThirdDoublesSkipsMoveAndRequiresEnd(t *testing.T) {
 
 func TestPassGoStillWorks(t *testing.T) {
 	repo := newMemRepo()
-	svc := New(repo)
+	svc := New(repo, nil)
 	seedTwoPlayer(t, repo)
 	cur, _ := repo.FindByID(context.Background(), "g1")
 	cur.Players[0].BoardIndex = 38
@@ -228,7 +230,7 @@ func TestPassGoStillWorks(t *testing.T) {
 
 func TestResignLastPlayerWins(t *testing.T) {
 	repo := newMemRepo()
-	svc := New(repo)
+	svc := New(repo, nil)
 	seedTwoPlayer(t, repo)
 
 	view, err := svc.Resign(context.Background(), "g1", "a")
@@ -251,7 +253,7 @@ func TestResignLastPlayerWins(t *testing.T) {
 
 func TestResignAdvancesTurnWhenCurrentLeaves(t *testing.T) {
 	repo := newMemRepo()
-	svc := New(repo)
+	svc := New(repo, nil)
 	bank := gamerepo.TimeBankDuration.Milliseconds()
 	g := &gamerepo.Game{
 		ID:      "g2",
@@ -286,7 +288,7 @@ func TestResignAdvancesTurnWhenCurrentLeaves(t *testing.T) {
 
 func TestTimeBankExhaustedEliminatesPlayer(t *testing.T) {
 	repo := newMemRepo()
-	svc := New(repo)
+	svc := New(repo, nil)
 	bank := gamerepo.TimeBankDuration.Milliseconds()
 	g := &gamerepo.Game{
 		ID:      "g1",
@@ -323,7 +325,7 @@ func TestTimeBankExhaustedEliminatesPlayer(t *testing.T) {
 
 func TestEndTurnPausesBankAndStartsNext(t *testing.T) {
 	repo := newMemRepo()
-	svc := New(repo)
+	svc := New(repo, nil)
 	seedTwoPlayer(t, repo)
 
 	g, err := repo.FindByID(context.Background(), "g1")
@@ -349,5 +351,101 @@ func TestEndTurnPausesBankAndStartsNext(t *testing.T) {
 	}
 	if view.TurnStartedAt == "" {
 		t.Fatal("expected turnStartedAt for b")
+	}
+}
+
+type memSpaces []Space
+
+func (m memSpaces) ListSpaces(context.Context, string) ([]Space, error) {
+	return m, nil
+}
+
+func TestBuyUnownedProperty(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
+		{BoardIndex: 5, Slug: "air-1", Name: "Air Hub", Kind: "railroad", Price: 200},
+	}
+	svc := New(repo, spaces)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 1
+	g.Players[0].Cash = 2000
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	g.LastRoll = &gamerepo.LastRoll{
+		UserID: "a", Username: "A", Die1: 1, Die2: 0, Total: 1,
+		FromIndex: 0, ToIndex: 1,
+	}
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.Get(context.Background(), "g1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !view.CanBuy || view.BuyOffer == nil || view.BuyOffer.Price != 60 {
+		t.Fatalf("canBuy=%v offer=%v", view.CanBuy, view.BuyOffer)
+	}
+
+	view, err = svc.Buy(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Players[0].Cash != 1940 {
+		t.Fatalf("cash=%d", view.Players[0].Cash)
+	}
+	if len(view.Deeds) != 1 || view.Deeds[0].OwnerUserID != "a" || view.Deeds[0].BoardIndex != 1 {
+		t.Fatalf("deeds=%v", view.Deeds)
+	}
+	if view.CanBuy {
+		t.Fatal("should not canBuy after purchase")
+	}
+}
+
+func TestBuyCannotAfford(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
+	}
+	svc := New(repo, spaces)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 1
+	g.Players[0].Cash = 50
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	g.LastRoll = &gamerepo.LastRoll{
+		UserID: "a", Username: "A", Die1: 1, Die2: 0, Total: 1,
+		FromIndex: 0, ToIndex: 1,
+	}
+	_ = repo.Update(context.Background(), g)
+
+	_, err := svc.Buy(context.Background(), "g1", "a")
+	if !errors.Is(err, ErrCannotAfford) {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestBuyAlreadyOwned(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
+	}
+	svc := New(repo, spaces)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 1
+	g.Deeds = []gamerepo.Deed{{BoardIndex: 1, OwnerUserID: "b"}}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	g.LastRoll = &gamerepo.LastRoll{
+		UserID: "a", Username: "A", Die1: 1, Die2: 0, Total: 1,
+		FromIndex: 0, ToIndex: 1,
+	}
+	_ = repo.Update(context.Background(), g)
+
+	_, err := svc.Buy(context.Background(), "g1", "a")
+	if !errors.Is(err, ErrAlreadyOwned) {
+		t.Fatalf("err=%v", err)
 	}
 }

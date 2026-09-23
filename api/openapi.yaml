@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.10.0
+  version: 0.11.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -764,6 +764,56 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /games/{gameId}/buy:
+    post:
+      operationId: buyProperty
+      summary: Buy the unowned space you landed on
+      description: |
+        Phase 6.4 — purchase at list price when the current player occupies an unowned
+        property / railroad / utility after landing. Skipping buy = End turn without calling this
+        (deed stays unowned until Phase 13 auction).
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Not your turn, not buyable, already owned, cannot afford, or inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /locations:
     get:
       operationId: listLocations
@@ -1306,6 +1356,42 @@ components:
         thirdDoubles:
           type: boolean
           description: True when movement was skipped (Jail deferred to Phase 12)
+    GameDeed:
+      type: object
+      additionalProperties: false
+      required:
+        - boardIndex
+        - ownerUserId
+        - ownerUsername
+      properties:
+        boardIndex:
+          type: integer
+        ownerUserId:
+          type: string
+        ownerUsername:
+          type: string
+    GameBuyOffer:
+      type: object
+      additionalProperties: false
+      required:
+        - boardIndex
+        - slug
+        - name
+        - kind
+        - price
+      properties:
+        boardIndex:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+          enum: [property, railroad, utility]
+        price:
+          type: integer
+          description: List price in MeetCoin
     Game:
       type: object
       additionalProperties: false
@@ -1324,6 +1410,8 @@ components:
         - doublesStreak
         - canRoll
         - canEndTurn
+        - canBuy
+        - deeds
       properties:
         id:
           type: string
@@ -1360,6 +1448,17 @@ components:
           type: boolean
         canEndTurn:
           type: boolean
+        canBuy:
+          type: boolean
+          description: Current player may buy the space they just landed on (Phase 6.4)
+        buyOffer:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/GameBuyOffer"
+        deeds:
+          type: array
+          items:
+            $ref: "#/components/schemas/GameDeed"
         lastRoll:
           nullable: true
           allOf:

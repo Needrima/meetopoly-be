@@ -23,6 +23,9 @@ var (
 	ErrMustEndTurn   = errors.New("must end turn before rolling again")
 	ErrMustRoll      = errors.New("must roll before ending turn")
 	ErrAlreadyOut    = errors.New("already resigned")
+	ErrNotBuyable    = errors.New("space is not buyable")
+	ErrCannotAfford  = errors.New("insufficient MeetCoin")
+	ErrAlreadyOwned  = errors.New("space already owned")
 )
 
 // SeatInput is a seated lobby player used to bootstrap a game.
@@ -61,25 +64,44 @@ type LastRollView struct {
 	ThirdDoubles  bool   `json:"thirdDoubles"`
 }
 
+// DeedView is public ownership of a board space.
+type DeedView struct {
+	BoardIndex     int    `json:"boardIndex"`
+	OwnerUserID    string `json:"ownerUserId"`
+	OwnerUsername  string `json:"ownerUsername"`
+}
+
+// BuyOfferView is shown when the current player may buy the space they occupy.
+type BuyOfferView struct {
+	BoardIndex int    `json:"boardIndex"`
+	Slug       string `json:"slug"`
+	Name       string `json:"name"`
+	Kind       string `json:"kind"`
+	Price      int    `json:"price"`
+}
+
 // View is the public game snapshot.
 type View struct {
-	ID              string        `json:"id"`
-	TableID         string        `json:"tableId"`
-	WorldID         string        `json:"worldId"`
-	Status          string        `json:"status"`
-	Players         []PlayerView  `json:"players"`
-	CurrentTurn     int           `json:"currentTurn"`
-	CurrentUserID   string        `json:"currentUserId"`
-	CurrentUsername string        `json:"currentUsername"`
-	PassGoBonus     int           `json:"passGoBonus"`
-	Currency        string        `json:"currency"`
-	TurnPhase       string        `json:"turnPhase"`
-	DoublesStreak   int           `json:"doublesStreak"`
-	CanRoll         bool          `json:"canRoll"`
-	CanEndTurn      bool          `json:"canEndTurn"`
-	LastRoll        *LastRollView `json:"lastRoll"`
-	WinnerUserID    string        `json:"winnerUserId,omitempty"`
-	WinnerUsername  string        `json:"winnerUsername,omitempty"`
+	ID              string         `json:"id"`
+	TableID         string         `json:"tableId"`
+	WorldID         string         `json:"worldId"`
+	Status          string         `json:"status"`
+	Players         []PlayerView   `json:"players"`
+	CurrentTurn     int            `json:"currentTurn"`
+	CurrentUserID   string         `json:"currentUserId"`
+	CurrentUsername string         `json:"currentUsername"`
+	PassGoBonus     int            `json:"passGoBonus"`
+	Currency        string         `json:"currency"`
+	TurnPhase       string         `json:"turnPhase"`
+	DoublesStreak   int            `json:"doublesStreak"`
+	CanRoll         bool           `json:"canRoll"`
+	CanEndTurn      bool           `json:"canEndTurn"`
+	CanBuy          bool           `json:"canBuy"`
+	BuyOffer        *BuyOfferView  `json:"buyOffer"`
+	Deeds           []DeedView     `json:"deeds"`
+	LastRoll        *LastRollView  `json:"lastRoll"`
+	WinnerUserID    string         `json:"winnerUserId,omitempty"`
+	WinnerUsername  string         `json:"winnerUsername,omitempty"`
 	// TurnStartedAt — RFC3339 UTC; current player's bank drains from this instant.
 	TurnStartedAt string `json:"turnStartedAt,omitempty"`
 }
@@ -104,6 +126,7 @@ type Service interface {
 	Roll(ctx context.Context, gameID, userID string) (*View, error)
 	EndTurn(ctx context.Context, gameID, userID string) (*View, error)
 	Resign(ctx context.Context, gameID, userID string) (*View, error)
+	Buy(ctx context.Context, gameID, userID string) (*View, error)
 	SetBroadcaster(b Broadcaster)
 }
 
@@ -118,15 +141,17 @@ var pinPalette = []string{
 
 type service struct {
 	repo       gamerepo.Repository
+	spaces     SpaceCatalog
 	mu         sync.Mutex
 	bcast      Broadcaster
 	bankTimers map[string]*time.Timer
 }
 
-// New builds a game Service.
-func New(repo gamerepo.Repository) Service {
+// New builds a game Service. spaces may be nil in unit tests that never buy.
+func New(repo gamerepo.Repository, spaces SpaceCatalog) Service {
 	return &service{
 		repo:       repo,
+		spaces:     spaces,
 		bankTimers: make(map[string]*time.Timer),
 	}
 }
@@ -145,7 +170,7 @@ func (s *service) broadcast(gameID string, ev Event) {
 
 func (s *service) CreateFromSeats(ctx context.Context, tableID, worldID string, seats []SeatInput) (*View, error) {
 	if existing, err := s.repo.FindByTableID(ctx, tableID); err == nil {
-		return toView(existing), nil
+		return s.viewOf(ctx, existing), nil
 	} else if !errors.Is(err, gamerepo.ErrNotFound) {
 		return nil, err
 	}
@@ -202,11 +227,11 @@ func (s *service) CreateFromSeats(ctx context.Context, tableID, worldID string, 
 	if err := s.repo.Insert(ctx, g); err != nil {
 		s.cancelBankTimerLocked(g.ID)
 		if existing, findErr := s.repo.FindByTableID(ctx, tableID); findErr == nil {
-			return toView(existing), nil
+			return s.viewOf(ctx, existing), nil
 		}
 		return nil, err
 	}
-	return toView(g), nil
+	return s.viewOf(ctx, g), nil
 }
 
 func (s *service) Get(ctx context.Context, gameID string) (*View, error) {
@@ -223,11 +248,11 @@ func (s *service) Get(ctx context.Context, gameID string) (*View, error) {
 	if changed, err := s.syncTimeBankLocked(ctx, g); err != nil {
 		return nil, err
 	} else if changed {
-		return toView(g), nil
+		return s.viewOf(ctx, g), nil
 	}
 	s.ensureBanksLocked(g)
 	s.armBankTimerLocked(g)
-	return toView(g), nil
+	return s.viewOf(ctx, g), nil
 }
 
 func (s *service) GetByTableID(ctx context.Context, tableID string) (*View, error) {
@@ -244,11 +269,11 @@ func (s *service) GetByTableID(ctx context.Context, tableID string) (*View, erro
 	if changed, err := s.syncTimeBankLocked(ctx, g); err != nil {
 		return nil, err
 	} else if changed {
-		return toView(g), nil
+		return s.viewOf(ctx, g), nil
 	}
 	s.ensureBanksLocked(g)
 	s.armBankTimerLocked(g)
-	return toView(g), nil
+	return s.viewOf(ctx, g), nil
 }
 
 func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error) {
@@ -270,7 +295,7 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 		return nil, err
 	}
 	if g.Status != gamerepo.StatusActive {
-		return toView(g), nil
+		return s.viewOf(ctx, g), nil
 	}
 
 	playerIdx, err := requireCurrentPlayer(g, userID)
@@ -339,7 +364,7 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 	if err := s.repo.Update(ctx, g); err != nil {
 		return nil, err
 	}
-	view := toView(g)
+	view := s.viewOf(ctx, g)
 	s.broadcast(gameID, Event{Type: "state", Game: view})
 	return view, nil
 }
@@ -363,7 +388,7 @@ func (s *service) EndTurn(ctx context.Context, gameID, userID string) (*View, er
 		return nil, err
 	}
 	if g.Status != gamerepo.StatusActive {
-		return toView(g), nil
+		return s.viewOf(ctx, g), nil
 	}
 
 	if _, err := requireCurrentPlayer(g, userID); err != nil {
@@ -397,7 +422,7 @@ func (s *service) EndTurn(ctx context.Context, gameID, userID string) (*View, er
 	if err := s.repo.Update(ctx, g); err != nil {
 		return nil, err
 	}
-	view := toView(g)
+	view := s.viewOf(ctx, g)
 	s.broadcast(gameID, Event{Type: "state", Game: view})
 	return view, nil
 }
@@ -422,7 +447,7 @@ func (s *service) Resign(ctx context.Context, gameID, userID string) (*View, err
 		return nil, err
 	}
 	if g.Status != gamerepo.StatusActive {
-		return toView(g), nil
+		return s.viewOf(ctx, g), nil
 	}
 
 	playerIdx := -1
@@ -458,7 +483,61 @@ func (s *service) Resign(ctx context.Context, gameID, userID string) (*View, err
 	if err := s.repo.Update(ctx, g); err != nil {
 		return nil, err
 	}
-	view := toView(g)
+	view := s.viewOf(ctx, g)
+	s.broadcast(gameID, Event{Type: "state", Game: view})
+	return view, nil
+}
+
+// Buy purchases the unowned buyable space the current player occupies (Phase 6.4).
+func (s *service) Buy(ctx context.Context, gameID, userID string) (*View, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	g, err := s.repo.FindByID(ctx, gameID)
+	if err != nil {
+		if errors.Is(err, gamerepo.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return nil, ErrInactive
+	}
+	normalizeTurnPhase(g)
+	if _, err := s.syncTimeBankLocked(ctx, g); err != nil {
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return s.viewOf(ctx, g), nil
+	}
+
+	playerIdx, err := requireCurrentPlayer(g, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	spaces := s.loadSpaces(ctx, g.WorldID)
+	sp := spaceAt(spaces, g.Players[playerIdx].BoardIndex)
+	if sp == nil || !isBuyableKind(sp.Kind) || sp.Price <= 0 {
+		return nil, ErrNotBuyable
+	}
+	if ownerOf(g.Deeds, sp.BoardIndex) != "" {
+		return nil, ErrAlreadyOwned
+	}
+	if g.Players[playerIdx].Cash < sp.Price {
+		return nil, ErrCannotAfford
+	}
+
+	g.Players[playerIdx].Cash -= sp.Price
+	g.Deeds = append(g.Deeds, gamerepo.Deed{
+		BoardIndex:  sp.BoardIndex,
+		OwnerUserID: userID,
+	})
+	g.UpdatedAt = time.Now().UTC()
+	if err := s.repo.Update(ctx, g); err != nil {
+		return nil, err
+	}
+	view := s.viewOf(ctx, g)
 	s.broadcast(gameID, Event{Type: "state", Game: view})
 	return view, nil
 }
@@ -645,7 +724,7 @@ func (s *service) syncTimeBankLocked(ctx context.Context, g *gamerepo.Game) (boo
 	if err := s.repo.Update(ctx, g); err != nil {
 		return false, err
 	}
-	s.broadcast(g.ID, Event{Type: "state", Game: toView(g)})
+	s.broadcast(g.ID, Event{Type: "state", Game: s.viewOf(ctx, g)})
 	return true, nil
 }
 
@@ -712,13 +791,30 @@ func liveRemainingMs(g *gamerepo.Game, p gamerepo.Player, now time.Time) int64 {
 	return left
 }
 
-func toView(g *gamerepo.Game) *View {
+func (s *service) loadSpaces(ctx context.Context, worldID string) []Space {
+	if s.spaces == nil {
+		return nil
+	}
+	spaces, err := s.spaces.ListSpaces(ctx, worldID)
+	if err != nil {
+		return nil
+	}
+	return spaces
+}
+
+func (s *service) viewOf(ctx context.Context, g *gamerepo.Game) *View {
+	return toView(g, s.loadSpaces(ctx, g.WorldID))
+}
+
+func toView(g *gamerepo.Game, spaces []Space) *View {
 	normalizeTurnPhase(g)
 	now := time.Now().UTC()
 	players := make([]PlayerView, len(g.Players))
 	currentUserID := ""
 	currentUsername := ""
+	nameByID := make(map[string]string, len(g.Players))
 	for i, p := range g.Players {
+		nameByID[p.UserID] = p.Username
 		players[i] = PlayerView{
 			UserID:          p.UserID,
 			Username:        p.Username,
@@ -734,6 +830,14 @@ func toView(g *gamerepo.Game) *View {
 			currentUserID = p.UserID
 			currentUsername = p.Username
 		}
+	}
+	deeds := make([]DeedView, 0, len(g.Deeds))
+	for _, d := range g.Deeds {
+		deeds = append(deeds, DeedView{
+			BoardIndex:    d.BoardIndex,
+			OwnerUserID:   d.OwnerUserID,
+			OwnerUsername: nameByID[d.OwnerUserID],
+		})
 	}
 	var last *LastRollView
 	if g.LastRoll != nil {
@@ -758,6 +862,32 @@ func toView(g *gamerepo.Game) *View {
 	if active && !g.TurnStartedAt.IsZero() {
 		started = g.TurnStartedAt.UTC().Format(time.RFC3339Nano)
 	}
+
+	var buyOffer *BuyOfferView
+	canBuy := false
+	if active && currentUserID != "" {
+		idx := currentPlayerIndex(g)
+		if idx >= 0 && !g.Players[idx].Resigned {
+			sp := spaceAt(spaces, g.Players[idx].BoardIndex)
+			if sp != nil && isBuyableKind(sp.Kind) && sp.Price > 0 && ownerOf(g.Deeds, sp.BoardIndex) == "" {
+				landedThisTurn := g.LastRoll != nil &&
+					g.LastRoll.UserID == currentUserID &&
+					g.LastRoll.ToIndex == sp.BoardIndex &&
+					!g.LastRoll.ThirdDoubles
+				if landedThisTurn {
+					buyOffer = &BuyOfferView{
+						BoardIndex: sp.BoardIndex,
+						Slug:       sp.Slug,
+						Name:       sp.Name,
+						Kind:       sp.Kind,
+						Price:      sp.Price,
+					}
+					canBuy = true
+				}
+			}
+		}
+	}
+
 	return &View{
 		ID:              g.ID,
 		TableID:         g.TableID,
@@ -773,6 +903,9 @@ func toView(g *gamerepo.Game) *View {
 		DoublesStreak:   g.DoublesStreak,
 		CanRoll:         active && phase == gamerepo.TurnPhaseAwaitingRoll,
 		CanEndTurn:      active && phase == gamerepo.TurnPhaseAwaitingEnd,
+		CanBuy:          canBuy,
+		BuyOffer:        buyOffer,
+		Deeds:           deeds,
 		LastRoll:        last,
 		WinnerUserID:    g.WinnerUserID,
 		WinnerUsername:  g.WinnerUsername,

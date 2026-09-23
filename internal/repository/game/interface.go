@@ -38,6 +38,12 @@ type Player struct {
 	TimeRemainingMs int64 `bson:"timeRemainingMs" json:"timeRemainingMs"`
 }
 
+// Deed is ownership of a buyable board space (Phase 6.4).
+type Deed struct {
+	BoardIndex  int    `bson:"boardIndex" json:"boardIndex"`
+	OwnerUserID string `bson:"ownerUserId" json:"ownerUserId"`
+}
+
 // LastRoll is the most recent dice result (Phase 6.1+).
 type LastRoll struct {
 	UserID        string `bson:"userId" json:"userId"`
@@ -64,6 +70,8 @@ type Game struct {
 	Players     []Player `bson:"players" json:"players"`
 	CurrentTurn int      `bson:"currentTurn" json:"currentTurn"` // turnOrder of active player
 	PassGoBonus int      `bson:"passGoBonus" json:"passGoBonus"`
+	// Deeds — owned buyable spaces (Phase 6.4). Unowned spaces are absent.
+	Deeds []Deed `bson:"deeds,omitempty" json:"deeds,omitempty"`
 	// TurnPhase — awaiting_roll | awaiting_end (Phase 6.2).
 	TurnPhase string `bson:"turnPhase" json:"turnPhase"`
 	// DoublesStreak — consecutive doubles this turn (0–3).
