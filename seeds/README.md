@@ -45,6 +45,8 @@ If a continent has extra cities after filling 22: leftovers **&lt; 15** stay unu
 | `oceania-1` | 40 | Padded with in-world repeats |
 | `central-america-1` | 40 | Padded with in-world repeats |
 
+Property `colorGroup` follows classic Monopoly bands by `boardIndex` (e.g. 31/32/34 green, 37/39 darkBlue) on every world.
+
 City icons: [svgcities.com](https://svgcities.com/) / [anto1/city-icons](https://github.com/anto1/city-icons) (CC BY 4.0).
 
 ### Fields

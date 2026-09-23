@@ -217,7 +217,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 9.600000000000001,
       "z": 24,
@@ -290,7 +290,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 4.799999999999997,
       "z": 24,
@@ -336,7 +336,7 @@
       600
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 2.3999999999999986,
       "z": 24,
@@ -1307,7 +1307,7 @@
       1500
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "green",
     "map": {
       "x": 24,
       "z": 12.0,
@@ -1410,7 +1410,7 @@
       2000
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 24,
       "z": 16.799999999999997,
@@ -1484,7 +1484,7 @@
       1275
     ],
     "houseCost": 200,
-    "colorGroup": "violet",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 24,
       "z": 21.6,
@@ -1731,7 +1731,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 7.58,
       "z": 0.0,
@@ -1803,7 +1803,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 12.63,
       "z": 0.0,
@@ -1852,7 +1852,7 @@
       600
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 17.68,
       "z": 0.0,
@@ -2922,7 +2922,7 @@
       1500
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 0.0,
       "z": 15.16,
@@ -2995,7 +2995,7 @@
       2000
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 0.0,
       "z": 10.11,
@@ -3241,7 +3241,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 7.58,
       "z": 0.0,
@@ -3313,7 +3313,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 12.63,
       "z": 0.0,
@@ -3361,7 +3361,7 @@
       600
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 17.68,
       "z": 0.0,
@@ -4439,7 +4439,7 @@
       1500
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 0.0,
       "z": 15.16,
@@ -4512,7 +4512,7 @@
       2000
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 0.0,
       "z": 10.11,
@@ -4761,7 +4761,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 20.0,
       "z": 0.0,
@@ -4834,7 +4834,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 24.0,
       "z": 4.0,
@@ -4879,7 +4879,7 @@
       600
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 24.0,
       "z": 12.0,
@@ -5547,7 +5547,7 @@
       250
     ],
     "houseCost": 50,
-    "colorGroup": "brown",
+    "colorGroup": "yellow",
     "map": {
       "x": 4.0,
       "z": 0.0,
@@ -5595,7 +5595,7 @@
       450
     ],
     "houseCost": 50,
-    "colorGroup": "brown",
+    "colorGroup": "yellow",
     "map": {
       "x": 12.0,
       "z": 0.0,
@@ -5672,7 +5672,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "yellow",
     "map": {
       "x": 20.0,
       "z": 0.0,
@@ -5745,7 +5745,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "green",
     "map": {
       "x": 24.0,
       "z": 4.0,
@@ -5790,7 +5790,7 @@
       600
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "green",
     "map": {
       "x": 24.0,
       "z": 12.0,
@@ -5863,7 +5863,7 @@
       750
     ],
     "houseCost": 100,
-    "colorGroup": "pink",
+    "colorGroup": "green",
     "map": {
       "x": 24.0,
       "z": 20.0,
@@ -5967,7 +5967,7 @@
       750
     ],
     "houseCost": 100,
-    "colorGroup": "pink",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 20.0,
       "z": 24.0,
@@ -6040,7 +6040,7 @@
       900
     ],
     "houseCost": 100,
-    "colorGroup": "pink",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 12.0,
       "z": 24.0,
@@ -6289,7 +6289,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 6.86,
       "z": 0.0,
@@ -6361,7 +6361,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 11.43,
       "z": 0.0,
@@ -6407,7 +6407,7 @@
       600
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 16.0,
       "z": 0.0,
@@ -7482,7 +7482,7 @@
       1500
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 0.0,
       "z": 20.57,
@@ -7555,7 +7555,7 @@
       2000
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 0.0,
       "z": 18.29,
@@ -7803,7 +7803,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 6.86,
       "z": 0.0,
@@ -7875,7 +7875,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 11.43,
       "z": 0.0,
@@ -7922,7 +7922,7 @@
       600
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 16.0,
       "z": 0.0,
@@ -8992,7 +8992,7 @@
       1500
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 0.0,
       "z": 20.57,
@@ -9067,7 +9067,7 @@
       2000
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 0.0,
       "z": 18.29,
@@ -9314,7 +9314,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 6.86,
       "z": 0.0,
@@ -9385,7 +9385,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 11.43,
       "z": 0.0,
@@ -9430,7 +9430,7 @@
       600
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 16.0,
       "z": 0.0,
@@ -10497,7 +10497,7 @@
       1500
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 0.0,
       "z": 20.57,
@@ -10571,7 +10571,7 @@
       2000
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 0.0,
       "z": 18.29,
@@ -10822,7 +10822,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 6.86,
       "z": 0.0,
@@ -10895,7 +10895,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 11.43,
       "z": 0.0,
@@ -10940,7 +10940,7 @@
       600
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 16.0,
       "z": 0.0,
@@ -12012,7 +12012,7 @@
       1500
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 0.0,
       "z": 20.57,
@@ -12085,7 +12085,7 @@
       2000
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 0.0,
       "z": 18.29,
@@ -12330,7 +12330,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 6.86,
       "z": 0.0,
@@ -12403,7 +12403,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 11.43,
       "z": 0.0,
@@ -12451,7 +12451,7 @@
       600
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 16.0,
       "z": 0.0,
@@ -13530,7 +13530,7 @@
       1500
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 0.0,
       "z": 20.57,
@@ -13603,7 +13603,7 @@
       2000
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 0.0,
       "z": 18.29,
@@ -13849,7 +13849,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 7.02,
       "z": 0.0,
@@ -13923,7 +13923,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 11.71,
       "z": 0.0,
@@ -13969,7 +13969,7 @@
       600
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 16.39,
       "z": 0.0,
@@ -15036,7 +15036,7 @@
       1500
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 0.0,
       "z": 18.73,
@@ -15107,7 +15107,7 @@
       2000
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 0.0,
       "z": 14.05,
@@ -15355,7 +15355,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 6.26,
       "z": 0.0,
@@ -15428,7 +15428,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 10.43,
       "z": 0.0,
@@ -15476,7 +15476,7 @@
       600
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 12.52,
       "z": 0.0,
@@ -16555,7 +16555,7 @@
       1500
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 7.3,
       "z": 24.0,
@@ -16627,7 +16627,7 @@
       2000
     ],
     "houseCost": 200,
-    "colorGroup": "darkblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 3.13,
       "z": 24.0,
@@ -16876,7 +16876,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 20.0,
       "z": 0.0,
@@ -16948,7 +16948,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 24.0,
       "z": 4.0,
@@ -16995,7 +16995,7 @@
       600
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 24.0,
       "z": 12.0,
@@ -17652,7 +17652,7 @@
       250
     ],
     "houseCost": 50,
-    "colorGroup": "brown",
+    "colorGroup": "yellow",
     "map": {
       "x": 4.0,
       "z": 0.0,
@@ -17698,7 +17698,7 @@
       450
     ],
     "houseCost": 50,
-    "colorGroup": "brown",
+    "colorGroup": "yellow",
     "map": {
       "x": 12.0,
       "z": 0.0,
@@ -17775,7 +17775,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "yellow",
     "map": {
       "x": 20.0,
       "z": 0.0,
@@ -17847,7 +17847,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "green",
     "map": {
       "x": 24.0,
       "z": 4.0,
@@ -17894,7 +17894,7 @@
       600
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "green",
     "map": {
       "x": 24.0,
       "z": 12.0,
@@ -17965,7 +17965,7 @@
       750
     ],
     "houseCost": 100,
-    "colorGroup": "pink",
+    "colorGroup": "green",
     "map": {
       "x": 24.0,
       "z": 20.0,
@@ -18069,7 +18069,7 @@
       750
     ],
     "houseCost": 100,
-    "colorGroup": "pink",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 20.0,
       "z": 24.0,
@@ -18142,7 +18142,7 @@
       900
     ],
     "houseCost": 100,
-    "colorGroup": "pink",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 12.0,
       "z": 24.0,
@@ -18389,7 +18389,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 11.64,
       "z": 0.0,
@@ -18459,7 +18459,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 17.45,
       "z": 0.0,
@@ -18506,7 +18506,7 @@
       600
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "lightBlue",
     "map": {
       "x": 23.27,
       "z": 0.0,
@@ -19408,7 +19408,7 @@
       250
     ],
     "houseCost": 50,
-    "colorGroup": "brown",
+    "colorGroup": "green",
     "map": {
       "x": 2.91,
       "z": 0.0,
@@ -19480,7 +19480,7 @@
       450
     ],
     "houseCost": 50,
-    "colorGroup": "brown",
+    "colorGroup": "green",
     "map": {
       "x": 5.82,
       "z": 0.0,
@@ -19581,7 +19581,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 11.64,
       "z": 0.0,
@@ -19652,7 +19652,7 @@
       550
     ],
     "houseCost": 50,
-    "colorGroup": "lightblue",
+    "colorGroup": "darkBlue",
     "map": {
       "x": 17.45,
       "z": 0.0,

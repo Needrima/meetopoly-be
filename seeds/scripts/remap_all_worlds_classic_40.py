@@ -68,6 +68,32 @@ CLASSIC: dict[int, tuple[str, str | None]] = {
 RAIL_SLOTS = [5, 15, 25, 35]
 UTIL_SLOTS = [12, 28]  # power, water
 
+# Classic Monopoly property color bands by boardIndex
+CLASSIC_COLOR_GROUP: dict[int, str] = {
+    1: "brown",
+    3: "brown",
+    6: "lightBlue",
+    8: "lightBlue",
+    9: "lightBlue",
+    11: "pink",
+    13: "pink",
+    14: "pink",
+    16: "orange",
+    18: "orange",
+    19: "orange",
+    21: "red",
+    23: "red",
+    24: "red",
+    26: "yellow",
+    27: "yellow",
+    29: "yellow",
+    31: "green",
+    32: "green",
+    34: "green",
+    37: "darkBlue",
+    39: "darkBlue",
+}
+
 
 def find_by_special(docs: list[dict], st: str) -> dict | None:
     for d in docs:
@@ -382,6 +408,10 @@ def remap_world(world_id: str, docs: list[dict], africa_donor: list[dict]) -> li
         doc = deepcopy(doc)
         doc["worldId"] = world_id
         doc["boardIndex"] = idx
+        if kind == "property":
+            cg = CLASSIC_COLOR_GROUP.get(idx)
+            if cg:
+                doc["colorGroup"] = cg
         out.append(doc)
 
     unique_board_codes(out)
