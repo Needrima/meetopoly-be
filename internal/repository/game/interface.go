@@ -6,7 +6,8 @@ import (
 )
 
 const (
-	StatusActive = "active"
+	StatusActive   = "active"
+	StatusFinished = "finished"
 
 	StartingCash    = 2000
 	PassGoBonus     = 200
@@ -28,6 +29,8 @@ type Player struct {
 	Cash       int    `bson:"cash" json:"cash"`
 	BoardIndex int    `bson:"boardIndex" json:"boardIndex"`
 	PinColor   string `bson:"pinColor" json:"pinColor"`
+	// Resigned — left mid-game (Phase 6.2c); skipped for turns. Assets frozen until Phase 14.
+	Resigned bool `bson:"resigned,omitempty" json:"resigned,omitempty"`
 }
 
 // LastRoll is the most recent dice result (Phase 6.1+).
@@ -49,20 +52,23 @@ type LastRoll struct {
 
 // Game is the authoritative M1 session (Phase 6+).
 type Game struct {
-	ID          string `bson:"_id" json:"id"`
-	TableID     string `bson:"tableId" json:"tableId"`
-	WorldID     string `bson:"worldId" json:"worldId"`
-	Status      string `bson:"status" json:"status"`
+	ID          string   `bson:"_id" json:"id"`
+	TableID     string   `bson:"tableId" json:"tableId"`
+	WorldID     string   `bson:"worldId" json:"worldId"`
+	Status      string   `bson:"status" json:"status"`
 	Players     []Player `bson:"players" json:"players"`
-	CurrentTurn int    `bson:"currentTurn" json:"currentTurn"` // turnOrder of active player
-	PassGoBonus int    `bson:"passGoBonus" json:"passGoBonus"`
+	CurrentTurn int      `bson:"currentTurn" json:"currentTurn"` // turnOrder of active player
+	PassGoBonus int      `bson:"passGoBonus" json:"passGoBonus"`
 	// TurnPhase — awaiting_roll | awaiting_end (Phase 6.2).
 	TurnPhase string `bson:"turnPhase" json:"turnPhase"`
 	// DoublesStreak — consecutive doubles this turn (0–3).
 	DoublesStreak int       `bson:"doublesStreak" json:"doublesStreak"`
 	LastRoll      *LastRoll `bson:"lastRoll,omitempty" json:"lastRoll,omitempty"`
-	CreatedAt     time.Time `bson:"createdAt" json:"createdAt"`
-	UpdatedAt     time.Time `bson:"updatedAt" json:"updatedAt"`
+	// WinnerUserID — set when StatusFinished (Phase 6.2c last player standing).
+	WinnerUserID   string    `bson:"winnerUserId,omitempty" json:"winnerUserId,omitempty"`
+	WinnerUsername string    `bson:"winnerUsername,omitempty" json:"winnerUsername,omitempty"`
+	CreatedAt      time.Time `bson:"createdAt" json:"createdAt"`
+	UpdatedAt      time.Time `bson:"updatedAt" json:"updatedAt"`
 }
 
 // Repository persists games.

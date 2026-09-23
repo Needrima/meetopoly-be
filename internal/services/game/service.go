@@ -22,6 +22,7 @@ var (
 	ErrInactive      = errors.New("game is not active")
 	ErrMustEndTurn   = errors.New("must end turn before rolling again")
 	ErrMustRoll      = errors.New("must roll before ending turn")
+	ErrAlreadyOut    = errors.New("already resigned")
 )
 
 // SeatInput is a seated lobby player used to bootstrap a game.
@@ -40,6 +41,7 @@ type PlayerView struct {
 	Cash       int    `json:"cash"`
 	BoardIndex int    `json:"boardIndex"`
 	PinColor   string `json:"pinColor"`
+	Resigned   bool   `json:"resigned"`
 }
 
 // LastRollView is the public last-dice snapshot.
@@ -75,6 +77,8 @@ type View struct {
 	CanRoll         bool          `json:"canRoll"`
 	CanEndTurn      bool          `json:"canEndTurn"`
 	LastRoll        *LastRollView `json:"lastRoll"`
+	WinnerUserID    string        `json:"winnerUserId,omitempty"`
+	WinnerUsername  string        `json:"winnerUsername,omitempty"`
 }
 
 // Event is pushed to WebSocket subscribers (Phase 6 realtime).
@@ -96,6 +100,7 @@ type Service interface {
 	GetByTableID(ctx context.Context, tableID string) (*View, error)
 	Roll(ctx context.Context, gameID, userID string) (*View, error)
 	EndTurn(ctx context.Context, gameID, userID string) (*View, error)
+	Resign(ctx context.Context, gameID, userID string) (*View, error)
 	SetBroadcaster(b Broadcaster)
 }
 
@@ -330,12 +335,64 @@ func (s *service) EndTurn(ctx context.Context, gameID, userID string) (*View, er
 
 	n := len(g.Players)
 	if n > 0 {
-		g.CurrentTurn = (g.CurrentTurn + 1) % n
+		advanceToNextActive(g)
 	}
 	g.DoublesStreak = 0
 	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
 	g.UpdatedAt = time.Now().UTC()
 
+	if err := s.repo.Update(ctx, g); err != nil {
+		return nil, err
+	}
+	view := toView(g)
+	s.broadcast(gameID, Event{Type: "state", Game: view})
+	return view, nil
+}
+
+// Resign marks the caller as out (Phase 6.2c). Leaving the board mid-game is resigning.
+// If only one active player remains, they win and the game finishes.
+func (s *service) Resign(ctx context.Context, gameID, userID string) (*View, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	g, err := s.repo.FindByID(ctx, gameID)
+	if err != nil {
+		if errors.Is(err, gamerepo.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return nil, ErrInactive
+	}
+	normalizeTurnPhase(g)
+
+	playerIdx := -1
+	for i := range g.Players {
+		if g.Players[i].UserID == userID {
+			playerIdx = i
+			break
+		}
+	}
+	if playerIdx < 0 {
+		return nil, ErrNotPlayer
+	}
+	if g.Players[playerIdx].Resigned {
+		return nil, ErrAlreadyOut
+	}
+
+	g.Players[playerIdx].Resigned = true
+	wasCurrent := g.Players[playerIdx].TurnOrder == g.CurrentTurn
+
+	if finishIfOneActive(g) {
+		// winner set
+	} else if wasCurrent {
+		advanceToNextActive(g)
+		g.DoublesStreak = 0
+		g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+	}
+
+	g.UpdatedAt = time.Now().UTC()
 	if err := s.repo.Update(ctx, g); err != nil {
 		return nil, err
 	}
@@ -355,10 +412,58 @@ func requireCurrentPlayer(g *gamerepo.Game, userID string) (int, error) {
 	if playerIdx < 0 {
 		return -1, ErrNotPlayer
 	}
+	if g.Players[playerIdx].Resigned {
+		return -1, ErrAlreadyOut
+	}
 	if g.Players[playerIdx].TurnOrder != g.CurrentTurn {
 		return -1, ErrNotYourTurn
 	}
 	return playerIdx, nil
+}
+
+func playerByTurnOrder(g *gamerepo.Game, turnOrder int) *gamerepo.Player {
+	for i := range g.Players {
+		if g.Players[i].TurnOrder == turnOrder {
+			return &g.Players[i]
+		}
+	}
+	return nil
+}
+
+func advanceToNextActive(g *gamerepo.Game) {
+	n := len(g.Players)
+	if n == 0 {
+		return
+	}
+	for i := 0; i < n; i++ {
+		g.CurrentTurn = (g.CurrentTurn + 1) % n
+		p := playerByTurnOrder(g, g.CurrentTurn)
+		if p != nil && !p.Resigned {
+			return
+		}
+	}
+}
+
+// finishIfOneActive sets finished + winner when exactly one active player remains.
+func finishIfOneActive(g *gamerepo.Game) bool {
+	var winner *gamerepo.Player
+	active := 0
+	for i := range g.Players {
+		if g.Players[i].Resigned {
+			continue
+		}
+		active++
+		winner = &g.Players[i]
+	}
+	if active != 1 || winner == nil {
+		return false
+	}
+	g.Status = gamerepo.StatusFinished
+	g.WinnerUserID = winner.UserID
+	g.WinnerUsername = winner.Username
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+	g.DoublesStreak = 0
+	return true
 }
 
 func normalizeTurnPhase(g *gamerepo.Game) {
@@ -391,8 +496,9 @@ func toView(g *gamerepo.Game) *View {
 			Cash:       p.Cash,
 			BoardIndex: p.BoardIndex,
 			PinColor:   p.PinColor,
+			Resigned:   p.Resigned,
 		}
-		if p.TurnOrder == g.CurrentTurn {
+		if !p.Resigned && p.TurnOrder == g.CurrentTurn {
 			currentUserID = p.UserID
 			currentUsername = p.Username
 		}
@@ -415,6 +521,7 @@ func toView(g *gamerepo.Game) *View {
 		}
 	}
 	phase := g.TurnPhase
+	active := g.Status == gamerepo.StatusActive
 	return &View{
 		ID:              g.ID,
 		TableID:         g.TableID,
@@ -428,8 +535,10 @@ func toView(g *gamerepo.Game) *View {
 		Currency:        "MeetCoin",
 		TurnPhase:       phase,
 		DoublesStreak:   g.DoublesStreak,
-		CanRoll:         phase == gamerepo.TurnPhaseAwaitingRoll,
-		CanEndTurn:      phase == gamerepo.TurnPhaseAwaitingEnd,
+		CanRoll:         active && phase == gamerepo.TurnPhaseAwaitingRoll,
+		CanEndTurn:      active && phase == gamerepo.TurnPhaseAwaitingEnd,
 		LastRoll:        last,
+		WinnerUserID:    g.WinnerUserID,
+		WinnerUsername:  g.WinnerUsername,
 	}
 }

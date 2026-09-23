@@ -55,6 +55,23 @@ func handleEndTurn(games gamesvc.Service) http.HandlerFunc {
 	}
 }
 
+func handleResignGame(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		view, err := games.Resign(r.Context(), gameID, userID)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
 func mapGameError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, gamesvc.ErrNotFound):
@@ -71,6 +88,8 @@ func mapGameError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "must_end_turn", "End your turn before rolling again")
 	case errors.Is(err, gamesvc.ErrMustRoll):
 		writeError(w, http.StatusConflict, "must_roll", "Roll before ending your turn")
+	case errors.Is(err, gamesvc.ErrAlreadyOut):
+		writeError(w, http.StatusConflict, "already_out", "You already resigned from this game")
 	default:
 		writeError(w, http.StatusInternalServerError, "internal_error", "Something went wrong")
 	}

@@ -506,9 +506,17 @@ Roll → move (+pass GO if applicable) → resolve space →
 | **6.1** | ✅ Dice + pin move + pass-GO; tile-by-tile motion; auto-advance (interim) | Buy, rent, End UI |
 | **6.2** | ✅ Explicit **End** + **doubles** re-roll; stop auto-advance after roll; **game WS** push | Buy, auction, Jail |
 | **6.2b** | ✅ Dice **roll animation** (Moti) on all devices when `lastRoll` updates; hold pin walk until dice land | Timer, buy, Lottie pack unless asked |
+| **6.2c** | Leave board = **resign** (confirm); notify via game WS; last active player **wins** | Full bankruptcy asset transfer (→ Phase 14); app-kill hold |
 | **6.3** | 5-min turn timer + skip | Hubs / presence |
 | **6.4** | **Buy at list price** for unowned city / airport / utility; ownership on game doc | Auction (→ Phase 13); if player skips buy, property stays unowned until 13 |
 | **6.5** | **Rent** (+ tax to Bank; own tile = noop); classic rail/util formulas | Houses, mortgage, cards |
+
+**6.2c notes**
+
+- ⋯ Leave → confirm (“leaving = resigning”) → `POST /games/{id}/resign`.
+- Mark `resigned`; skip for turns; freeze assets until Phase 14.
+- Game WS pushes updated `Game`; if one active player left → `status: finished` + winner fields.
+- Explicit Leave only this slice (disconnect/app-kill hold later).
 
 **6.2b notes (client-only)**
 
@@ -540,6 +548,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 - [x] **6.1:** roll + tile walk + pass GO +200; interim auto-advance
 - [x] **6.2:** End turn + doubles re-roll; third doubles skips move (Jail later); game WS
 - [x] **6.2b:** synced dice roll animation; pin walk waits for dice to land
+- [x] **6.2c:** resign on Leave + last-player-wins
 ---
 
 ### Phase 7 — Dual presence + board/hub avatar sync (DataChannels)
@@ -763,3 +772,4 @@ Only when the user asks:
 | 2026-09-23 | **Game WS:** `/ws/games/{id}` push on roll/end-turn; mobile drops 2s poll (5s fallback if socket down) |
 | 2026-09-23 | **6.2b** added: synced dice roll animation (client Moti/Reanimated on `lastRoll`; pin walk waits) |
 | 2026-09-23 | **6.2b:** Moti dice overlay + `useDiceRollMotion`; pin `holdWalk` until tumble settles |
+| 2026-09-23 | **6.2c:** Leave = resign (confirm); last active player wins; `POST /games/{id}/resign` |

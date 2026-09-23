@@ -222,3 +222,59 @@ func TestPassGoStillWorks(t *testing.T) {
 	}
 	t.Fatal("exhausted")
 }
+
+func TestResignLastPlayerWins(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo)
+	seedTwoPlayer(t, repo)
+
+	view, err := svc.Resign(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Status != gamerepo.StatusFinished {
+		t.Fatalf("status=%s", view.Status)
+	}
+	if view.WinnerUserID != "b" || view.WinnerUsername != "B" {
+		t.Fatalf("winner=%s/%s", view.WinnerUserID, view.WinnerUsername)
+	}
+	if !view.Players[0].Resigned {
+		t.Fatal("a should be resigned")
+	}
+	if view.Players[1].Resigned {
+		t.Fatal("b should still be active")
+	}
+}
+
+func TestResignAdvancesTurnWhenCurrentLeaves(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo)
+	g := &gamerepo.Game{
+		ID:      "g2",
+		TableID: "t2",
+		WorldID: "africa-1",
+		Status:  gamerepo.StatusActive,
+		Players: []gamerepo.Player{
+			{UserID: "a", Username: "A", SeatIndex: 0, TurnOrder: 0, Cash: 2000, BoardIndex: 0, PinColor: "#f00"},
+			{UserID: "b", Username: "B", SeatIndex: 1, TurnOrder: 1, Cash: 2000, BoardIndex: 0, PinColor: "#0f0"},
+			{UserID: "c", Username: "C", SeatIndex: 2, TurnOrder: 2, Cash: 2000, BoardIndex: 0, PinColor: "#00f"},
+		},
+		CurrentTurn: 0,
+		PassGoBonus: 200,
+		TurnPhase:   gamerepo.TurnPhaseAwaitingRoll,
+	}
+	if err := repo.Insert(context.Background(), g); err != nil {
+		t.Fatal(err)
+	}
+
+	view, err := svc.Resign(context.Background(), "g2", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Status != gamerepo.StatusActive {
+		t.Fatalf("status=%s", view.Status)
+	}
+	if view.CurrentUserID != "b" {
+		t.Fatalf("current=%s", view.CurrentUserID)
+	}
+}

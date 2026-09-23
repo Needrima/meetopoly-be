@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.7.0
+  version: 0.8.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -713,6 +713,57 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /games/{gameId}/resign:
+    post:
+      operationId: resignGame
+      summary: Resign and leave the game
+      description: |
+        Phase 6.2c — voluntary leave mid-game counts as resigning.
+        Marks the caller `resigned`, skips them for turns, broadcasts state.
+        If only one active player remains, that player wins and `status` becomes `finished`.
+        Asset transfer / bankruptcy cleanup stays Phase 14.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Already resigned or game inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /locations:
     get:
       operationId: listLocations
@@ -1177,6 +1228,7 @@ components:
         - cash
         - boardIndex
         - pinColor
+        - resigned
       properties:
         userId:
           type: string
@@ -1195,6 +1247,9 @@ components:
         pinColor:
           type: string
           description: Hex accent for the pin
+        resigned:
+          type: boolean
+          description: Left mid-game (Phase 6.2c); skipped for turns
     GameLastRoll:
       type: object
       additionalProperties: false
@@ -1270,7 +1325,7 @@ components:
           type: string
         status:
           type: string
-          enum: [active]
+          enum: [active, finished]
         players:
           type: array
           items:
@@ -1301,6 +1356,12 @@ components:
           nullable: true
           allOf:
             - $ref: "#/components/schemas/GameLastRoll"
+        winnerUserId:
+          type: string
+          description: Set when status is finished (last active player)
+        winnerUsername:
+          type: string
+          description: Display name of the winner
     LocationsResponse:
       type: object
       additionalProperties: false
