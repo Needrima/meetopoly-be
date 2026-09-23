@@ -18,9 +18,10 @@ Meetopoly is a **mobile-first**, worldwide social property game:
   - **Social avatar** — walks the **whole board** (ring + center); pod + face callout (initial now, photo later).
 - **Enter hub:** walk near a property / railroad / utility → Enter prompt (not tap-only).
 - **Worlds:** board packs (`africa-1` first, **40** spaces — classic equal sides). Cities from [svgcities.com](https://svgcities.com/); more Worlds later.
-- **Tables:** 2–6 players; **5-minute** turn timer or lose turn; notify players in hubs with a compact turn sheet.
-- **Content:** `seeds/locations.json` → Mongo; `worldId` filter.
-- **Realtime:** Pion SFU; board + hub presence; **voice later**.
+- **Tables:** **2–6** players (pins pack up to 6 on one square — prefer **2×3** grid when crowded); **5-minute** turn timer or lose turn; notify players in hubs with a compact turn sheet.
+- **Signed-in funnel (long-term):** menu home → **Play** → pick **World** → lobby → **Start** → board. Phase 4 Play goes **straight to board** (no lobby yet).
+- **Content:** `seeds/locations.json` → Mongo; `worldId` filter. (**Locations** = board spaces; **World** = which board pack to play.)
+- **Realtime:** Pion SFU; board + hub presence; **voice later**. Lobby seating = **WebSocket** (not WebRTC).
 - **Rules:** ship **M1** first, then M2–M5 (see skill `product.md`).
 - **No separate 3D overworld in v1** — roaming is on the 2D board surface.
 
@@ -48,7 +49,10 @@ Meetopoly is a **mobile-first**, worldwide social property game:
 | Hub enter      | **Walk near** property / railroad / utility → Enter; specials not enterable                              |
 | Board walk     | Avatar walks whole board; joystick in **panel bottom-right**                                             |
 | Collisions     | Hard: board outer edge + **center** Chance/Chest decks; soft: pins. Ring Chance/Chest **tiles** walkable |
+| Pins on square | Up to **6**; fan OK for ≤4; crowded → **2×3** grid oriented to tile long edge                            |
 | Avatar look    | Pod + Maps-style callout: colored circle + **initial** now; photo later (settings upload)                |
+| App home       | Signed-in **menu** (Play / Settings / About / Log out) — **not** the board as root                       |
+| Leave board    | Only via panel **⋯** (no on-art Back); block Android back + iOS swipe-back while on board                |
 | Presence sync  | Pins via game WS; board + hub avatar positions later (~10–20 Hz)                                         |
 | Voice          | Phase after presence; same room model                                                                    |
 
@@ -340,31 +344,40 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 1. **40** `africa-1` spaces; corners at boardIndex **0 / 10 / 20 / 30** (even sides like classic Monopoly).
 2. Joystick lives in **panel bottom-right** (not over the board art).
 3. Right panel in Phase 4 = nearby location + Enter (+ joystick); **no** turn/money chrome (Phase 6).
-4. Keep **health home** until **4.8**; board via “Open board” until then.
-5. Phase 4 is **local only** (one avatar); remote avatar sync = Phase 7.
+4. **Do not** make the board the app root. **4.8** replaces the health/debug home with a **menu home**; board stays at `/(app)/board`.
+5. Phase 4 is **local only** (one avatar); remote avatar sync = Phase 7. **No lobby / World picker / fake joiners / WebRTC** in Phase 4 — those are Phase 5+.
+6. On the board screen: **no** floating Back on the board art; leave only via panel **⋯**; block system/gesture back.
 
 **Mobile — incremental slices (implement one at a time)**
 
-| Slice   | Done when                                                                                | Avoid           |
-| ------- | ---------------------------------------------------------------------------------------- | --------------- |
-| **4.0** | Landscape shell: 1:1 board placeholder + panel; reachable from home                      | Ring, walk      |
-| **4.1** | Empty ring of slots from `boardIndex` (geometry only)                                    | Colors, icons   |
-| **4.2** | Color bands + kind styling                                                               | Icons, walk     |
-| **4.3** | Icons + `boardCode` / styling from `useLocations('africa-1')`                            | Walk, Enter     |
-| **4.4** | ✅ Center brand + Chance/Chest deck shapes (`layout.decks` obstacles reserved)           | Movement        |
-| **4.5** | ✅ Local avatar (pod + 1-letter) + joystick BR + edge/deck hard + pin soft; pin on GO    | Enter, net      |
-| **4.6** | ✅ Walk-near Enter (nearest glow) + Details `InfoModal` + hub placeholder + BoardSession | SFU             |
-| **4.7** | ✅ **DEV** multi-pin fan on GO (distinct colors; soft collide all); local pin from 4.5   | Full game rules |
-| **4.8** | Board as home + ⋯ menu (Locations / logout; health `__DEV__`)                            | —               |
-| **4.9** | Polish: attribution, side-length pass, feel; tick Phase 4 exit criteria                  | New features    |
+| Slice   | Done when                                                                                  | Avoid           |
+| ------- | ------------------------------------------------------------------------------------------ | --------------- |
+| **4.0** | Landscape shell: 1:1 board placeholder + panel; reachable from home                        | Ring, walk      |
+| **4.1** | Empty ring of slots from `boardIndex` (geometry only)                                      | Colors, icons   |
+| **4.2** | Color bands + kind styling                                                                 | Icons, walk     |
+| **4.3** | Icons + `boardCode` / styling from `useLocations('africa-1')`                               | Walk, Enter     |
+| **4.4** | ✅ Center brand + Chance/Chest deck shapes (`layout.decks` obstacles reserved)              | Movement        |
+| **4.5** | ✅ Local avatar (pod + 1-letter) + joystick BR + edge/deck hard + pin soft; pin on GO       | Enter, net      |
+| **4.6** | ✅ Walk-near Enter (nearest glow) + Details `InfoModal` + hub placeholder + BoardSession   | SFU             |
+| **4.7** | ✅ __DEV__ multi-pin fan on GO (distinct colors; soft collide all); local pin from 4.5     | Full game rules |
+| **4.8** | ✅ Menu home + board ⋯ (Leave / logout; health+locations `__DEV__`); block board back       | Lobby, WS, RTC  |
+| **4.9** | Polish: attribution, side-length pass, feel; tick Phase 4 exit criteria                    | New features    |
+
+**4.8 detail (locked)**
+
+- **Home** (`/(app)/index`): branded menu — **Play**, **Settings** (stub OK), **About Meetopoly** (stub OK), **Log out**. Health API card and “View locations” move behind **⋯** or `__DEV__` only (not primary CTAs).
+- **Play** → `/(app)/board` (direct; no World picker / lobby yet).
+- **Board panel top:** **⋯** menu — **Leave** (→ menu home), **Log out**; in `__DEV__`: **Health**, **Locations** list.
+- Remove on-board **Back** Pressable. `BackHandler` + `gestureEnabled: false` (or equivalent) so hardware/swipe back cannot leave the board; hub **Leave** stays explicit.
+- Settings / About: placeholder screens or short modals are enough for 4.8.
 
 **Suggested files**
 
 - `components/board/Board.tsx`, `BoardTile.tsx`, `boardLayout.ts` (index → rect/side/rotation)
-- `components/board/BoardPanel.tsx`, `BoardAvatar.tsx`, `BoardPin.tsx`
+- `components/board/BoardPanel.tsx`, `BoardAvatar.tsx`, `BoardPin.tsx`, `boardPins.ts`, `BoardOverflowMenu.tsx`
 - `components/board/Joystick.tsx` (PanResponder; panel BR)
-- `hooks/useBoardWalk.ts` (avatar pose, stick, collision, nearby enterable)
-- Route: `(app)/board` (+ later home); `(app)/hub/[slug]` for Enter
+- `hooks/useBoardWalk.ts`, `hooks/useBlockHardwareBack.ts`
+- Routes: `(app)/index` menu home; `(app)/board`; `(app)/hub/[slug]`; `(app)/settings`, `(app)/about`, `(app)/health` (`__DEV__`)
 
 **Backend:** none beyond locations API (already done).
 
@@ -375,15 +388,27 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 - [x] Ring Chance/Chest tiles remain walkable
 - [x] Walk near city/air/utility → Enter → hub placeholder → Leave → board
 - [x] Joystick usable from panel bottom-right; board stays 1:1 dominant
+- [x] Signed-in **menu home**; Play opens board; board leave only via **⋯**; system/gesture back blocked on board
 - [ ] Smooth on a mid-range phone (2D Views/SVG; no GL requirement)
 
-**Note on later phases:** Phase 7 syncs **board** avatar positions (and hub poses). Pins stay authoritative via game WS. Rolling moves pins without forcing avatars.
+**Note on later phases:** Phase 5 adds World picker + lobby before board. Phase 7 syncs **board** avatar positions (and hub poses). Pins stay authoritative via game WS. Rolling moves pins without forcing avatars.
 
 ---
 
 ### Phase 5 — Tables lobby (2–6) + WebSocket basics
 
-**Goal:** Create/join a table; presence of seated players.
+**Goal:** Real play funnel into a table: pick **World** → lobby seats → host **Start** → board. Presence of seated players over **WebSocket** (not WebRTC).
+
+**Funnel (locked)**
+
+```text
+Menu → Play → World picker → Lobby (2–6 seats) → Start → Board
+```
+
+- **World** = board pack (`africa-1`, …). Do **not** confuse with **Locations** (individual board spaces / seed rows).
+- Capacity **2–6** (pins: up to 6 on one square; prefer **2×3** grid when crowded — implement packing with game pins in Phase 6 UI if not already).
+- Optional **local stub** before WS is live: `setInterval` (or similar) fake seat fills so Start can be tested single-device; replace with real WS as soon as table adapter exists.
+- **WebRTC** is **not** for lobby seating — reserved for board/hub presence (Phase 7) and voice (Phase 10).
 
 **Backend**
 
@@ -394,12 +419,14 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 **Mobile**
 
-1. Lobby screens under `(app)/`
+1. World picker + lobby screens under `(app)/`
 2. `hooks/useTable`, `hooks/useTableSocket`
 3. Write WS events into TanStack cache
+4. Wire menu **Play** through this funnel (replacing Phase 4 direct → board)
 
 **Exit criteria**
 
+- [ ] Menu Play → World → lobby → Start → board (or local stub seats until WS ready)
 - [ ] Two devices/users can join one table and see each other seated
 - [ ] Cannot start with &lt;2 or &gt;6
 - [ ] Disconnect handling stubbed (ask for exact policy when implementing)
@@ -627,3 +654,4 @@ Only when the user asks:
 | 2026-09-21 | Password reset (OTP) + session revoke-all; branded toasts via `notify()`                                          |
 | 2026-09-21 | Signup resume after password: `/auth/signup/status` + login `needsProfile`                                        |
 | 2026-09-21 | Phase 3: locations Mongo + seed CLI; Bearer `/worlds` + `/locations` (+ by id/slug); mobile `(app)/locations`     |
+| 2026-09-23 | **4.8:** menu home (not board-as-home); board leave via ⋯ + back lock; lobby/World funnel → Phase 5; 2–6 pins 2×3 |
