@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.3.1
+  version: 0.4.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -21,6 +21,8 @@ tags:
     description: World board content (seeded locations)
   - name: Worlds
     description: Distinct world packs derived from locations
+  - name: Tables
+    description: Matchmaking lobby (join pool, ready, leave)
 paths:
   /health:
     get:
@@ -400,6 +402,172 @@ paths:
                 $ref: "#/components/schemas/WorldsResponse"
         "401":
           description: Missing or invalid session token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /tables/join:
+    post:
+      operationId: joinTable
+      summary: Join a World matchmaking lobby
+      description: |
+        Finds an open lobby for `worldId` (or creates one), seats the caller,
+        and returns the table snapshot. Connect to `GET /ws/tables/{tableId}?token=`
+        for live seat/ready updates. Messages: client `{type:ready|leave|ping}`,
+        server `{type:state|started|pong|error}`.
+      tags:
+        - Tables
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinTableRequest"
+      responses:
+        "200":
+          description: Seated in lobby
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Table"
+        "400":
+          description: Invalid world
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Table full
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /tables/{tableId}:
+    get:
+      operationId: getTable
+      summary: Get table snapshot
+      tags:
+        - Tables
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Table
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Table"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /tables/{tableId}/ready:
+    post:
+      operationId: setTableReady
+      summary: Toggle Ready for the local seat
+      description: Requires ≥2 seated. When every seated player is Ready, status becomes `starting` and WS emits `started`.
+      tags:
+        - Tables
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetTableReadyRequest"
+      responses:
+        "200":
+          description: Updated table
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Table"
+        "400":
+          description: Need more players
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not seated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /tables/{tableId}/leave:
+    post:
+      operationId: leaveTable
+      summary: Leave lobby (frees seat immediately)
+      tags:
+        - Tables
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated table after leave
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Table"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
           content:
             application/json:
               schema:
@@ -789,6 +957,71 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorldSummary"
+    JoinTableRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - worldId
+      properties:
+        worldId:
+          type: string
+          example: africa-1
+    SetTableReadyRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - ready
+      properties:
+        ready:
+          type: boolean
+    TableSeat:
+      type: object
+      additionalProperties: false
+      required:
+        - seatIndex
+        - ready
+        - holding
+      properties:
+        seatIndex:
+          type: integer
+          minimum: 0
+          maximum: 5
+        userId:
+          type: string
+          nullable: true
+        username:
+          type: string
+          nullable: true
+        ready:
+          type: boolean
+        holding:
+          type: boolean
+        holdEndsAt:
+          type: string
+          format: date-time
+          nullable: true
+    Table:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - worldId
+        - status
+        - seats
+      properties:
+        id:
+          type: string
+        worldId:
+          type: string
+        status:
+          type: string
+          enum: [lobby, starting, in_game]
+        seats:
+          type: array
+          minItems: 6
+          maxItems: 6
+          items:
+            $ref: "#/components/schemas/TableSeat"
     LocationsResponse:
       type: object
       additionalProperties: false

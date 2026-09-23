@@ -435,12 +435,12 @@ Menu → Play → World picker → Lobby (matchmaking pool) → all Ready (≥2)
 | Slice | Done when | Avoid |
 | ----- | --------- | ----- |
 | **5.0** | ✅ World picker from `useWorlds`; Play → picker; select World; temp Continue → board with `worldId` | Lobby, bots, Ready |
-| **5.1** | Lobby shell route for `worldId`; 6 seat slots UI; Leave → picker | Matchmaking logic, bots |
-| **5.2** | Local stub: enter pool as local seat; waiting copy until ≥2 | Bots, Ready, WS |
-| **5.3** | Slow fake joiners toward 6 (cap); newcomer unready rule | Ready start, WS |
-| **5.4** | Ready toggle (≥2); bots delayed auto-Ready; all Ready → board | Real WS |
-| **5.5** | Disconnect-hold stub (30–60s); polish lobby chrome | Backend |
-| **5.6** | Real `services/table` + WS matchmaking replaces local stub | Game M1 rules |
+| **5.1** | ✅ Lobby shell `lobby/[worldId]`; 6 seat slots UI; Leave → picker | Matchmaking logic, bots |
+| **5.2** | ✅ Local stub: enter pool as local seat; waiting copy until ≥2 | Bots, Ready, WS |
+| **5.3** | ✅ Slow fake joiners toward 6 (cap); newcomer unready rule | Ready start, WS |
+| **5.4** | ✅ Ready toggle (≥2); bots delayed auto-Ready; all Ready → board | Real WS |
+| **5.5** | ✅ Disconnect-hold stub (45s); polish lobby chrome | Backend |
+| **5.6** | ✅ Real `services/table` + WS matchmaking replaces local stub | Game M1 rules |
 
 **Backend (primarily 5.6)**
 
@@ -458,11 +458,11 @@ Menu → Play → World picker → Lobby (matchmaking pool) → all Ready (≥2)
 
 **Exit criteria**
 
-- [ ] Menu Play → World → lobby → all Ready → board (stub OK through 5.5)
-- [ ] Seats capped at 6; cannot start with &lt;2
-- [ ] Ready UI shows who is ready; start only when all seated are Ready
-- [ ] Two devices can share a lobby via WS (5.6)
-- [ ] Disconnect hold stubbed (30–60s)
+- [x] Menu Play → World → lobby → all Ready → board (stub OK through 5.5)
+- [x] Seats capped at 6; cannot start with &lt;2
+- [x] Ready UI shows who is ready; start only when all seated are Ready
+- [x] Two devices can share a lobby via WS (5.6)
+- [x] Disconnect hold stubbed (30–60s)
 
 ---
 
@@ -690,3 +690,9 @@ Only when the user asks:
 | 2026-09-23 | **4.8:** menu home (not board-as-home); board leave via ⋯ + back lock; lobby/World funnel → Phase 5; 2–6 pins 2×3 |
 | 2026-09-23 | **4.9:** Reanimated avatar walk; attribution; BoardTile memo; Phase 4 exit criteria ticked |
 | 2026-09-23 | **Phase 5 split:** sub-phases 5.0–5.6; matchmaking + all-Ready locks; stub before WS |
+| 2026-09-23 | **5.1:** lobby shell `lobby/[worldId]`; 6 empty seats; Leave → Worlds; worlds Continue → lobby |
+| 2026-09-23 | **5.2:** `useLobbyStub` seats local player; waiting copy until ≥2; Leave frees seat |
+| 2026-09-23 | **5.3:** slow bot joiners (~3.2s) up to 6; newcomers always unready |
+| 2026-09-23 | **5.4:** Ready toggle (≥2); bots auto-Ready ~1.8s; all Ready → board |
+| 2026-09-23 | **5.5:** disconnect hold 45s (AppState + demo bot); Ready pills; hold banner |
+| 2026-09-23 | **5.6:** `services/table` + Mongo `tables`; WS `/ws/tables/{id}`; mobile `useTableLobby` |

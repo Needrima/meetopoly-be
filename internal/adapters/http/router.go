@@ -10,9 +10,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
+	wsadapter "meetopoly-be/internal/adapters/websocket"
 	"meetopoly-be/internal/services/auth"
 	"meetopoly-be/internal/services/health"
 	locationsvc "meetopoly-be/internal/services/location"
+	tablesvc "meetopoly-be/internal/services/table"
 	usersvc "meetopoly-be/internal/services/user"
 )
 
@@ -22,6 +24,8 @@ type Deps struct {
 	Auth      auth.Service
 	Users     usersvc.Service
 	Locations locationsvc.Service
+	Tables    tablesvc.Service
+	TableWS   *wsadapter.Hub
 }
 
 // NewRouter builds the chi router for HTTP adapters.
@@ -55,10 +59,20 @@ func NewRouter(deps Deps) http.Handler {
 		r.Get("/locations", handleListLocations(deps.Locations))
 		r.Get("/locations/by-slug", handleGetLocationBySlug(deps.Locations))
 		r.Get("/locations/{locationId}", handleGetLocationByID(deps.Locations))
+
+		r.Post("/tables/join", handleJoinTable(deps.Tables, deps.Users))
+		r.Get("/tables/{tableId}", handleGetTable(deps.Tables))
+		r.Post("/tables/{tableId}/ready", handleSetReady(deps.Tables))
+		r.Post("/tables/{tableId}/leave", handleLeaveTable(deps.Tables))
 	})
+
+	if deps.TableWS != nil {
+		r.Get("/ws/tables/{tableId}", deps.TableWS.HandleTable)
+	}
 
 	return r
 }
+
 
 func handleHealth(svc health.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -423,4 +437,15 @@ func corsDev(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// ResolveWSUser authenticates a WebSocket request via Bearer header or ?token=.
+func ResolveWSUser(authSvc auth.Service) func(r *http.Request) (string, error) {
+	return func(r *http.Request) (string, error) {
+		token := bearerToken(r)
+		if token == "" {
+			token = strings.TrimSpace(r.URL.Query().Get("token"))
+		}
+		return authSvc.ResolveSession(r.Context(), token)
+	}
 }

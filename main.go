@@ -11,17 +11,20 @@ import (
 	"time"
 
 	httpadapter "meetopoly-be/internal/adapters/http"
+	wsadapter "meetopoly-be/internal/adapters/websocket"
 	"meetopoly-be/internal/platform/config"
 	mongoplatform "meetopoly-be/internal/platform/mongo"
 	redisplatform "meetopoly-be/internal/platform/redis"
 	locationrepo "meetopoly-be/internal/repository/location"
 	sessionrepo "meetopoly-be/internal/repository/session"
+	tablerepo "meetopoly-be/internal/repository/table"
 	userrepo "meetopoly-be/internal/repository/user"
 	verificationrepo "meetopoly-be/internal/repository/verification"
 	"meetopoly-be/internal/services/auth"
 	"meetopoly-be/internal/services/health"
 	locationsvc "meetopoly-be/internal/services/location"
 	"meetopoly-be/internal/services/mail"
+	tablesvc "meetopoly-be/internal/services/table"
 	usersvc "meetopoly-be/internal/services/user"
 )
 
@@ -59,6 +62,7 @@ func main() {
 	users := userrepo.NewMongoRepository(db)
 	codes := verificationrepo.NewMongoRepository(db)
 	locations := locationrepo.NewMongoRepository(db)
+	tables := tablerepo.NewMongoRepository(db)
 	sessions := sessionrepo.NewRedisRepository(redisClient)
 
 	indexCtx, indexCancel := context.WithTimeout(ctx, 10*time.Second)
@@ -73,6 +77,10 @@ func main() {
 	}
 	if err := locations.EnsureIndexes(indexCtx); err != nil {
 		slog.Error("location indexes failed", "err", err)
+		os.Exit(1)
+	}
+	if err := tables.EnsureIndexes(indexCtx); err != nil {
+		slog.Error("table indexes failed", "err", err)
 		os.Exit(1)
 	}
 
@@ -90,6 +98,10 @@ func main() {
 	})
 	userSvc := usersvc.New(users)
 	locationSvc := locationsvc.New(locations)
+	tableSvc := tablesvc.New(tables, tablesvc.Config{
+		DisconnectHold: 45 * time.Second,
+	})
+	tableWS := wsadapter.NewHub(tableSvc, httpadapter.ResolveWSUser(authSvc))
 	healthSvc := health.New(
 		health.NewMongoPinger(mongoClient),
 		health.NewRedisPinger(redisClient),
@@ -103,6 +115,8 @@ func main() {
 			Auth:      authSvc,
 			Users:     userSvc,
 			Locations: locationSvc,
+			Tables:    tableSvc,
+			TableWS:   tableWS,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
