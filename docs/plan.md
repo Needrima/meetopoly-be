@@ -509,14 +509,15 @@ Roll → move (+pass GO if applicable) → resolve space →
 | **6.2c** | Leave board = **resign** (confirm); notify via game WS; last active player **wins** | Full bankruptcy asset transfer (→ Phase 14); app-kill hold |
 | **6.3** | ✅ Interim **3-min** per-turn AFK (`turnDeadline`) — **superseded by 6.3b** | — |
 | **6.3b** | ✅ **45-min per-player time bank**; drain only on your turn; bank = 0 → eliminate; all banks on every HUD | Phase 13 pause actions (auction/trade/…); hubs |
-| **6.4** | ✅ **Buy at list price** for unowned city / airport / utility; ownership on game doc | Auction (→ Phase 13); if player skips buy, property stays unowned until 13 |
-| **6.5** | **Rent** (+ tax to Bank; own tile = noop); classic rail/util formulas | Houses, mortgage, cards |
+| **6.4** | ✅ **Buy at list price** for unowned city / airport / utility; ownership on game doc; classic price/rent ladder in seeds; buy modal shows 1–4 houses + hotel | Auction (→ Phase 13); if player skips buy, property stays unowned until 13; ownership tile markers |
+| **6.5** | **Rent** (+ tax to Bank; own tile = noop); classic rail/util formulas; block End until rent settled | Houses, mortgage, cards |
 
 **6.4 notes**
 
 - After landing on unowned `property` / `railroad` / `utility` with `price > 0`: `canBuy` + `buyOffer`.
 - `POST /games/{id}/buy` deducts list price, appends deed (`boardIndex` + owner).
 - Skip: End turn without buying — space stays unowned until Phase 13 auction.
+- Classic US rent/price ladder by `boardIndex` in seeds (colors stay Meetopoly); buy modal lists Rent + 1–4 houses + Hotel.
 - Rent on owned land is **6.5** (not this slice).
 
 **6.3b notes — time bank (locked)**
@@ -812,3 +813,4 @@ Only when the user asks:
 | 2026-09-23 | **Timer 6.3b (locked):** **45 min/player** bank; drains on turn only; **0 → eliminate**; all banks on every HUD; Phase 13 adds auction/trade/raise-funds pauses. Interim 3‑min AFK superseded. HTTP commands + WS fan-out kept for scale. |
 | 2026-09-23 | **6.3b shipped:** `timeRemainingMs` + `turnStartedAt`; bank drain/eliminate; HUD all banks |
 | 2026-09-23 | **6.4:** `POST /buy`; deeds + buyOffer/canBuy; skip = End without auction (→ 13) |
+| 2026-09-23 | **6.4 polish:** classic rent/price ladder in seeds by boardIndex; buy modal 4 houses + icon/name align |

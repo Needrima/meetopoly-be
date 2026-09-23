@@ -1298,14 +1298,14 @@
     "kind": "property",
     "boardIndex": 34,
     "boardCode": "TIM",
-    "price": 350,
+    "price": 320,
     "rents": [
-      35,
-      175,
-      500,
-      1100,
-      1300,
-      1500
+      28,
+      150,
+      450,
+      1000,
+      1200,
+      1400
     ],
     "houseCost": 200,
     "colorGroup": "green",
@@ -1401,14 +1401,14 @@
     "kind": "property",
     "boardIndex": 37,
     "boardCode": "TUN",
-    "price": 400,
+    "price": 350,
     "rents": [
-      50,
-      200,
-      600,
-      1400,
-      1700,
-      2000
+      35,
+      175,
+      500,
+      1100,
+      1300,
+      1500
     ],
     "houseCost": 200,
     "colorGroup": "darkBlue",
@@ -1475,14 +1475,14 @@
     "kind": "property",
     "boardIndex": 39,
     "boardCode": "YAM",
-    "price": 340,
+    "price": 400,
     "rents": [
-      26,
-      130,
-      390,
-      900,
-      1100,
-      1275
+      50,
+      200,
+      600,
+      1400,
+      1700,
+      2000
     ],
     "houseCost": 200,
     "colorGroup": "darkBlue",
@@ -5538,16 +5538,16 @@
     "kind": "property",
     "boardIndex": 26,
     "boardCode": "ALJ",
-    "price": 60,
+    "price": 260,
     "rents": [
-      2,
-      10,
-      30,
-      90,
-      160,
-      250
+      22,
+      110,
+      330,
+      800,
+      975,
+      1150
     ],
-    "houseCost": 50,
+    "houseCost": 150,
     "colorGroup": "yellow",
     "map": {
       "x": 4,
@@ -5586,16 +5586,16 @@
     "kind": "property",
     "boardIndex": 27,
     "boardCode": "ANT",
-    "price": 60,
+    "price": 260,
     "rents": [
-      4,
-      20,
-      60,
-      180,
-      320,
-      450
+      22,
+      110,
+      330,
+      800,
+      975,
+      1150
     ],
-    "houseCost": 50,
+    "houseCost": 150,
     "colorGroup": "yellow",
     "map": {
       "x": 12,
@@ -5663,16 +5663,16 @@
     "kind": "property",
     "boardIndex": 29,
     "boardCode": "GRN",
-    "price": 100,
+    "price": 280,
     "rents": [
-      6,
-      30,
-      90,
-      270,
-      400,
-      550
+      24,
+      120,
+      360,
+      850,
+      1025,
+      1200
     ],
-    "houseCost": 50,
+    "houseCost": 150,
     "colorGroup": "yellow",
     "map": {
       "x": 20,
@@ -5736,16 +5736,16 @@
     "kind": "property",
     "boardIndex": 31,
     "boardCode": "HAV",
-    "price": 100,
+    "price": 300,
     "rents": [
-      6,
-      30,
-      90,
-      270,
-      400,
-      550
+      26,
+      130,
+      390,
+      900,
+      1100,
+      1275
     ],
-    "houseCost": 50,
+    "houseCost": 200,
     "colorGroup": "green",
     "map": {
       "x": 24,
@@ -5781,16 +5781,16 @@
     "kind": "property",
     "boardIndex": 32,
     "boardCode": "NAS",
-    "price": 120,
+    "price": 300,
     "rents": [
-      8,
-      40,
-      100,
-      300,
-      450,
-      600
+      26,
+      130,
+      390,
+      900,
+      1100,
+      1275
     ],
-    "houseCost": 50,
+    "houseCost": 200,
     "colorGroup": "green",
     "map": {
       "x": 24,
@@ -5854,16 +5854,16 @@
     "kind": "property",
     "boardIndex": 34,
     "boardCode": "POT",
-    "price": 140,
+    "price": 320,
     "rents": [
-      10,
-      50,
+      28,
       150,
       450,
-      625,
-      750
+      1000,
+      1200,
+      1400
     ],
-    "houseCost": 100,
+    "houseCost": 200,
     "colorGroup": "green",
     "map": {
       "x": 24,
@@ -5958,16 +5958,16 @@
     "kind": "property",
     "boardIndex": 37,
     "boardCode": "SAT",
-    "price": 140,
+    "price": 350,
     "rents": [
-      10,
-      50,
-      150,
-      450,
-      625,
-      750
+      35,
+      175,
+      500,
+      1100,
+      1300,
+      1500
     ],
-    "houseCost": 100,
+    "houseCost": 200,
     "colorGroup": "darkBlue",
     "map": {
       "x": 20,
@@ -6031,16 +6031,16 @@
     "kind": "property",
     "boardIndex": 39,
     "boardCode": "SAG",
-    "price": 160,
+    "price": 400,
     "rents": [
-      12,
-      60,
-      180,
-      500,
-      700,
-      900
+      50,
+      200,
+      600,
+      1400,
+      1700,
+      2000
     ],
-    "houseCost": 100,
+    "houseCost": 200,
     "colorGroup": "darkBlue",
     "map": {
       "x": 12,
@@ -17643,16 +17643,16 @@
     "kind": "property",
     "boardIndex": 26,
     "boardCode": "APA",
-    "price": 60,
+    "price": 260,
     "rents": [
-      2,
-      10,
-      30,
-      90,
-      160,
-      250
+      22,
+      110,
+      330,
+      800,
+      975,
+      1150
     ],
-    "houseCost": 50,
+    "houseCost": 150,
     "colorGroup": "yellow",
     "map": {
       "x": 4,
@@ -17689,16 +17689,16 @@
     "kind": "property",
     "boardIndex": 27,
     "boardCode": "CAB",
-    "price": 60,
+    "price": 260,
     "rents": [
-      4,
-      20,
-      60,
-      180,
-      320,
-      450
+      22,
+      110,
+      330,
+      800,
+      975,
+      1150
     ],
-    "houseCost": 50,
+    "houseCost": 150,
     "colorGroup": "yellow",
     "map": {
       "x": 12,
@@ -17766,16 +17766,16 @@
     "kind": "property",
     "boardIndex": 29,
     "boardCode": "FUN",
-    "price": 100,
+    "price": 280,
     "rents": [
-      6,
-      30,
-      90,
-      270,
-      400,
-      550
+      24,
+      120,
+      360,
+      850,
+      1025,
+      1200
     ],
-    "houseCost": 50,
+    "houseCost": 150,
     "colorGroup": "yellow",
     "map": {
       "x": 20,
@@ -17838,16 +17838,16 @@
     "kind": "property",
     "boardIndex": 31,
     "boardCode": "HOB",
-    "price": 100,
+    "price": 300,
     "rents": [
-      6,
-      30,
-      90,
-      270,
-      400,
-      550
+      26,
+      130,
+      390,
+      900,
+      1100,
+      1275
     ],
-    "houseCost": 50,
+    "houseCost": 200,
     "colorGroup": "green",
     "map": {
       "x": 24,
@@ -17885,16 +17885,16 @@
     "kind": "property",
     "boardIndex": 32,
     "boardCode": "HON",
-    "price": 120,
+    "price": 300,
     "rents": [
-      8,
-      40,
-      100,
-      300,
-      450,
-      600
+      26,
+      130,
+      390,
+      900,
+      1100,
+      1275
     ],
-    "houseCost": 50,
+    "houseCost": 200,
     "colorGroup": "green",
     "map": {
       "x": 24,
@@ -17956,16 +17956,16 @@
     "kind": "property",
     "boardIndex": 34,
     "boardCode": "MEB",
-    "price": 140,
+    "price": 320,
     "rents": [
-      10,
-      50,
+      28,
       150,
       450,
-      625,
-      750
+      1000,
+      1200,
+      1400
     ],
-    "houseCost": 100,
+    "houseCost": 200,
     "colorGroup": "green",
     "map": {
       "x": 24,
@@ -18060,16 +18060,16 @@
     "kind": "property",
     "boardIndex": 37,
     "boardCode": "NOM",
-    "price": 140,
+    "price": 350,
     "rents": [
-      10,
-      50,
-      150,
-      450,
-      625,
-      750
+      35,
+      175,
+      500,
+      1100,
+      1300,
+      1500
     ],
-    "houseCost": 100,
+    "houseCost": 200,
     "colorGroup": "darkBlue",
     "map": {
       "x": 20,
@@ -18133,16 +18133,16 @@
     "kind": "property",
     "boardIndex": 39,
     "boardCode": "NUU",
-    "price": 160,
+    "price": 400,
     "rents": [
-      12,
-      60,
-      180,
-      500,
-      700,
-      900
+      50,
+      200,
+      600,
+      1400,
+      1700,
+      2000
     ],
-    "houseCost": 100,
+    "houseCost": 200,
     "colorGroup": "darkBlue",
     "map": {
       "x": 12,
@@ -19399,16 +19399,16 @@
     "kind": "property",
     "boardIndex": 32,
     "boardCode": "BOO",
-    "price": 60,
+    "price": 300,
     "rents": [
-      2,
-      10,
-      30,
-      90,
-      160,
-      250
+      26,
+      130,
+      390,
+      900,
+      1100,
+      1275
     ],
-    "houseCost": 50,
+    "houseCost": 200,
     "colorGroup": "green",
     "map": {
       "x": 2.91,
@@ -19471,16 +19471,16 @@
     "kind": "property",
     "boardIndex": 34,
     "boardCode": "BRA",
-    "price": 60,
+    "price": 320,
     "rents": [
-      4,
-      20,
-      60,
-      180,
-      320,
-      450
+      28,
+      150,
+      450,
+      1000,
+      1200,
+      1400
     ],
-    "houseCost": 50,
+    "houseCost": 200,
     "colorGroup": "green",
     "map": {
       "x": 5.82,
@@ -19572,16 +19572,16 @@
     "kind": "property",
     "boardIndex": 37,
     "boardCode": "BUN",
-    "price": 100,
+    "price": 350,
     "rents": [
-      6,
-      30,
-      90,
-      270,
-      400,
-      550
+      35,
+      175,
+      500,
+      1100,
+      1300,
+      1500
     ],
-    "houseCost": 50,
+    "houseCost": 200,
     "colorGroup": "darkBlue",
     "map": {
       "x": 11.64,
@@ -19643,16 +19643,16 @@
     "kind": "property",
     "boardIndex": 39,
     "boardCode": "CAA",
-    "price": 100,
+    "price": 400,
     "rents": [
-      6,
-      30,
-      90,
-      270,
-      400,
-      550
+      50,
+      200,
+      600,
+      1400,
+      1700,
+      2000
     ],
-    "houseCost": 50,
+    "houseCost": 200,
     "colorGroup": "darkBlue",
     "map": {
       "x": 17.45,
