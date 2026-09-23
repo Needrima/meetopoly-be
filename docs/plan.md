@@ -466,59 +466,73 @@ Menu → Play → World picker → Lobby (matchmaking pool) → all Ready (≥2)
 
 ---
 
-### Phase 6 — Game M1 (authoritative) without hubs
+### Phase 6 — Game M1: movement + turn loop (authoritative), then light economy
 
-**Goal:** Dice, pin movement, buy, rent, pass income, turn order, **5-minute timer**.
+**Goal:** Authoritative dice, pin movement, pass-GO income, turn order, **5-minute timer**. Property **buy / rent** follow once the movement loop is solid. Hubs/presence stay Phase 7+.
 
-**M1 economy locks (do not re-litigate)**
+**Rules source:** classic Monopoly (see `meetopoly-mobile/resources/Monopoly_Complete_Rules_Guide.pdf`). Meetopoly keeps its own economy numbers and phased delivery — do **not** reshape phases just to match the booklet order.
+
+**M1 economy / rules locks (do not re-litigate)**
 
 | Topic | Decision |
 | ----- | -------- |
-| Currency | **MeetCoin** — double-bar capital **M** mark (₦ / ₩ family); HUD shows `[symbol] amount` |
-| Start cash | **2000** MeetCoin per player |
-| Pass GO | **200** MeetCoin (applied when movement lands in later slices) |
-| Rent (cities) | `rents[0]` from seed (unimproved) |
-| Rent (airports / utilities) | Classic Monopoly tables |
-| Doubles | Classic: roll again; three doubles → jail later (M3) |
-| End turn | Explicit **End** (not auto-end after buy/decline alone) |
+| Currency | **MeetCoin** — double-bar capital **M**; HUD `[symbol] amount` |
+| Start cash | **2000** MeetCoin (ignore classic $1500 editions) |
+| Pass / land GO | **+200** MeetCoin |
+| Free Parking | **Nothing** (no jackpot — that is a house rule) |
+| Rent (cities) | `rents[0]` unimproved; color-set doubling when monopoly logic exists |
+| Rent (airports / utilities) | Classic tables (rail 25/50/100/200; util 4× / 10× dice) |
+| Rent collection | **Auto-pay** on land (digital; do not use “owner forgot → no rent”) |
+| Unowned buyable | Official: **Buy at list price** *or* **Bank auctions** — auction ships in **Phase 13**, not here |
+| Doubles | Re-roll after resolving the space; **three doubles → Jail** in M3 (Phase 12) |
+| End turn | Explicit **End** after space is resolved (not auto-end mid-resolution) |
 | Turn order | **Seat order** (lowest seatIndex first) |
-| Devices | Real tables need **2+** devices / accounts (no bots in production path) |
-| HUD balances | Show **all** players’ MeetCoin on the board panel |
+| Devices | **2+** real accounts (no bots on production path) |
+| HUD balances | Show **all** players’ MeetCoin |
+
+**Turn shape (official-aligned)**
+
+```text
+Roll → move (+pass GO if applicable) → resolve space →
+  (later: buy / auction / rent / tax / cards / jail) →
+  if doubles (and not 3rd): may Roll again → else End → next seat
+```
+
+**6.1 interim:** turn currently **auto-advances** after roll so multi-device testing works. Replace with End + doubles in **6.2**.
 
 **Sub-phases (ship one at a time)**
 
 | Slice | Done when | Avoid |
 | ----- | --------- | ----- |
-| **6.0** | ✅ Create `games` on all-Ready; `GET /games/{id}`; board pins on GO; MeetCoin HUD + toast; navigate with `gameId` | Dice, buy, timer |
-| **6.1** | ✅ Dice roll + pin move + pass-GO cash (server truth); tile-by-tile pin motion; auto-advance turn | Buy/rent UI |
-| **6.2** | Buy / decline unowned property | Trading |
-| **6.3** | Rent payment on land | Houses |
-| **6.4** | Explicit End turn + doubles re-roll | Timer |
-| **6.5** | 5-min turn timer + skip | Hubs / presence |
+| **6.0** | ✅ Create `games` on all-Ready; `GET /games/{id}`; pins on GO; MeetCoin HUD + toast; `gameId` nav | Dice, buy, timer |
+| **6.1** | ✅ Dice + pin move + pass-GO; tile-by-tile motion; auto-advance (interim) | Buy, rent, End UI |
+| **6.2** | Explicit **End** + **doubles** re-roll; stop auto-advance after roll | Buy, auction, Jail |
+| **6.3** | 5-min turn timer + skip | Hubs / presence |
+| **6.4** | **Buy at list price** for unowned city / airport / utility; ownership on game doc | Auction (→ Phase 13); if player skips buy, property stays unowned until 13 |
+| **6.5** | **Rent** (+ tax to Bank; own tile = noop); classic rail/util formulas | Houses, mortgage, cards |
 
 **Backend**
 
-1. `services/game` state machine (M1 only) — **6.0:** create + get snapshot
-2. Persist `games` documents — **6.0**
-3. Redis turn deadlines — **6.5**
-4. WS events: `turnStarted`, `turnTick`/`deadline`, `diceRolled`, `pinMoved`, `propertyBought`, `rentPaid`, `turnSkipped` — **6.1+**
-5. On timeout: skip turn (lose turn) — **6.5**
-6. Table bridge: all-Ready → `GameStarter` → `table.gameId` + `in_game` — **6.0**
+1. `services/game` state machine — **6.0+**
+2. Persist `games` — **6.0**; ownership fields when **6.4**
+3. Redis turn deadlines — **6.3**
+4. WS / HTTP events as slices need (`diceRolled`, later `propertyBought`, `rentPaid`, …)
+5. Table bridge: all-Ready → game — **6.0**
 
 **Mobile**
 
-1. Board HUD: MeetCoin, turn indicator — **6.0**; timer — **6.5**
-2. Turn sheet actions: Roll, Buy, Decline, End — **6.1–6.4**
-3. Show **pins** on slots from game state — **6.0** (all on GO); move in **6.1**
-4. `hooks/useGame` + `queryKeys.game` — **6.0**
+1. HUD: MeetCoin + turn — **6.0**; timer — **6.3**
+2. Actions: Roll — **6.1**; End — **6.2**; Buy — **6.4**; (Auction UI — Phase 13)
+3. Pins from game state — **6.0**; animate — **6.1**
+4. `useGame` + poll/refetch — **6.0+**
 
 **Exit criteria**
 
-- [ ] Full M1 round playable for 2–6 players
-- [ ] Timer skip works
-- [ ] Server is source of truth (client cannot forge money)
-- [x] **6.0:** lobby start creates game; board loads snapshot (balances 2000, pins on GO, turn = seat 0)
-- [x] **6.1:** `POST /games/{id}/roll`; pin walks tile-by-tile; pass GO +200; turn advances (doubles/End → 6.4)
+- [ ] Movement + End + doubles + timer playable for 2–6
+- [ ] Buy + rent when 6.4–6.5 done (auction still Phase 13)
+- [ ] Server is source of truth (client cannot forge money / position)
+- [x] **6.0:** lobby start creates game; snapshot (2000, pins on GO, turn = seat 0)
+- [x] **6.1:** roll + tile walk + pass GO +200; interim auto-advance
 
 ---
 
@@ -602,11 +616,15 @@ Menu → Play → World picker → Lobby (matchmaking pool) → all Ready (≥2)
 
 ### Phase 11 — Rules M2 (houses / hotels / light mortgage)
 
-**Exit criteria:** Even-build enforced server-side; UI to buy/sell houses.
+**Official alignment:** even-build across a color group; max 4 houses then hotel; sell buildings back at half price; cannot build if any deed in the set is mortgaged; house shortage → auction for last houses.
+
+**Exit criteria:** Even-build enforced server-side; UI to buy/sell houses (and hotels).
 
 ---
 
 ### Phase 12 — Rules M3 (jail + cards)
+
+**Official alignment:** Go to Jail (land / card / three doubles); Just Visiting vs in Jail; exit via $50, Get Out of Jail Free, or doubles within 3 turns; Chance / Community Chest decks; Free Parking stays a noop.
 
 **Exit criteria:** Jail entry/exit paths; Chance/Community Chest deck from config or seed.
 
@@ -614,11 +632,15 @@ Menu → Play → World picker → Lobby (matchmaking pool) → all Ready (≥2)
 
 ### Phase 13 — Rules M4 (trading + auctions)
 
-**Exit criteria:** Multi-property offers; auction when declined purchase.
+**Official alignment:** Players may trade deeds, cash, and Get Out of Jail Free cards. **When a player lands on unowned property and does not buy at list price, the Bank auctions it immediately** — all players may bid (including the one who declined). Also: house-shortage auctions if not done in M2; bankruptcy-to-bank may re-auction deeds (coord with Phase 14).
+
+**Exit criteria:** Multi-property / cash trades; **auction when purchase declined** (completes the official unowned-land rule started in Phase 6.4 buy).
 
 ---
 
 ### Phase 14 — Rules M5 (bankruptcy)
+
+**Official alignment:** Raise funds (sell buildings, mortgage, trade) before elimination; debt to player → assets transfer; debt to Bank → deeds return to Bank (auction where applicable); bankrupt token leaves the game.
 
 **Exit criteria:** Debt resolution; player elimination; assets transfer correctly.
 
@@ -730,3 +752,4 @@ Only when the user asks:
 | 2026-09-23 | **6.0:** `games` repo+svc; create on all-Ready; `GET /games/{id}`; board HUD+pins+toast |
 | 2026-09-23 | Fix lobby matchmaking: never persist `starting` without game; abandon broken half-starts on Join |
 | 2026-09-23 | **6.1:** Roll 2d6 + move + pass-GO; HTTP roll + poll; Reanimated tile-by-tile pins; auto-advance turn |
+| 2026-09-23 | Rules alignment: Phase 6 = movement+turn loop first; official Buy→Auction stays Phase 13; Free Parking noop; MeetCoin 2000/200 |
