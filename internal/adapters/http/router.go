@@ -12,6 +12,7 @@ import (
 
 	wsadapter "meetopoly-be/internal/adapters/websocket"
 	"meetopoly-be/internal/services/auth"
+	gamesvc "meetopoly-be/internal/services/game"
 	"meetopoly-be/internal/services/health"
 	locationsvc "meetopoly-be/internal/services/location"
 	tablesvc "meetopoly-be/internal/services/table"
@@ -25,6 +26,7 @@ type Deps struct {
 	Users     usersvc.Service
 	Locations locationsvc.Service
 	Tables    tablesvc.Service
+	Games     gamesvc.Service
 	TableWS   *wsadapter.Hub
 }
 
@@ -64,6 +66,8 @@ func NewRouter(deps Deps) http.Handler {
 		r.Get("/tables/{tableId}", handleGetTable(deps.Tables))
 		r.Post("/tables/{tableId}/ready", handleSetReady(deps.Tables))
 		r.Post("/tables/{tableId}/leave", handleLeaveTable(deps.Tables))
+
+		r.Get("/games/{gameId}", handleGetGame(deps.Games))
 	})
 
 	if deps.TableWS != nil {

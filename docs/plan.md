@@ -470,25 +470,54 @@ Menu → Play → World picker → Lobby (matchmaking pool) → all Ready (≥2)
 
 **Goal:** Dice, pin movement, buy, rent, pass income, turn order, **5-minute timer**.
 
+**M1 economy locks (do not re-litigate)**
+
+| Topic | Decision |
+| ----- | -------- |
+| Currency | **MeetCoin** — double-bar capital **M** mark (₦ / ₩ family); HUD shows `[symbol] amount` |
+| Start cash | **2000** MeetCoin per player |
+| Pass GO | **200** MeetCoin (applied when movement lands in later slices) |
+| Rent (cities) | `rents[0]` from seed (unimproved) |
+| Rent (airports / utilities) | Classic Monopoly tables |
+| Doubles | Classic: roll again; three doubles → jail later (M3) |
+| End turn | Explicit **End** (not auto-end after buy/decline alone) |
+| Turn order | **Seat order** (lowest seatIndex first) |
+| Devices | Real tables need **2+** devices / accounts (no bots in production path) |
+| HUD balances | Show **all** players’ MeetCoin on the board panel |
+
+**Sub-phases (ship one at a time)**
+
+| Slice | Done when | Avoid |
+| ----- | --------- | ----- |
+| **6.0** | ✅ Create `games` on all-Ready; `GET /games/{id}`; board pins on GO; MeetCoin HUD + toast; navigate with `gameId` | Dice, buy, timer |
+| **6.1** | Dice roll + pin move + pass-GO cash (server truth) | Buy/rent UI |
+| **6.2** | Buy / decline unowned property | Trading |
+| **6.3** | Rent payment on land | Houses |
+| **6.4** | Explicit End turn + doubles re-roll | Timer |
+| **6.5** | 5-min turn timer + skip | Hubs / presence |
+
 **Backend**
 
-1. `services/game` state machine (M1 only)
-2. Persist `games` documents
-3. Redis turn deadlines
-4. WS events: `turnStarted`, `turnTick`/`deadline`, `diceRolled`, `pinMoved`, `propertyBought`, `rentPaid`, `turnSkipped`
-5. On timeout: skip turn (lose turn)
+1. `services/game` state machine (M1 only) — **6.0:** create + get snapshot
+2. Persist `games` documents — **6.0**
+3. Redis turn deadlines — **6.5**
+4. WS events: `turnStarted`, `turnTick`/`deadline`, `diceRolled`, `pinMoved`, `propertyBought`, `rentPaid`, `turnSkipped` — **6.1+**
+5. On timeout: skip turn (lose turn) — **6.5**
+6. Table bridge: all-Ready → `GameStarter` → `table.gameId` + `in_game` — **6.0**
 
 **Mobile**
 
-1. Board HUD: money, turn indicator, timer
-2. Turn sheet actions: Roll, Buy, Decline, End (as rules require)
-3. Show **pins** on slots from game state; avatars can idle at table spawn for now
+1. Board HUD: MeetCoin, turn indicator — **6.0**; timer — **6.5**
+2. Turn sheet actions: Roll, Buy, Decline, End — **6.1–6.4**
+3. Show **pins** on slots from game state — **6.0** (all on GO); move in **6.1**
+4. `hooks/useGame` + `queryKeys.game` — **6.0**
 
 **Exit criteria**
 
 - [ ] Full M1 round playable for 2–6 players
 - [ ] Timer skip works
 - [ ] Server is source of truth (client cannot forge money)
+- [x] **6.0:** lobby start creates game; board loads snapshot (balances 2000, pins on GO, turn = seat 0)
 
 ---
 
@@ -696,3 +725,6 @@ Only when the user asks:
 | 2026-09-23 | **5.4:** Ready toggle (≥2); bots auto-Ready ~1.8s; all Ready → board |
 | 2026-09-23 | **5.5:** disconnect hold 45s (AppState + demo bot); Ready pills; hold banner |
 | 2026-09-23 | **5.6:** `services/table` + Mongo `tables`; WS `/ws/tables/{id}`; mobile `useTableLobby` |
+| 2026-09-23 | **Phase 6 split:** 6.0–6.5; M1 MeetCoin locks (2000 / pass GO 200 / seat-order / symbol HUD) |
+| 2026-09-23 | **6.0:** `games` repo+svc; create on all-Ready; `GET /games/{id}`; board HUD+pins+toast |
+| 2026-09-23 | Fix lobby matchmaking: never persist `starting` without game; abandon broken half-starts on Join |

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.4.0
+  version: 0.5.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -23,6 +23,8 @@ tags:
     description: Distinct world packs derived from locations
   - name: Tables
     description: Matchmaking lobby (join pool, ready, leave)
+  - name: Games
+    description: Authoritative M1 game state (Phase 6+)
 paths:
   /health:
     get:
@@ -573,6 +575,43 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /games/{gameId}:
+    get:
+      operationId: getGame
+      summary: Get M1 game snapshot
+      description: |
+        Authoritative game state (players, MeetCoin balances, pin boardIndex, whose turn).
+        Created when a lobby reaches all-Ready (Phase 6.0).
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Game
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /locations:
     get:
       operationId: listLocations
@@ -1016,12 +1055,86 @@ components:
         status:
           type: string
           enum: [lobby, starting, in_game]
+        gameId:
+          type: string
+          nullable: true
+          description: Set when lobby starts an M1 game (Phase 6+)
         seats:
           type: array
           minItems: 6
           maxItems: 6
           items:
             $ref: "#/components/schemas/TableSeat"
+    GamePlayer:
+      type: object
+      additionalProperties: false
+      required:
+        - userId
+        - username
+        - seatIndex
+        - turnOrder
+        - cash
+        - boardIndex
+        - pinColor
+      properties:
+        userId:
+          type: string
+        username:
+          type: string
+        seatIndex:
+          type: integer
+        turnOrder:
+          type: integer
+        cash:
+          type: integer
+          description: MeetCoin balance
+        boardIndex:
+          type: integer
+          description: Rules pin position (0 = GO)
+        pinColor:
+          type: string
+          description: Hex accent for the pin
+    Game:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - tableId
+        - worldId
+        - status
+        - players
+        - currentTurn
+        - currentUserId
+        - currentUsername
+        - passGoBonus
+        - currency
+      properties:
+        id:
+          type: string
+        tableId:
+          type: string
+        worldId:
+          type: string
+        status:
+          type: string
+          enum: [active]
+        players:
+          type: array
+          items:
+            $ref: "#/components/schemas/GamePlayer"
+        currentTurn:
+          type: integer
+          description: turnOrder of the active player
+        currentUserId:
+          type: string
+        currentUsername:
+          type: string
+        passGoBonus:
+          type: integer
+          description: MeetCoin granted when passing GO (applied in later slices)
+        currency:
+          type: string
+          example: MeetCoin
     LocationsResponse:
       type: object
       additionalProperties: false

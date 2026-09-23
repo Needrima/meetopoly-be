@@ -30,6 +30,7 @@ type Table struct {
 	WorldID   string    `bson:"worldId" json:"worldId"`
 	Status    string    `bson:"status" json:"status"`
 	Seats     []Seat    `bson:"seats" json:"seats"`
+	GameID    string    `bson:"gameId,omitempty" json:"gameId,omitempty"`
 	CreatedAt time.Time `bson:"createdAt" json:"createdAt"`
 	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
 }

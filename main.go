@@ -15,12 +15,14 @@ import (
 	"meetopoly-be/internal/platform/config"
 	mongoplatform "meetopoly-be/internal/platform/mongo"
 	redisplatform "meetopoly-be/internal/platform/redis"
+	gamerepo "meetopoly-be/internal/repository/game"
 	locationrepo "meetopoly-be/internal/repository/location"
 	sessionrepo "meetopoly-be/internal/repository/session"
 	tablerepo "meetopoly-be/internal/repository/table"
 	userrepo "meetopoly-be/internal/repository/user"
 	verificationrepo "meetopoly-be/internal/repository/verification"
 	"meetopoly-be/internal/services/auth"
+	gamesvc "meetopoly-be/internal/services/game"
 	"meetopoly-be/internal/services/health"
 	locationsvc "meetopoly-be/internal/services/location"
 	"meetopoly-be/internal/services/mail"
@@ -63,6 +65,7 @@ func main() {
 	codes := verificationrepo.NewMongoRepository(db)
 	locations := locationrepo.NewMongoRepository(db)
 	tables := tablerepo.NewMongoRepository(db)
+	repoGames := gamerepo.NewMongoRepository(db)
 	sessions := sessionrepo.NewRedisRepository(redisClient)
 
 	indexCtx, indexCancel := context.WithTimeout(ctx, 10*time.Second)
@@ -83,6 +86,10 @@ func main() {
 		slog.Error("table indexes failed", "err", err)
 		os.Exit(1)
 	}
+	if err := repoGames.EnsureIndexes(indexCtx); err != nil {
+		slog.Error("game indexes failed", "err", err)
+		os.Exit(1)
+	}
 
 	mailer := mail.New(mail.Config{
 		Host: cfg.SMTPHost,
@@ -98,9 +105,11 @@ func main() {
 	})
 	userSvc := usersvc.New(users)
 	locationSvc := locationsvc.New(locations)
+	gameSvc := gamesvc.New(repoGames)
 	tableSvc := tablesvc.New(tables, tablesvc.Config{
 		DisconnectHold: 45 * time.Second,
 	})
+	tableSvc.SetGameStarter(gamesvc.TableBridge{Games: gameSvc})
 	tableWS := wsadapter.NewHub(tableSvc, httpadapter.ResolveWSUser(authSvc))
 	healthSvc := health.New(
 		health.NewMongoPinger(mongoClient),
@@ -116,6 +125,7 @@ func main() {
 			Users:     userSvc,
 			Locations: locationSvc,
 			Tables:    tableSvc,
+			Games:     gameSvc,
 			TableWS:   tableWS,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,

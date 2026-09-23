@@ -104,6 +104,8 @@ func (r *MongoRepository) FindOpenLobby(ctx context.Context, worldID string) (*T
 }
 
 func (r *MongoRepository) FindLobbyByUser(ctx context.Context, userID string) (*Table, error) {
+	// Include starting so Join can detect/abandon broken half-starts (no gameId).
+	// Successful starts use in_game and are not resumed here.
 	filter := bson.M{
 		"status":       bson.M{"$in": []string{StatusLobby, StatusStarting}},
 		"seats.userId": userID,

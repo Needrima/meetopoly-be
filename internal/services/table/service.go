@@ -13,12 +13,12 @@ import (
 )
 
 type service struct {
-	repo  tablerepo.Repository
-	cfg   Config
-	bcast Broadcaster
-
-	mu    sync.Mutex
-	holds map[string]*time.Timer
+	repo    tablerepo.Repository
+	cfg     Config
+	bcast   Broadcaster
+	gameStarter GameStarter
+	mu      sync.Mutex
+	holds   map[string]*time.Timer
 }
 
 // New builds a table Service.
@@ -37,6 +37,10 @@ func (s *service) SetBroadcaster(b Broadcaster) {
 	s.bcast = b
 }
 
+func (s *service) SetGameStarter(g GameStarter) {
+	s.gameStarter = g
+}
+
 func (s *service) Join(ctx context.Context, userID, username, worldID string) (*View, error) {
 	worldID = strings.TrimSpace(worldID)
 	if worldID == "" {
@@ -50,23 +54,29 @@ func (s *service) Join(ctx context.Context, userID, username, worldID string) (*
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Resume existing lobby seat (reconnect / remount).
+	// Resume existing lobby seat (reconnect / remount), unless the table is a
+	// broken half-start (status starting, no game) — those block matchmaking.
 	existing, err := s.repo.FindLobbyByUser(ctx, userID)
 	if err == nil && existing.WorldID == worldID {
-		s.clearHoldLocked(existing.ID, userID)
-		for i := range existing.Seats {
-			if existing.Seats[i].UserID == userID {
-				existing.Seats[i].Holding = false
-				existing.Seats[i].HoldEndsAt = nil
-				existing.Seats[i].Username = username
+		if isBrokenMatchmakingTable(existing) {
+			_, _ = s.leaveLocked(ctx, existing, userID)
+			existing = nil
+		} else {
+			s.clearHoldLocked(existing.ID, userID)
+			for i := range existing.Seats {
+				if existing.Seats[i].UserID == userID {
+					existing.Seats[i].Holding = false
+					existing.Seats[i].HoldEndsAt = nil
+					existing.Seats[i].Username = username
+				}
 			}
+			if err := s.repo.Update(ctx, existing); err != nil {
+				return nil, err
+			}
+			view := toView(existing)
+			s.broadcast(existing.ID, Event{Type: "state", Table: view})
+			return view, nil
 		}
-		if err := s.repo.Update(ctx, existing); err != nil {
-			return nil, err
-		}
-		view := toView(existing)
-		s.broadcast(existing.ID, Event{Type: "state", Table: view})
-		return view, nil
 	}
 	if err != nil && !errors.Is(err, tablerepo.ErrNotFound) {
 		return nil, err
@@ -142,8 +152,27 @@ func (s *service) SetReady(ctx context.Context, tableID, userID string, ready bo
 	}
 	seat.Ready = ready
 
-	if ready && everyoneReady(t) {
-		t.Status = tablerepo.StatusStarting
+	// Never persist status=starting without a gameId — that orphans the table
+	// from FindOpenLobby while FindLobbyByUser keeps resuming it (solo lobbies).
+	started := false
+	if ready && everyoneReady(t) && t.GameID == "" {
+		if s.gameStarter == nil {
+			return nil, ErrWrongStatus
+		}
+		viewSeats := toView(t).Seats
+		gameID, err := s.gameStarter.StartFromTable(ctx, t.ID, t.WorldID, viewSeats)
+		if err != nil {
+			// Keep lobby + Ready flags; do not leave status stuck on starting.
+			if updErr := s.repo.Update(ctx, t); updErr != nil {
+				return nil, updErr
+			}
+			view := toView(t)
+			s.broadcast(t.ID, Event{Type: "state", Table: view})
+			return view, err
+		}
+		t.GameID = gameID
+		t.Status = tablerepo.StatusInGame
+		started = true
 	}
 
 	if err := s.repo.Update(ctx, t); err != nil {
@@ -151,7 +180,7 @@ func (s *service) SetReady(ctx context.Context, tableID, userID string, ready bo
 	}
 	view := toView(t)
 	s.broadcast(t.ID, Event{Type: "state", Table: view})
-	if t.Status == tablerepo.StatusStarting {
+	if started {
 		s.broadcast(t.ID, Event{Type: "started", Table: view})
 	}
 	return view, nil
@@ -183,18 +212,41 @@ func (s *service) leaveLocked(ctx context.Context, t *tablerepo.Table, userID st
 	if !cleared {
 		return toView(t), nil
 	}
-	// Remaining players stay; reset ready-gate if below min.
-	if tablerepo.OccupiedCount(t) < tablerepo.MinSeats {
-		for i := range t.Seats {
-			t.Seats[i].Ready = false
-		}
-	}
+	normalizeMatchmakingStatus(t)
 	if err := s.repo.Update(ctx, t); err != nil {
 		return nil, err
 	}
 	view := toView(t)
 	s.broadcast(t.ID, Event{Type: "state", Table: view})
 	return view, nil
+}
+
+// isBrokenMatchmakingTable is a half-started lobby with no game — resume would
+// isolate the player from FindOpenLobby (status != lobby).
+func isBrokenMatchmakingTable(t *tablerepo.Table) bool {
+	if t == nil {
+		return false
+	}
+	if t.GameID != "" {
+		return false
+	}
+	if t.Status == tablerepo.StatusStarting {
+		return true
+	}
+	return false
+}
+
+// normalizeMatchmakingStatus resets ready-gate and pulls stuck starting tables
+// (no game yet) back into the joinable lobby pool.
+func normalizeMatchmakingStatus(t *tablerepo.Table) {
+	if tablerepo.OccupiedCount(t) < tablerepo.MinSeats {
+		for i := range t.Seats {
+			t.Seats[i].Ready = false
+		}
+	}
+	if t.GameID == "" && t.Status != tablerepo.StatusLobby {
+		t.Status = tablerepo.StatusLobby
+	}
 }
 
 func (s *service) Disconnect(ctx context.Context, tableID, userID string) (*View, error) {
@@ -351,5 +403,14 @@ func toView(t *tablerepo.Table) *View {
 		WorldID: t.WorldID,
 		Status:  t.Status,
 		Seats:   seats,
+		GameID:  gameIDPtr(t.GameID),
 	}
+}
+
+func gameIDPtr(id string) *string {
+	if id == "" {
+		return nil
+	}
+	v := id
+	return &v
 }

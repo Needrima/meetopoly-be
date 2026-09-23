@@ -31,6 +31,7 @@ type View struct {
 	WorldID string     `json:"worldId"`
 	Status  string     `json:"status"`
 	Seats   []SeatView `json:"seats"`
+	GameID  *string    `json:"gameId"`
 }
 
 // Event is pushed to WebSocket subscribers.
@@ -43,6 +44,11 @@ type Event struct {
 // Broadcaster fans table events to WS clients.
 type Broadcaster interface {
 	Broadcast(tableID string, ev Event)
+}
+
+// GameStarter creates an M1 game when the lobby is ready to start.
+type GameStarter interface {
+	StartFromTable(ctx context.Context, tableID, worldID string, seats []SeatView) (gameID string, err error)
 }
 
 // Config tunes lobby behaviour.
@@ -58,4 +64,5 @@ type Service interface {
 	Leave(ctx context.Context, tableID, userID string) (*View, error)
 	Disconnect(ctx context.Context, tableID, userID string) (*View, error)
 	SetBroadcaster(b Broadcaster)
+	SetGameStarter(g GameStarter)
 }
