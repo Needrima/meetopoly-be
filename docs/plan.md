@@ -615,6 +615,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 - Pose payload: board-local `{ type:"pose", userId, username, x, y, rot?, t? }` (0..1 board-norm); SFU stamps identity; ~10–20 Hz send; client interpolates remotes in **7.2**.
 - Pins remain authoritative via existing `/ws/games/{id}` — do not drive pins over DataChannel.
 - **Done (2026-09-24) 7.1:** `StampPose` + SFU `forwardPose`; mobile `presencePose` + `useBoardPresence.sendPose` / `remotes`; board publishes ~10 Hz when DC open. Remotes not drawn yet (→ **7.2**).
+- **Done (2026-09-24) 7.2:** `useInterpolatedBoardPose` + `BoardRemoteAvatar`; remotes drawn under local avatar with ~100 ms linear ease; accents from game `pinColor`.
 
 **7.3 notes**
 
@@ -659,7 +660,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 
 - [x] **7.0:** two clients join/leave the same board presence room reliably
 - [x] **7.1:** pose messages fan out over DataChannel
-- [ ] **7.2:** two players see each other’s board avatars move smoothly
+- [x] **7.2:** two players see each other’s board avatars move smoothly
 - [ ] **7.3:** illegal teleport gets bounce-back only on offender
 - [ ] **7.4:** Roll updates pins while avatars keep walking (no forced avatar snap); presence reconnect hardened
 - [ ] **7.5:** game WS down 3 min → auto-resign + last-player-wins; presence-only drop does not resign
