@@ -645,6 +645,11 @@ func TestSetPinColor(t *testing.T) {
 		t.Fatalf("err=%v", err)
 	}
 
+	_, err = svc.SetPinColor(context.Background(), "g-pin", "a", "#0072BB")
+	if !errors.Is(err, ErrInvalidPinColor) {
+		t.Fatalf("taken color err=%v", err)
+	}
+
 	_, err = svc.SetPinColor(context.Background(), "g-pin", "z", "#112233")
 	if !errors.Is(err, ErrNotPlayer) {
 		t.Fatalf("err=%v", err)

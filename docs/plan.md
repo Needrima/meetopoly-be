@@ -826,3 +826,4 @@ Only when the user asks:
 | 2026-09-23 | **6.5:** auto rent/tax on land; lastPayment + pendingPayment; block End/Roll if unpaid; monopoly ×2 base |
 | 2026-09-23 | **6.5 UX:** gate buy modal + Pass-GO/rent toasts until pin settles; `POST /pin-color` syncs avatar accent; cash tick animation |
 | 2026-09-24 | **UX polish:** buy toast titles by kind; hide local HUD row; Title-Case usernames on signup + display; winner modal row CTAs |
+| 2026-09-24 | **Lobby pin colors:** unique `pinColor` on seat join → game; HUD You · turn + filter; stop random accent overwrite |

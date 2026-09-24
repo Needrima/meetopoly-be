@@ -36,6 +36,7 @@ type SeatInput struct {
 	UserID    string
 	Username  string
 	SeatIndex int
+	PinColor  string
 }
 
 // PlayerView is the public player shape.
@@ -226,6 +227,10 @@ func (s *service) CreateFromSeats(ctx context.Context, tableID, worldID string, 
 		if name == "" {
 			name = "Player"
 		}
+		color := strings.TrimSpace(seat.PinColor)
+		if color == "" {
+			color = pinPalette[i%len(pinPalette)]
+		}
 		players = append(players, gamerepo.Player{
 			UserID:          seat.UserID,
 			Username:        capitalizePlayerName(name),
@@ -233,7 +238,7 @@ func (s *service) CreateFromSeats(ctx context.Context, tableID, worldID string, 
 			TurnOrder:       i,
 			Cash:            gamerepo.StartingCash,
 			BoardIndex:      gamerepo.GoBoardIndex,
-			PinColor:        pinPalette[i%len(pinPalette)],
+			PinColor:        color,
 			TimeRemainingMs: bankMs,
 		})
 	}
@@ -618,6 +623,14 @@ func (s *service) SetPinColor(ctx context.Context, gameID, userID, pinColor stri
 	}
 	if strings.EqualFold(g.Players[playerIdx].PinColor, normalized) {
 		return s.viewOf(ctx, g), nil
+	}
+	for i, p := range g.Players {
+		if i == playerIdx || p.UserID == "" {
+			continue
+		}
+		if strings.EqualFold(p.PinColor, normalized) {
+			return nil, ErrInvalidPinColor
+		}
 	}
 
 	g.Players[playerIdx].PinColor = normalized

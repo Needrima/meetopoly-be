@@ -68,6 +68,7 @@ func (s *service) Join(ctx context.Context, userID, username, worldID string) (*
 					existing.Seats[i].Holding = false
 					existing.Seats[i].HoldEndsAt = nil
 					existing.Seats[i].Username = username
+					ensureSeatColor(existing, i)
 				}
 			}
 			if err := s.repo.Update(ctx, existing); err != nil {
@@ -336,6 +337,50 @@ func emptySeat(index int) tablerepo.Seat {
 	return tablerepo.Seat{SeatIndex: index}
 }
 
+// seatPalette — distinct accents for up to 6 players (matches game pin palette).
+var seatPalette = []string{
+	"#ED1B24",
+	"#0072BB",
+	"#1FB25A",
+	"#F7941D",
+	"#D93A96",
+	"#FEF200",
+}
+
+func usedSeatColors(t *tablerepo.Table, exceptIndex int) map[string]bool {
+	used := make(map[string]bool, len(t.Seats))
+	for i, s := range t.Seats {
+		if i == exceptIndex || s.UserID == "" || s.PinColor == "" {
+			continue
+		}
+		used[strings.ToLower(s.PinColor)] = true
+	}
+	return used
+}
+
+func pickFreeSeatColor(t *tablerepo.Table, exceptIndex int) string {
+	used := usedSeatColors(t, exceptIndex)
+	for _, c := range seatPalette {
+		if !used[strings.ToLower(c)] {
+			return c
+		}
+	}
+	return seatPalette[exceptIndex%len(seatPalette)]
+}
+
+// ensureSeatColor assigns a free palette color if missing or colliding.
+func ensureSeatColor(t *tablerepo.Table, seatIndex int) {
+	if seatIndex < 0 || seatIndex >= len(t.Seats) {
+		return
+	}
+	cur := strings.ToLower(strings.TrimSpace(t.Seats[seatIndex].PinColor))
+	used := usedSeatColors(t, seatIndex)
+	if cur != "" && !used[cur] {
+		return
+	}
+	t.Seats[seatIndex].PinColor = pickFreeSeatColor(t, seatIndex)
+}
+
 func seatUser(t *tablerepo.Table, userID, username string) error {
 	if findSeat(t, userID) != nil {
 		return nil
@@ -347,6 +392,7 @@ func seatUser(t *tablerepo.Table, userID, username string) error {
 			t.Seats[i].Ready = false
 			t.Seats[i].Holding = false
 			t.Seats[i].HoldEndsAt = nil
+			t.Seats[i].PinColor = pickFreeSeatColor(t, i)
 			return nil
 		}
 	}
@@ -391,6 +437,10 @@ func toView(t *tablerepo.Table) *View {
 		if s.Username != "" {
 			name := s.Username
 			sv.Username = &name
+		}
+		if s.PinColor != "" {
+			c := s.PinColor
+			sv.PinColor = &c
 		}
 		if s.HoldEndsAt != nil {
 			iso := s.HoldEndsAt.UTC().Format(time.RFC3339)

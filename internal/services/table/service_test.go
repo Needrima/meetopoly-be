@@ -3,6 +3,7 @@ package table
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -168,6 +169,39 @@ func TestJoinAbandonsBrokenStartingAndMatches(t *testing.T) {
 	}
 	if tablerepo.OccupiedCount(storedBroken) != 0 {
 		t.Fatalf("broken table still occupied")
+	}
+}
+
+func TestJoinAssignsUniquePinColors(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, Config{})
+
+	a, err := svc.Join(context.Background(), "user-a", "A", "africa-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := svc.Join(context.Background(), "user-b", "B", "africa-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.ID != b.ID {
+		t.Fatalf("expected same table %s vs %s", a.ID, b.ID)
+	}
+	var colors []string
+	for _, s := range b.Seats {
+		if s.UserID == nil {
+			continue
+		}
+		if s.PinColor == nil || *s.PinColor == "" {
+			t.Fatalf("seat %d missing pinColor", s.SeatIndex)
+		}
+		colors = append(colors, strings.ToLower(*s.PinColor))
+	}
+	if len(colors) != 2 {
+		t.Fatalf("occupied=%d", len(colors))
+	}
+	if colors[0] == colors[1] {
+		t.Fatalf("duplicate colors %v", colors)
 	}
 }
 

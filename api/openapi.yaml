@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.13.0
+  version: 0.14.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -821,6 +821,7 @@ paths:
       description: |
         Updates the caller's `pinColor` so board pins, HUD dots, and ownership chips
         match their local avatar / joystick accent. Idempotent when unchanged.
+        Rejects colors already taken by another player in the same game.
       tags:
         - Games
       security:
@@ -1299,6 +1300,11 @@ components:
         username:
           type: string
           nullable: true
+        pinColor:
+          type: string
+          nullable: true
+          description: Unique seat accent assigned on lobby join (`#RRGGBB`)
+          pattern: "^#[0-9A-Fa-f]{6}$"
         ready:
           type: boolean
         holding:

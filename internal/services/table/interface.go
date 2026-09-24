@@ -20,6 +20,7 @@ type SeatView struct {
 	SeatIndex  int     `json:"seatIndex"`
 	UserID     *string `json:"userId"`
 	Username   *string `json:"username"`
+	PinColor   *string `json:"pinColor"`
 	Ready      bool    `json:"ready"`
 	Holding    bool    `json:"holding"`
 	HoldEndsAt *string `json:"holdEndsAt"`

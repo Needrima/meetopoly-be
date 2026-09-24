@@ -26,6 +26,7 @@ func (b TableBridge) StartFromTable(ctx context.Context, tableID, worldID string
 			UserID:    *s.UserID,
 			Username:  name,
 			SeatIndex: s.SeatIndex,
+			PinColor:  pinFromSeat(s),
 		})
 	}
 	view, err := b.Games.CreateFromSeats(ctx, tableID, worldID, inputs)
@@ -33,4 +34,11 @@ func (b TableBridge) StartFromTable(ctx context.Context, tableID, worldID string
 		return "", err
 	}
 	return view.ID, nil
+}
+
+func pinFromSeat(s tablesvc.SeatView) string {
+	if s.PinColor == nil {
+		return ""
+	}
+	return *s.PinColor
 }
