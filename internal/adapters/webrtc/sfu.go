@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	// PresenceDataChannelLabel is the idle DC for Phase 7.0; poses start in 7.1.
+	// PresenceDataChannelLabel carries board presence poses (Phase 7.1+).
 	PresenceDataChannelLabel = "presence"
 )
 
@@ -187,19 +187,31 @@ func (s *SFU) HandleOffer(roomID, userID string, sdp string) error {
 			return
 		}
 		s.mu.Lock()
-		if peer := s.peerLocked(roomID, userID); peer != nil {
-			peer.dc = dc
+		peer := s.peerLocked(roomID, userID)
+		if peer == nil {
+			s.mu.Unlock()
+			return
 		}
+		peer.dc = dc
+		fromUser := peer.userID
+		fromName := peer.username
 		s.mu.Unlock()
+
 		dc.OnOpen(func() {
 			slog.Info("presence datachannel open",
 				"roomId", roomID,
-				"userId", userID,
+				"userId", fromUser,
 				"label", dc.Label(),
 			)
 		})
-		// Phase 7.0: ignore payloads; 7.1 fans out poses.
-		dc.OnMessage(func(_ webrtc.DataChannelMessage) {})
+		// Phase 7.1: stamp identity + fan out unvalidated poses to other peers' DCs.
+		dc.OnMessage(func(msg webrtc.DataChannelMessage) {
+			stamped, err := StampPose(fromUser, fromName, msg.Data)
+			if err != nil {
+				return
+			}
+			s.forwardPose(roomID, fromUser, stamped)
+		})
 	})
 
 	offer := webrtc.SessionDescription{Type: webrtc.SDPTypeOffer, SDP: sdp}
@@ -258,6 +270,31 @@ func (s *SFU) peerLocked(roomID, userID string) *peer {
 		return nil
 	}
 	return r.peers[userID]
+}
+
+// forwardPose sends stamped pose bytes to every other open DataChannel in the room.
+func (s *SFU) forwardPose(roomID, fromUserID string, payload []byte) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	r := s.rooms[roomID]
+	if r == nil {
+		return
+	}
+	for id, p := range r.peers {
+		if id == fromUserID || p.dc == nil {
+			continue
+		}
+		if p.dc.ReadyState() != webrtc.DataChannelStateOpen {
+			continue
+		}
+		if err := p.dc.Send(payload); err != nil {
+			slog.Debug("presence pose send",
+				"roomId", roomID,
+				"toUserId", id,
+				"err", err,
+			)
+		}
+	}
 }
 
 func (s *SFU) closePeerLocked(p *peer) {

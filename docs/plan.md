@@ -612,8 +612,9 @@ Roll → move (+pass GO if applicable) → resolve space →
 **7.1–7.2 notes**
 
 - Unvalidated fan-out first so remotes are visible early; wire validation in **7.3**.
-- Pose payload: board-local `{ x, y, rot? }` (+ identity); ~10–20 Hz send; client interpolates remotes.
+- Pose payload: board-local `{ type:"pose", userId, username, x, y, rot?, t? }` (0..1 board-norm); SFU stamps identity; ~10–20 Hz send; client interpolates remotes in **7.2**.
 - Pins remain authoritative via existing `/ws/games/{id}` — do not drive pins over DataChannel.
+- **Done (2026-09-24) 7.1:** `StampPose` + SFU `forwardPose`; mobile `presencePose` + `useBoardPresence.sendPose` / `remotes`; board publishes ~10 Hz when DC open. Remotes not drawn yet (→ **7.2**).
 
 **7.3 notes**
 
@@ -657,7 +658,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 **Exit criteria**
 
 - [x] **7.0:** two clients join/leave the same board presence room reliably
-- [ ] **7.1:** pose messages fan out over DataChannel
+- [x] **7.1:** pose messages fan out over DataChannel
 - [ ] **7.2:** two players see each other’s board avatars move smoothly
 - [ ] **7.3:** illegal teleport gets bounce-back only on offender
 - [ ] **7.4:** Roll updates pins while avatars keep walking (no forced avatar snap); presence reconnect hardened
