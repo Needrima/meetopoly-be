@@ -510,8 +510,14 @@ Roll → move (+pass GO if applicable) → resolve space →
 | **6.3** | ✅ Interim **3-min** per-turn AFK (`turnDeadline`) — **superseded by 6.3b** | — |
 | **6.3b** | ✅ **45-min per-player time bank**; drain only on your turn; bank = 0 → eliminate; all banks on every HUD | Phase 13 pause actions (auction/trade/…); hubs |
 | **6.4** | ✅ **Buy at list price** for unowned city / airport / utility; ownership on game doc; classic price/rent ladder in seeds; buy modal shows 1–4 houses + hotel; **owner color chip** on tiles; **tap any tile** → info sheet (deed / Chance / Chest / tax / …) | Auction (→ Phase 13); if player skips buy, property stays unowned until 13; mortgage chip later |
-| **6.5** | **Rent** (+ tax to Bank; own tile = noop); classic rail/util formulas; block End until rent settled | Houses, mortgage, cards |
-t
+| **6.5** | ✅ **Rent** (+ tax to Bank; own tile = noop); classic rail/util formulas; auto-collect on land; block End/Roll if unpaid remainder | Houses, mortgage, cards; full bankruptcy raise-funds (→ Phase 14) |
+
+**6.5 notes**
+
+- On land (after Roll move): auto-collect **rent** (city `rents[0]`, ×2 if full color set owned; rail 25/50/100/200 by count; util 4×/10× dice total) or **tax** (`taxAmount` → Bank). Own tile / unowned buyable = no rent (buy still 6.4).
+- `lastPayment` on Game for WS toasts; if cash short: pay all, set `pendingPayment`, `canEndTurn`/`canRoll` false until resign (Phase 14 bankruptcy later).
+- Chance / Chest / Free Parking still noop this slice.
+
 **6.4 notes**
 
 - After landing on unowned `property` / `railroad` / `utility` with `price > 0`: `canBuy` + `buyOffer`.
@@ -520,7 +526,7 @@ t
 - Classic US rent/price ladder by `boardIndex` in seeds (colors stay Meetopoly); buy modal lists Rent + 1–4 houses + Hotel.
 - **Ownership chip:** outer-corner dot in owner `pinColor` on deed tiles (client from `deeds` + `players`).
 - **Tap tile:** info overlay (buyable = deed + Available/Owned by; Chance/Chest = icon + name; tax = icon + name + amount). Disabled only while **local** buy modal is open.
-- Rent on owned land is **6.5** (not this slice).
+- Rent on owned land is **6.5** (shipped).
 
 **6.3b notes — time bank (locked)**
 
@@ -565,7 +571,7 @@ t
 **Exit criteria**
 
 - [ ] Movement + End + doubles + dice anim + time bank playable for 2–6
-- [ ] Buy + rent when 6.4–6.5 done (auction still Phase 13)
+- [x] Buy + rent when 6.4–6.5 done (auction still Phase 13)
 - [ ] Server is source of truth (client cannot forge money / position)
 - [x] **6.0:** lobby start creates game; snapshot (2000, pins on GO, turn = seat 0)
 - [x] **6.1:** roll + tile walk + pass GO +200; interim auto-advance
@@ -817,3 +823,6 @@ Only when the user asks:
 | 2026-09-23 | **6.4:** `POST /buy`; deeds + buyOffer/canBuy; skip = End without auction (→ 13) |
 | 2026-09-23 | **6.4 polish:** classic rent/price ladder in seeds by boardIndex; buy modal 4 houses + icon/name align |
 | 2026-09-23 | **6.4 polish:** owner pinColor chip on tiles; tap-any-square TileInfoOverlay (buy taps disabled for buyer only) |
+| 2026-09-23 | **6.5:** auto rent/tax on land; lastPayment + pendingPayment; block End/Roll if unpaid; monopoly ×2 base |
+| 2026-09-23 | **6.5 UX:** gate buy modal + Pass-GO/rent toasts until pin settles; `POST /pin-color` syncs avatar accent; cash tick animation |
+| 2026-09-24 | **UX polish:** buy toast titles by kind; hide local HUD row; Title-Case usernames on signup + display; winner modal row CTAs |

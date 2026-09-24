@@ -73,6 +73,7 @@ func NewRouter(deps Deps) http.Handler {
 		r.Post("/games/{gameId}/end-turn", handleEndTurn(deps.Games))
 		r.Post("/games/{gameId}/resign", handleResignGame(deps.Games))
 		r.Post("/games/{gameId}/buy", handleBuyProperty(deps.Games))
+		r.Post("/games/{gameId}/pin-color", handleSetPinColor(deps.Games))
 	})
 
 	if deps.TableWS != nil {

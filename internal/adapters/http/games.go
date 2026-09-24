@@ -89,6 +89,32 @@ func handleBuyProperty(games gamesvc.Service) http.HandlerFunc {
 	}
 }
 
+type setPinColorRequest struct {
+	PinColor string `json:"pinColor"`
+}
+
+func handleSetPinColor(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		var req setPinColorRequest
+		if err := decodeJSON(r, &req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_body", "Invalid request body")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		view, err := games.SetPinColor(r.Context(), gameID, userID, req.PinColor)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
 func mapGameError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, gamesvc.ErrNotFound):
@@ -113,6 +139,10 @@ func mapGameError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "already_owned", "This space is already owned")
 	case errors.Is(err, gamesvc.ErrCannotAfford):
 		writeError(w, http.StatusConflict, "cannot_afford", "Not enough MeetCoin")
+	case errors.Is(err, gamesvc.ErrMustSettle):
+		writeError(w, http.StatusConflict, "must_settle", "Settle rent or tax before continuing (resign if you cannot pay)")
+	case errors.Is(err, gamesvc.ErrInvalidPinColor):
+		writeError(w, http.StatusBadRequest, "invalid_pin_color", "pinColor must be #RRGGBB")
 	default:
 		writeError(w, http.StatusInternalServerError, "internal_error", "Something went wrong")
 	}

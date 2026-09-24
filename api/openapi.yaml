@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.11.0
+  version: 0.13.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -814,6 +814,61 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /games/{gameId}/pin-color:
+    post:
+      operationId: setPinColor
+      summary: Sync pin color to avatar accent
+      description: |
+        Updates the caller's `pinColor` so board pins, HUD dots, and ownership chips
+        match their local avatar / joystick accent. Idempotent when unchanged.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetPinColorRequest"
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "400":
+          description: Invalid pinColor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /locations:
     get:
       operationId: listLocations
@@ -1215,6 +1270,17 @@ components:
       properties:
         ready:
           type: boolean
+    SetPinColorRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - pinColor
+      properties:
+        pinColor:
+          type: string
+          description: Hex accent `#RRGGBB` matching the player's avatar/joystick color
+          pattern: "^#[0-9A-Fa-f]{6}$"
+          example: "#ED1B24"
     TableSeat:
       type: object
       additionalProperties: false
@@ -1370,6 +1436,64 @@ components:
           type: string
         ownerUsername:
           type: string
+    GameLastPayment:
+      type: object
+      additionalProperties: false
+      required:
+        - kind
+        - fromUserId
+        - fromUsername
+        - amount
+        - boardIndex
+        - spaceName
+        - paidInFull
+      properties:
+        kind:
+          type: string
+          enum: [rent, tax]
+        fromUserId:
+          type: string
+        fromUsername:
+          type: string
+        toUserId:
+          type: string
+          description: Empty or omitted when paid to the Bank (tax)
+        toUsername:
+          type: string
+          description: Landlord username, or Bank for tax
+        amount:
+          type: integer
+          description: MeetCoin transferred this event (may be partial)
+        boardIndex:
+          type: integer
+        spaceName:
+          type: string
+        paidInFull:
+          type: boolean
+          description: False when cash was insufficient; see pendingPayment
+    GamePendingPayment:
+      type: object
+      additionalProperties: false
+      required:
+        - kind
+        - amount
+        - boardIndex
+        - spaceName
+      properties:
+        kind:
+          type: string
+          enum: [rent, tax]
+        amount:
+          type: integer
+          description: Remaining MeetCoin owed
+        toUserId:
+          type: string
+        toUsername:
+          type: string
+        boardIndex:
+          type: integer
+        spaceName:
+          type: string
     GameBuyOffer:
       type: object
       additionalProperties: false
@@ -1463,6 +1587,16 @@ components:
           nullable: true
           allOf:
             - $ref: "#/components/schemas/GameLastRoll"
+        lastPayment:
+          nullable: true
+          description: Most recent rent/tax auto-collect (Phase 6.5)
+          allOf:
+            - $ref: "#/components/schemas/GameLastPayment"
+        pendingPayment:
+          nullable: true
+          description: Unpaid remainder; canRoll/canEndTurn false until resign or Phase 14
+          allOf:
+            - $ref: "#/components/schemas/GamePendingPayment"
         winnerUserId:
           type: string
           description: Set when status is finished (last active player)

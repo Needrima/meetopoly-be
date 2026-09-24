@@ -231,6 +231,7 @@ func (s *service) CompleteProfile(
 	if !usernameRE.MatchString(username) {
 		return "", nil, ErrInvalidUsername
 	}
+	username = capitalizeUsername(username)
 	if !countryRE.MatchString(country) {
 		return "", nil, ErrInvalidCountry
 	}
@@ -582,6 +583,33 @@ func normalizeEmail(email string) (string, error) {
 		return "", ErrInvalidEmail
 	}
 	return addr.Address, nil
+}
+
+// capitalizeUsername Title-Cases ASCII usernames (ademola → Ademola, john_doe → John_Doe).
+func capitalizeUsername(s string) string {
+	if s == "" {
+		return s
+	}
+	b := []byte(s)
+	capNext := true
+	for i := 0; i < len(b); i++ {
+		c := b[i]
+		if c == '_' {
+			capNext = true
+			continue
+		}
+		if capNext {
+			if c >= 'a' && c <= 'z' {
+				b[i] = c - 'a' + 'A'
+			}
+			capNext = false
+			continue
+		}
+		if c >= 'A' && c <= 'Z' {
+			b[i] = c - 'A' + 'a'
+		}
+	}
+	return string(b)
 }
 
 func validatePassword(password string) error {

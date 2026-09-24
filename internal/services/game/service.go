@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -26,6 +27,8 @@ var (
 	ErrNotBuyable    = errors.New("space is not buyable")
 	ErrCannotAfford  = errors.New("insufficient MeetCoin")
 	ErrAlreadyOwned  = errors.New("space already owned")
+	ErrMustSettle       = errors.New("must settle rent or tax before continuing")
+	ErrInvalidPinColor  = errors.New("invalid pin color")
 )
 
 // SeatInput is a seated lobby player used to bootstrap a game.
@@ -80,28 +83,53 @@ type BuyOfferView struct {
 	Price      int    `json:"price"`
 }
 
+// LastPaymentView is the most recent rent/tax transfer (Phase 6.5).
+type LastPaymentView struct {
+	Kind         string `json:"kind"`
+	FromUserID   string `json:"fromUserId"`
+	FromUsername string `json:"fromUsername"`
+	ToUserID     string `json:"toUserId,omitempty"`
+	ToUsername   string `json:"toUsername,omitempty"`
+	Amount       int    `json:"amount"`
+	BoardIndex   int    `json:"boardIndex"`
+	SpaceName    string `json:"spaceName"`
+	PaidInFull   bool   `json:"paidInFull"`
+}
+
+// PendingPaymentView — unpaid remainder blocking Roll/End.
+type PendingPaymentView struct {
+	Kind       string `json:"kind"`
+	Amount     int    `json:"amount"`
+	ToUserID   string `json:"toUserId,omitempty"`
+	ToUsername string `json:"toUsername,omitempty"`
+	BoardIndex int    `json:"boardIndex"`
+	SpaceName  string `json:"spaceName"`
+}
+
 // View is the public game snapshot.
 type View struct {
-	ID              string         `json:"id"`
-	TableID         string         `json:"tableId"`
-	WorldID         string         `json:"worldId"`
-	Status          string         `json:"status"`
-	Players         []PlayerView   `json:"players"`
-	CurrentTurn     int            `json:"currentTurn"`
-	CurrentUserID   string         `json:"currentUserId"`
-	CurrentUsername string         `json:"currentUsername"`
-	PassGoBonus     int            `json:"passGoBonus"`
-	Currency        string         `json:"currency"`
-	TurnPhase       string         `json:"turnPhase"`
-	DoublesStreak   int            `json:"doublesStreak"`
-	CanRoll         bool           `json:"canRoll"`
-	CanEndTurn      bool           `json:"canEndTurn"`
-	CanBuy          bool           `json:"canBuy"`
-	BuyOffer        *BuyOfferView  `json:"buyOffer"`
-	Deeds           []DeedView     `json:"deeds"`
-	LastRoll        *LastRollView  `json:"lastRoll"`
-	WinnerUserID    string         `json:"winnerUserId,omitempty"`
-	WinnerUsername  string         `json:"winnerUsername,omitempty"`
+	ID              string              `json:"id"`
+	TableID         string              `json:"tableId"`
+	WorldID         string              `json:"worldId"`
+	Status          string              `json:"status"`
+	Players         []PlayerView        `json:"players"`
+	CurrentTurn     int                 `json:"currentTurn"`
+	CurrentUserID   string              `json:"currentUserId"`
+	CurrentUsername string              `json:"currentUsername"`
+	PassGoBonus     int                 `json:"passGoBonus"`
+	Currency        string              `json:"currency"`
+	TurnPhase       string              `json:"turnPhase"`
+	DoublesStreak   int                 `json:"doublesStreak"`
+	CanRoll         bool                `json:"canRoll"`
+	CanEndTurn      bool                `json:"canEndTurn"`
+	CanBuy          bool                `json:"canBuy"`
+	BuyOffer        *BuyOfferView       `json:"buyOffer"`
+	Deeds           []DeedView          `json:"deeds"`
+	LastRoll        *LastRollView       `json:"lastRoll"`
+	LastPayment     *LastPaymentView    `json:"lastPayment,omitempty"`
+	PendingPayment  *PendingPaymentView `json:"pendingPayment,omitempty"`
+	WinnerUserID    string              `json:"winnerUserId,omitempty"`
+	WinnerUsername  string              `json:"winnerUsername,omitempty"`
 	// TurnStartedAt — RFC3339 UTC; current player's bank drains from this instant.
 	TurnStartedAt string `json:"turnStartedAt,omitempty"`
 }
@@ -127,6 +155,7 @@ type Service interface {
 	EndTurn(ctx context.Context, gameID, userID string) (*View, error)
 	Resign(ctx context.Context, gameID, userID string) (*View, error)
 	Buy(ctx context.Context, gameID, userID string) (*View, error)
+	SetPinColor(ctx context.Context, gameID, userID, pinColor string) (*View, error)
 	SetBroadcaster(b Broadcaster)
 }
 
@@ -199,7 +228,7 @@ func (s *service) CreateFromSeats(ctx context.Context, tableID, worldID string, 
 		}
 		players = append(players, gamerepo.Player{
 			UserID:          seat.UserID,
-			Username:        name,
+			Username:        capitalizePlayerName(name),
 			SeatIndex:       seat.SeatIndex,
 			TurnOrder:       i,
 			Cash:            gamerepo.StartingCash,
@@ -305,6 +334,9 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 	if g.TurnPhase != gamerepo.TurnPhaseAwaitingRoll {
 		return nil, ErrMustEndTurn
 	}
+	if hasPendingPayment(g) {
+		return nil, ErrMustSettle
+	}
 
 	die1 := rollDie()
 	die2 := rollDie()
@@ -359,6 +391,11 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 		DoublesStreak: g.DoublesStreak,
 		ThirdDoubles:  thirdDoubles,
 	}
+
+	if !thirdDoubles {
+		s.resolveLandingLocked(ctx, g, playerIdx, total)
+	}
+
 	g.UpdatedAt = time.Now().UTC()
 
 	if err := s.repo.Update(ctx, g); err != nil {
@@ -396,6 +433,9 @@ func (s *service) EndTurn(ctx context.Context, gameID, userID string) (*View, er
 	}
 	if g.TurnPhase != gamerepo.TurnPhaseAwaitingEnd {
 		return nil, ErrMustRoll
+	}
+	if hasPendingPayment(g) {
+		return nil, ErrMustSettle
 	}
 
 	s.pauseCurrentBankLocked(g)
@@ -469,6 +509,9 @@ func (s *service) Resign(ctx context.Context, gameID, userID string) (*View, err
 		s.pauseCurrentBankLocked(g)
 	}
 	g.Players[playerIdx].Resigned = true
+	if wasCurrent {
+		g.PendingPayment = nil
+	}
 
 	if finishIfOneActive(g) {
 		s.clearBankClockLocked(g)
@@ -515,6 +558,9 @@ func (s *service) Buy(ctx context.Context, gameID, userID string) (*View, error)
 	if err != nil {
 		return nil, err
 	}
+	if hasPendingPayment(g) {
+		return nil, ErrMustSettle
+	}
 
 	spaces := s.loadSpaces(ctx, g.WorldID)
 	sp := spaceAt(spaces, g.Players[playerIdx].BoardIndex)
@@ -540,6 +586,92 @@ func (s *service) Buy(ctx context.Context, gameID, userID string) (*View, error)
 	view := s.viewOf(ctx, g)
 	s.broadcast(gameID, Event{Type: "state", Game: view})
 	return view, nil
+}
+
+// SetPinColor syncs a player's board pin / ownership chip to their avatar accent.
+func (s *service) SetPinColor(ctx context.Context, gameID, userID, pinColor string) (*View, error) {
+	normalized, ok := normalizePinColor(pinColor)
+	if !ok {
+		return nil, ErrInvalidPinColor
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	g, err := s.repo.FindByID(ctx, gameID)
+	if err != nil {
+		if errors.Is(err, gamerepo.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	playerIdx := -1
+	for i, p := range g.Players {
+		if p.UserID == userID {
+			playerIdx = i
+			break
+		}
+	}
+	if playerIdx < 0 {
+		return nil, ErrNotPlayer
+	}
+	if strings.EqualFold(g.Players[playerIdx].PinColor, normalized) {
+		return s.viewOf(ctx, g), nil
+	}
+
+	g.Players[playerIdx].PinColor = normalized
+	g.UpdatedAt = time.Now().UTC()
+	if err := s.repo.Update(ctx, g); err != nil {
+		return nil, err
+	}
+	view := s.viewOf(ctx, g)
+	s.broadcast(gameID, Event{Type: "state", Game: view})
+	return view, nil
+}
+
+func normalizePinColor(raw string) (string, bool) {
+	c := strings.TrimSpace(raw)
+	if len(c) != 7 || c[0] != '#' {
+		return "", false
+	}
+	for i := 1; i < 7; i++ {
+		ch := c[i]
+		isHex := (ch >= '0' && ch <= '9') ||
+			(ch >= 'a' && ch <= 'f') ||
+			(ch >= 'A' && ch <= 'F')
+		if !isHex {
+			return "", false
+		}
+	}
+	return "#" + strings.ToLower(c[1:]), true
+}
+
+// capitalizePlayerName Title-Cases seat names into game docs (ademola → Ademola).
+func capitalizePlayerName(s string) string {
+	if s == "" {
+		return s
+	}
+	b := []byte(s)
+	capNext := true
+	for i := 0; i < len(b); i++ {
+		c := b[i]
+		if c == '_' {
+			capNext = true
+			continue
+		}
+		if capNext {
+			if c >= 'a' && c <= 'z' {
+				b[i] = c - 'a' + 'A'
+			}
+			capNext = false
+			continue
+		}
+		if c >= 'A' && c <= 'Z' {
+			b[i] = c - 'A' + 'a'
+		}
+	}
+	return string(b)
 }
 
 func requireCurrentPlayer(g *gamerepo.Game, userID string) (int, error) {
@@ -865,7 +997,8 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 
 	var buyOffer *BuyOfferView
 	canBuy := false
-	if active && currentUserID != "" {
+	pending := hasPendingPayment(g)
+	if active && currentUserID != "" && !pending {
 		idx := currentPlayerIndex(g)
 		if idx >= 0 && !g.Players[idx].Resigned {
 			sp := spaceAt(spaces, g.Players[idx].BoardIndex)
@@ -888,6 +1021,35 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 		}
 	}
 
+	var lastPay *LastPaymentView
+	if g.LastPayment != nil {
+		lastPay = &LastPaymentView{
+			Kind:         g.LastPayment.Kind,
+			FromUserID:   g.LastPayment.FromUserID,
+			FromUsername: g.LastPayment.FromUsername,
+			ToUserID:     g.LastPayment.ToUserID,
+			ToUsername:   g.LastPayment.ToUsername,
+			Amount:       g.LastPayment.Amount,
+			BoardIndex:   g.LastPayment.BoardIndex,
+			SpaceName:    g.LastPayment.SpaceName,
+			PaidInFull:   g.LastPayment.PaidInFull,
+		}
+	}
+	var pend *PendingPaymentView
+	if g.PendingPayment != nil && g.PendingPayment.Amount > 0 {
+		pend = &PendingPaymentView{
+			Kind:       g.PendingPayment.Kind,
+			Amount:     g.PendingPayment.Amount,
+			ToUserID:   g.PendingPayment.ToUserID,
+			ToUsername: nameByID[g.PendingPayment.ToUserID],
+			BoardIndex: g.PendingPayment.BoardIndex,
+			SpaceName:  g.PendingPayment.SpaceName,
+		}
+		if g.PendingPayment.ToUserID == "" {
+			pend.ToUsername = "Bank"
+		}
+	}
+
 	return &View{
 		ID:              g.ID,
 		TableID:         g.TableID,
@@ -901,14 +1063,77 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 		Currency:        "MeetCoin",
 		TurnPhase:       phase,
 		DoublesStreak:   g.DoublesStreak,
-		CanRoll:         active && phase == gamerepo.TurnPhaseAwaitingRoll,
-		CanEndTurn:      active && phase == gamerepo.TurnPhaseAwaitingEnd,
+		CanRoll:         active && phase == gamerepo.TurnPhaseAwaitingRoll && !pending,
+		CanEndTurn:      active && phase == gamerepo.TurnPhaseAwaitingEnd && !pending,
 		CanBuy:          canBuy,
 		BuyOffer:        buyOffer,
 		Deeds:           deeds,
 		LastRoll:        last,
+		LastPayment:     lastPay,
+		PendingPayment:  pend,
 		WinnerUserID:    g.WinnerUserID,
 		WinnerUsername:  g.WinnerUsername,
 		TurnStartedAt:   started,
+	}
+}
+
+func hasPendingPayment(g *gamerepo.Game) bool {
+	return g.PendingPayment != nil && g.PendingPayment.Amount > 0
+}
+
+// resolveLandingLocked auto-collects rent/tax after a move (Phase 6.5).
+func (s *service) resolveLandingLocked(ctx context.Context, g *gamerepo.Game, payerIdx, diceTotal int) {
+	g.PendingPayment = nil
+	spaces := s.loadSpaces(ctx, g.WorldID)
+	boardIndex := g.Players[payerIdx].BoardIndex
+	payerID := g.Players[payerIdx].UserID
+	amount, toUserID, kind, spaceName := rentDueForLanding(
+		spaces, g.Deeds, boardIndex, payerID, diceTotal,
+	)
+	if amount <= 0 || kind == "" {
+		return
+	}
+
+	pay := amount
+	paidInFull := true
+	if g.Players[payerIdx].Cash < amount {
+		pay = g.Players[payerIdx].Cash
+		paidInFull = false
+	}
+	g.Players[payerIdx].Cash -= pay
+	toUsername := "Bank"
+	if toUserID != "" {
+		for i := range g.Players {
+			if g.Players[i].UserID == toUserID {
+				g.Players[i].Cash += pay
+				toUsername = g.Players[i].Username
+				break
+			}
+		}
+	}
+
+	g.LastPayment = &gamerepo.LastPayment{
+		Kind:         kind,
+		FromUserID:   payerID,
+		FromUsername: g.Players[payerIdx].Username,
+		ToUserID:     toUserID,
+		ToUsername:   toUsername,
+		Amount:       pay,
+		BoardIndex:   boardIndex,
+		SpaceName:    spaceName,
+		PaidInFull:   paidInFull,
+	}
+
+	if !paidInFull {
+		remaining := amount - pay
+		g.PendingPayment = &gamerepo.PendingPayment{
+			Kind:       kind,
+			Amount:     remaining,
+			ToUserID:   toUserID,
+			BoardIndex: boardIndex,
+			SpaceName:  spaceName,
+		}
+		// Can't continue turn (incl. doubles re-roll) until settled / resign.
+		g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
 	}
 }

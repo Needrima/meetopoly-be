@@ -62,6 +62,14 @@ func cloneGame(g *gamerepo.Game) *gamerepo.Game {
 		lr := *g.LastRoll
 		cp.LastRoll = &lr
 	}
+	if g.LastPayment != nil {
+		lp := *g.LastPayment
+		cp.LastPayment = &lp
+	}
+	if g.PendingPayment != nil {
+		pp := *g.PendingPayment
+		cp.PendingPayment = &pp
+	}
 	return &cp
 }
 
@@ -426,6 +434,26 @@ func TestBuyCannotAfford(t *testing.T) {
 	}
 }
 
+func TestRentPaidOnOwnedProperty(t *testing.T) {
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60, Rents: []int{2, 10, 30, 90, 160, 250}, ColorGroup: "brown"},
+		{BoardIndex: 3, Slug: "accra", Name: "Accra", Kind: "property", Price: 60, Rents: []int{4, 20, 60, 180, 320, 450}, ColorGroup: "brown"},
+	}
+	deeds := []gamerepo.Deed{{BoardIndex: 1, OwnerUserID: "b"}}
+	amount, to, kind, name := rentDueForLanding(spaces, deeds, 1, "a", 7)
+	if amount != 2 || to != "b" || kind != "rent" || name != "Lagos" {
+		t.Fatalf("got amount=%d to=%s kind=%s name=%s", amount, to, kind, name)
+	}
+	deeds = []gamerepo.Deed{
+		{BoardIndex: 1, OwnerUserID: "b"},
+		{BoardIndex: 3, OwnerUserID: "b"},
+	}
+	amount, _, _, _ = rentDueForLanding(spaces, deeds, 1, "a", 7)
+	if amount != 4 {
+		t.Fatalf("monopoly rent=%d want 4", amount)
+	}
+}
+
 func TestBuyAlreadyOwned(t *testing.T) {
 	repo := newMemRepo()
 	spaces := memSpaces{
@@ -446,6 +474,179 @@ func TestBuyAlreadyOwned(t *testing.T) {
 
 	_, err := svc.Buy(context.Background(), "g1", "a")
 	if !errors.Is(err, ErrAlreadyOwned) {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestRentAutoCollectOnRoll(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60, Rents: []int{2}, ColorGroup: "brown"},
+	}
+	svc := New(repo, spaces).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 1
+	g.Players[0].Cash = 2000
+	g.Players[1].Cash = 2000
+	g.Deeds = []gamerepo.Deed{{BoardIndex: 1, OwnerUserID: "b"}}
+	svc.resolveLandingLocked(context.Background(), g, 0, 5)
+	if g.Players[0].Cash != 1998 || g.Players[1].Cash != 2002 {
+		t.Fatalf("cash a=%d b=%d", g.Players[0].Cash, g.Players[1].Cash)
+	}
+	if g.LastPayment == nil || !g.LastPayment.PaidInFull || g.LastPayment.Amount != 2 {
+		t.Fatalf("lastPayment=%v", g.LastPayment)
+	}
+	if g.PendingPayment != nil {
+		t.Fatal("expected no pending")
+	}
+}
+
+func TestTaxAutoCollect(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 4, Slug: "tax", Name: "Income Tax", Kind: "special", SpecialType: "tax", TaxAmount: 200},
+	}
+	svc := New(repo, spaces).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 4
+	g.Players[0].Cash = 2000
+	svc.resolveLandingLocked(context.Background(), g, 0, 5)
+	if g.Players[0].Cash != 1800 {
+		t.Fatalf("cash=%d", g.Players[0].Cash)
+	}
+	if g.LastPayment == nil || g.LastPayment.Kind != "tax" || g.LastPayment.ToUserID != "" {
+		t.Fatalf("payment=%v", g.LastPayment)
+	}
+}
+
+func TestOwnTileNoRent(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60, Rents: []int{2}, ColorGroup: "brown"},
+	}
+	svc := New(repo, spaces).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 1
+	g.Players[0].Cash = 2000
+	g.Deeds = []gamerepo.Deed{{BoardIndex: 1, OwnerUserID: "a"}}
+	svc.resolveLandingLocked(context.Background(), g, 0, 5)
+	if g.Players[0].Cash != 2000 || g.LastPayment != nil {
+		t.Fatalf("cash=%d pay=%v", g.Players[0].Cash, g.LastPayment)
+	}
+}
+
+func TestCannotAffordRentBlocksEnd(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60, Rents: []int{100}, ColorGroup: "brown"},
+	}
+	svc := New(repo, spaces).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 1
+	g.Players[0].Cash = 40
+	g.Players[1].Cash = 2000
+	g.Deeds = []gamerepo.Deed{{BoardIndex: 1, OwnerUserID: "b"}}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	svc.resolveLandingLocked(context.Background(), g, 0, 5)
+	_ = repo.Update(context.Background(), g)
+
+	if g.Players[0].Cash != 0 || g.Players[1].Cash != 2040 {
+		t.Fatalf("cash a=%d b=%d", g.Players[0].Cash, g.Players[1].Cash)
+	}
+	if g.PendingPayment == nil || g.PendingPayment.Amount != 60 {
+		t.Fatalf("pending=%v", g.PendingPayment)
+	}
+
+	view, err := svc.Get(context.Background(), "g1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.CanEndTurn || view.CanRoll {
+		t.Fatalf("canEnd=%v canRoll=%v", view.CanEndTurn, view.CanRoll)
+	}
+
+	_, err = svc.EndTurn(context.Background(), "g1", "a")
+	if !errors.Is(err, ErrMustSettle) {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestRailroadAndUtilityRent(t *testing.T) {
+	spaces := memSpaces{
+		{BoardIndex: 5, Slug: "a1", Name: "Air1", Kind: "railroad", Price: 200, Rents: []int{25, 50, 100, 200}},
+		{BoardIndex: 15, Slug: "a2", Name: "Air2", Kind: "railroad", Price: 200, Rents: []int{25, 50, 100, 200}},
+		{BoardIndex: 12, Slug: "elc", Name: "Power", Kind: "utility", Price: 150, UtilityMultiplier: []int{4, 10}},
+		{BoardIndex: 28, Slug: "wtr", Name: "Water", Kind: "utility", Price: 150, UtilityMultiplier: []int{4, 10}},
+	}
+	deeds := []gamerepo.Deed{{BoardIndex: 5, OwnerUserID: "b"}}
+	amt, _, _, _ := rentDueForLanding(spaces, deeds, 5, "a", 7)
+	if amt != 25 {
+		t.Fatalf("1 rail=%d", amt)
+	}
+	deeds = append(deeds, gamerepo.Deed{BoardIndex: 15, OwnerUserID: "b"})
+	amt, _, _, _ = rentDueForLanding(spaces, deeds, 5, "a", 7)
+	if amt != 50 {
+		t.Fatalf("2 rail=%d", amt)
+	}
+	deeds = []gamerepo.Deed{{BoardIndex: 12, OwnerUserID: "b"}}
+	amt, _, _, _ = rentDueForLanding(spaces, deeds, 12, "a", 8)
+	if amt != 32 {
+		t.Fatalf("1 util=%d want 32", amt)
+	}
+	deeds = append(deeds, gamerepo.Deed{BoardIndex: 28, OwnerUserID: "b"})
+	amt, _, _, _ = rentDueForLanding(spaces, deeds, 12, "a", 8)
+	if amt != 80 {
+		t.Fatalf("2 util=%d want 80", amt)
+	}
+}
+
+func TestSetPinColor(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, nil)
+	bank := gamerepo.TimeBankDuration.Milliseconds()
+	g := &gamerepo.Game{
+		ID:      "g-pin",
+		TableID: "t-pin",
+		WorldID: "africa-1",
+		Status:  gamerepo.StatusActive,
+		Players: []gamerepo.Player{
+			{UserID: "a", Username: "A", SeatIndex: 0, TurnOrder: 0, Cash: 2000, BoardIndex: 0, PinColor: "#ed1b24", TimeRemainingMs: bank},
+			{UserID: "b", Username: "B", SeatIndex: 1, TurnOrder: 1, Cash: 2000, BoardIndex: 0, PinColor: "#0072bb", TimeRemainingMs: bank},
+		},
+		CurrentTurn:   0,
+		PassGoBonus:   200,
+		TurnPhase:     gamerepo.TurnPhaseAwaitingRoll,
+		TurnStartedAt: time.Now().UTC(),
+		CreatedAt:     time.Now().UTC(),
+		UpdatedAt:     time.Now().UTC(),
+	}
+	if err := repo.Insert(context.Background(), g); err != nil {
+		t.Fatal(err)
+	}
+
+	view, err := svc.SetPinColor(context.Background(), "g-pin", "a", "#8B4513")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Players[0].PinColor != "#8b4513" {
+		t.Fatalf("pin=%s", view.Players[0].PinColor)
+	}
+
+	_, err = svc.SetPinColor(context.Background(), "g-pin", "a", "red")
+	if !errors.Is(err, ErrInvalidPinColor) {
+		t.Fatalf("err=%v", err)
+	}
+
+	_, err = svc.SetPinColor(context.Background(), "g-pin", "z", "#112233")
+	if !errors.Is(err, ErrNotPlayer) {
 		t.Fatalf("err=%v", err)
 	}
 }

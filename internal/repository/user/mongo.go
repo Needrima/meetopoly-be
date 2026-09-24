@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -122,7 +123,11 @@ func (r *MongoRepository) FindByEmail(ctx context.Context, email string) (*User,
 
 func (r *MongoRepository) FindByUsername(ctx context.Context, username string) (*User, error) {
 	var doc mongoDoc
-	err := r.col.FindOne(ctx, bson.M{"username": username}).Decode(&doc)
+	// Case-insensitive match so Ademola / ademola collide for uniqueness checks.
+	pattern := "^" + regexp.QuoteMeta(username) + "$"
+	err := r.col.FindOne(ctx, bson.M{
+		"username": bson.M{"$regex": pattern, "$options": "i"},
+	}).Decode(&doc)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrNotFound

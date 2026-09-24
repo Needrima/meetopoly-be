@@ -44,6 +44,28 @@ type Deed struct {
 	OwnerUserID string `bson:"ownerUserId" json:"ownerUserId"`
 }
 
+// LastPayment is the most recent rent/tax transfer (Phase 6.5) for client toasts.
+type LastPayment struct {
+	Kind         string `bson:"kind" json:"kind"` // rent | tax
+	FromUserID   string `bson:"fromUserId" json:"fromUserId"`
+	FromUsername string `bson:"fromUsername" json:"fromUsername"`
+	ToUserID     string `bson:"toUserId,omitempty" json:"toUserId,omitempty"` // empty = Bank
+	ToUsername   string `bson:"toUsername,omitempty" json:"toUsername,omitempty"`
+	Amount       int    `bson:"amount" json:"amount"`
+	BoardIndex   int    `bson:"boardIndex" json:"boardIndex"`
+	SpaceName    string `bson:"spaceName" json:"spaceName"`
+	PaidInFull   bool   `bson:"paidInFull" json:"paidInFull"`
+}
+
+// PendingPayment — unpaid remainder after a land; blocks Roll/End until resign / Phase 14.
+type PendingPayment struct {
+	Kind       string `bson:"kind" json:"kind"` // rent | tax
+	Amount     int    `bson:"amount" json:"amount"`
+	ToUserID   string `bson:"toUserId,omitempty" json:"toUserId,omitempty"`
+	BoardIndex int    `bson:"boardIndex" json:"boardIndex"`
+	SpaceName  string `bson:"spaceName" json:"spaceName"`
+}
+
 // LastRoll is the most recent dice result (Phase 6.1+).
 type LastRoll struct {
 	UserID        string `bson:"userId" json:"userId"`
@@ -72,6 +94,10 @@ type Game struct {
 	PassGoBonus int      `bson:"passGoBonus" json:"passGoBonus"`
 	// Deeds — owned buyable spaces (Phase 6.4). Unowned spaces are absent.
 	Deeds []Deed `bson:"deeds,omitempty" json:"deeds,omitempty"`
+	// LastPayment — most recent auto rent/tax (Phase 6.5).
+	LastPayment *LastPayment `bson:"lastPayment,omitempty" json:"lastPayment,omitempty"`
+	// PendingPayment — unpaid remainder; blocks turn actions until settled (Phase 6.5 / 14).
+	PendingPayment *PendingPayment `bson:"pendingPayment,omitempty" json:"pendingPayment,omitempty"`
 	// TurnPhase — awaiting_roll | awaiting_end (Phase 6.2).
 	TurnPhase string `bson:"turnPhase" json:"turnPhase"`
 	// DoublesStreak — consecutive doubles this turn (0–3).
