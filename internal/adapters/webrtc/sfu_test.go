@@ -3,6 +3,7 @@ package webrtc
 import (
 	"sync"
 	"testing"
+	"time"
 )
 
 type memSignal struct {
@@ -20,6 +21,38 @@ func (m *memSignal) WriteJSON(v any) error {
 func TestBoardRoomID(t *testing.T) {
 	if got := BoardRoomID("g1"); got != "board:g1" {
 		t.Fatalf("got %s", got)
+	}
+}
+
+func TestHubRoomID(t *testing.T) {
+	if got := HubRoomID("africa-1:lagos"); got != "hub:africa-1:lagos" {
+		t.Fatalf("got %s", got)
+	}
+	if got := HubRoomID("hub:already"); got != "hub:already" {
+		t.Fatalf("prefixed=%s", got)
+	}
+}
+
+func TestAllowPoseRateLimit(t *testing.T) {
+	sfu := NewSFU()
+	room := BoardRoomID("rate")
+	sig := &memSignal{}
+	if err := sfu.Attach(room, "u1", "Ada", sig); err != nil {
+		t.Fatal(err)
+	}
+	if !sfu.allowPose(room, "u1") {
+		t.Fatal("first pose should pass")
+	}
+	if sfu.allowPose(room, "u1") {
+		t.Fatal("immediate second pose should be rate-limited")
+	}
+	// Advance past min interval without sleeping wall clock.
+	sfu.mu.Lock()
+	p := sfu.peerLocked(room, "u1")
+	p.lastPoseAt = time.Now().Add(-poseMinInterval - time.Millisecond)
+	sfu.mu.Unlock()
+	if !sfu.allowPose(room, "u1") {
+		t.Fatal("pose after interval should pass")
 	}
 }
 

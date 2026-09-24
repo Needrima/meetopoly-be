@@ -598,7 +598,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 | **7.0** | Pion SFU adapter + WS signaling; join/leave a **board presence room** per table/game; connect/disconnect lifecycle works (no pose payload yet)          | Pose messages, hubs, voice, Redis presence    |
 | **7.1** | DataChannel up; locked **pose message shape**; SFU fans out unvalidated; mobile `useWebRTC` / `useRoom` joins the board room                            | Server validation, interpolation polish, hubs |
 | **7.2** | Local avatar publishes ~10–20 Hz; remotes drawn + **interpolated** on the 2D board; pins still from game WS only                                        | Bounce-back, hubs, voice                      |
-| **7.3** | `services/presence` validates board moves (collision / illegal teleport); **bounce-back** only on the offender                                          | Hubs, voice, Redis presence                   |
+| **7.3** | ~~`services/presence` validates board moves; bounce-back~~ — **SKIPPED** (see notes)                                                                 | Hubs, voice, Redis presence                   |
 | **7.4** | Dual-presence proof: **Roll moves pins** while avatars keep walking; presence reconnect / leave room / rate-limit hardening; room-id hook ready for Phase 8 hubs | Full hub enter/UX (→ 8); voice (→ 10); game resign-on-disconnect |
 | **7.5** | Game WS disconnect hold (**3 min**, silent); reconnect cancels; expire → **auto-resign** (same fan-out as Leave); last active player wins; presence-only drops never resign | Resume-game CTA / SecureStore rejoin UI; pause time bank on disconnect; presence tear-down as resign |
 
@@ -617,16 +617,20 @@ Roll → move (+pass GO if applicable) → resolve space →
 - **Done (2026-09-24) 7.1:** `StampPose` + SFU `forwardPose`; mobile `presencePose` + `useBoardPresence.sendPose` / `remotes`; board publishes ~10 Hz when DC open. Remotes not drawn yet (→ **7.2**).
 - **Done (2026-09-24) 7.2:** `useInterpolatedBoardPose` + `BoardRemoteAvatar`; remotes drawn under local avatar with ~100 ms linear ease; accents from game `pinColor`.
 
-**7.3 notes**
+**7.3 notes — SKIPPED (2026-09-24)**
 
-- Validate against board collision rules (edge, decks, soft pins as already used locally).
-- Illegal teleport / out-of-bounds → bounce-back correction to offender only; others keep last good pose.
+- Decision: **do not** ship server presence validation / bounce-back / avatar↔avatar collision.
+- Collision stays **client-only** as already implemented in board walk: hard edge + center Chance/Chest decks; soft shove vs **game pins**; avatars may overlap each other.
+- Spoofed / teleported poses are out of scope for v1 Phase 7 (trust client + SFU identity stamp only). Revisit later if abuse shows up.
+- Exit criterion for 7.3 marked skipped — not required to exit Phase 7.
 
 **7.4 notes**
 
 - Prove independence: dice/pin walk must not snap or force social avatars.
 - Presence reconnect rejoins board room without breaking game WS; leave board tears down presence peer cleanly.
 - Harden WebRTC when PC/DC dies while presence signaling WS stays up (renegotiate or bounce socket).
+- Pose fan-out rate-limit on SFU (~20 Hz/peer); `HubRoomID` stub next to `BoardRoomID` for Phase 8.
+- **Done (2026-09-24) 7.4:** SFU `allowPose` + `HubRoomID`; mobile PC/DC recover while WS open; `disconnect()` on leave/hub enter; pins remain game-WS-only (no avatar snap on roll).
 
 **7.5 notes (locked)**
 
@@ -643,26 +647,28 @@ Roll → move (+pass GO if applicable) → resolve space →
 1. WebRTC (Pion) adapter + signaling WS — **7.0**
 2. Board presence room join/leave — **7.0**
 3. DataChannel fan-out of pose messages — **7.1**
-4. `services/presence` board validation + bounce-back — **7.3**
+4. ~~`services/presence` board validation + bounce-back — **7.3**~~ **SKIPPED** (client collision only; see 7.3 notes)
 5. On dice: pin update via game WS only; do not force avatar pose — **7.4**
 6. Game WS disconnect hold (3 min) → auto-resign — **7.5**
+7. Pose rate-limit + PC/DC recover while signaling up + `HubRoomID` stub — **7.4**
 
 **Mobile**
 
 1. `hooks/useWebRTC` / `useRoom` / `useBoardPresence` — **7.0–7.1**
 2. Publish local board avatar pose ~10–20 Hz — **7.2**
 3. Interpolate / render remote board avatars — **7.2**
-4. Apply bounce-back corrections — **7.3**
+4. ~~Apply bounce-back corrections — **7.3**~~ **SKIPPED**
 5. Pins from game WS; avatars from DataChannel — **throughout**
-6. Game WS reconnect stays client-side; server owns hold/resign — **7.5**
+6. Presence PC/DC recover + explicit disconnect on leave — **7.4**
+7. Game WS reconnect stays client-side; server owns hold/resign — **7.5**
 
 **Exit criteria**
 
 - [x] **7.0:** two clients join/leave the same board presence room reliably
 - [x] **7.1:** pose messages fan out over DataChannel
 - [x] **7.2:** two players see each other’s board avatars move smoothly
-- [ ] **7.3:** illegal teleport gets bounce-back only on offender
-- [ ] **7.4:** Roll updates pins while avatars keep walking (no forced avatar snap); presence reconnect hardened
+- [x] **7.3:** SKIPPED — no server bounce-back / avatar↔avatar collision (client edge+deck+pin soft only)
+- [x] **7.4:** Roll updates pins while avatars keep walking (no forced avatar snap); presence reconnect hardened
 - [ ] **7.5:** game WS down 3 min → auto-resign + last-player-wins; presence-only drop does not resign
 - [ ] Hubs deferred — not required for Phase 7 exit (→ **Phase 8**)
 

@@ -584,14 +584,15 @@ paths:
         Created when a lobby reaches all-Ready (Phase 6.0).
         Live updates: connect to `GET /ws/games/{gameId}?token=` (same auth as table lobby WS);
         server pushes `{ "type": "state", "game": Game }` after roll / end-turn.
-        Board presence (Phase 7.0–7.2): `GET /ws/presence/board/{gameId}?token=` — WebRTC signaling +
-        Pion SFU PeerConnection; room id `board:{gameId}`; STUN `stun:stun.l.google.com:19302`.
+        Board presence (Phase 7.0–7.4): `GET /ws/presence/board/{gameId}?token=` — WebRTC signaling +
+        Pion SFU PeerConnection; room id `board:{gameId}` (`HubRoomID` stub for Phase 8 hubs);
+        STUN `stun:stun.l.google.com:19302`.
         Messages: client `{type:offer|ice|ping}`, server `{type:welcome|answer|ice|peer-joined|peer-left|pong|error}`.
-        DataChannel label `presence`. Pose fan-out (7.1): client sends JSON
+        DataChannel label `presence`. Pose fan-out: client sends JSON
         `{type:"pose",userId?,username?,x,y,rot?,t?}` (board-normalized 0..1); SFU stamps
-        `userId`/`username` from the authenticated peer and forwards to other peers' open DCs
-        (positions unvalidated until 7.3). Clients interpolate remotes (~10 Hz samples → smooth walk)
-        and draw presence avatars separately from game pins (Phase 7.2).
+        `userId`/`username`, rate-limits ~20 Hz/peer, and forwards to other peers' open DCs.
+        Collision stays client-side (7.3 skipped). Pins stay on game WS only (dual presence).
+        Clients interpolate remotes and draw presence avatars separately from game pins.
       tags:
         - Games
       security:

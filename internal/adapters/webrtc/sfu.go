@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/pion/webrtc/v4"
 )
@@ -12,7 +14,11 @@ import (
 const (
 	// PresenceDataChannelLabel carries board presence poses (Phase 7.1+).
 	PresenceDataChannelLabel = "presence"
+	// MaxPoseHz caps stamped pose fan-out per peer (Phase 7.4). Clients send ~10 Hz.
+	MaxPoseHz = 20
 )
+
+var poseMinInterval = time.Second / MaxPoseHz
 
 // SignalWriter sends JSON signaling messages to one peer's WebSocket.
 type SignalWriter interface {
@@ -43,11 +49,12 @@ type room struct {
 }
 
 type peer struct {
-	userID   string
-	username string
-	pc       *webrtc.PeerConnection
-	dc       *webrtc.DataChannel
-	signal   SignalWriter
+	userID     string
+	username   string
+	pc         *webrtc.PeerConnection
+	dc         *webrtc.DataChannel
+	signal     SignalWriter
+	lastPoseAt time.Time
 }
 
 // NewSFU builds a memory SFU with Google public STUN (no TURN in Phase 7.0).
@@ -60,9 +67,22 @@ func NewSFU() *SFU {
 	}
 }
 
-// BoardRoomID returns the locked room id for a game.
+// BoardRoomID returns the locked room id for a game board presence room.
 func BoardRoomID(gameID string) string {
 	return "board:" + gameID
+}
+
+// HubRoomID returns the locked Phase 8 hub presence room id.
+// If hubID is already prefixed with "hub:", it is returned unchanged.
+func HubRoomID(hubID string) string {
+	hubID = strings.TrimSpace(hubID)
+	if hubID == "" {
+		return "hub:"
+	}
+	if strings.HasPrefix(hubID, "hub:") {
+		return hubID
+	}
+	return "hub:" + hubID
 }
 
 // ICEServersJSON returns STUN config for the welcome payload.
@@ -204,8 +224,11 @@ func (s *SFU) HandleOffer(roomID, userID string, sdp string) error {
 				"label", dc.Label(),
 			)
 		})
-		// Phase 7.1: stamp identity + fan out unvalidated poses to other peers' DCs.
+		// Phase 7.1–7.4: stamp identity, rate-limit, fan out (no collision validation — 7.3 skipped).
 		dc.OnMessage(func(msg webrtc.DataChannelMessage) {
+			if !s.allowPose(roomID, fromUser) {
+				return
+			}
 			stamped, err := StampPose(fromUser, fromName, msg.Data)
 			if err != nil {
 				return
@@ -270,6 +293,22 @@ func (s *SFU) peerLocked(roomID, userID string) *peer {
 		return nil
 	}
 	return r.peers[userID]
+}
+
+// allowPose returns true if this peer may fan out another pose (MaxPoseHz).
+func (s *SFU) allowPose(roomID, userID string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	p := s.peerLocked(roomID, userID)
+	if p == nil {
+		return false
+	}
+	now := time.Now()
+	if !p.lastPoseAt.IsZero() && now.Sub(p.lastPoseAt) < poseMinInterval {
+		return false
+	}
+	p.lastPoseAt = now
+	return true
 }
 
 // forwardPose sends stamped pose bytes to every other open DataChannel in the room.
