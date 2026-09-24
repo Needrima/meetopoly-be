@@ -21,14 +21,15 @@ import (
 
 // Deps are HTTP adapter dependencies.
 type Deps struct {
-	Health    health.Service
-	Auth      auth.Service
-	Users     usersvc.Service
-	Locations locationsvc.Service
-	Tables    tablesvc.Service
-	Games     gamesvc.Service
-	TableWS   *wsadapter.Hub
-	GameWS    *wsadapter.GameHub
+	Health     health.Service
+	Auth       auth.Service
+	Users      usersvc.Service
+	Locations  locationsvc.Service
+	Tables     tablesvc.Service
+	Games      gamesvc.Service
+	TableWS    *wsadapter.Hub
+	GameWS     *wsadapter.GameHub
+	PresenceWS *wsadapter.PresenceHub
 }
 
 // NewRouter builds the chi router for HTTP adapters.
@@ -81,6 +82,9 @@ func NewRouter(deps Deps) http.Handler {
 	}
 	if deps.GameWS != nil {
 		r.Get("/ws/games/{gameId}", deps.GameWS.HandleGame)
+	}
+	if deps.PresenceWS != nil {
+		r.Get("/ws/presence/board/{gameId}", deps.PresenceWS.HandleBoardPresence)
 	}
 
 	return r

@@ -113,6 +113,7 @@ func main() {
 	resolveUser := httpadapter.ResolveWSUser(authSvc)
 	tableWS := wsadapter.NewHub(tableSvc, resolveUser)
 	gameWS := wsadapter.NewGameHub(gameSvc, resolveUser)
+	presenceWS := wsadapter.NewPresenceHub(gameSvc, resolveUser)
 	healthSvc := health.New(
 		health.NewMongoPinger(mongoClient),
 		health.NewRedisPinger(redisClient),
@@ -122,14 +123,15 @@ func main() {
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,
 		Handler: httpadapter.NewRouter(httpadapter.Deps{
-			Health:    healthSvc,
-			Auth:      authSvc,
-			Users:     userSvc,
-			Locations: locationSvc,
-			Tables:    tableSvc,
-			Games:     gameSvc,
-			TableWS:   tableWS,
-			GameWS:    gameWS,
+			Health:     healthSvc,
+			Auth:       authSvc,
+			Users:      userSvc,
+			Locations:  locationSvc,
+			Tables:     tableSvc,
+			Games:      gameSvc,
+			TableWS:    tableWS,
+			GameWS:     gameWS,
+			PresenceWS: presenceWS,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 	}

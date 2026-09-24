@@ -53,8 +53,8 @@ Meetopoly is a **mobile-first**, worldwide social property game:
 | Avatar look    | Pod + Maps-style callout: colored circle + **initial** now; photo later (settings upload)                |
 | App home       | Signed-in **menu** (Play / Settings / About / Log out) — **not** the board as root                       |
 | Leave board    | Only via panel **⋯** (no on-art Back); block Android back + iOS swipe-back while on board                |
-| Presence sync  | Pins via game WS; board + hub avatar positions later (~10–20 Hz)                                         |
-| Voice          | Phase after presence; same room model                                                                    |
+| Presence sync  | Pins via game WS; **board** avatar poses Phase **7** (~10–20 Hz DataChannel); **hub** poses Phase **8**  |
+| Voice          | Phase **10**; same WebRTC room model as presence                                                         |
 
 ---
 
@@ -160,7 +160,7 @@ Per player in `games`:
 
 - Session / refresh tokens (if used)
 - Turn time bank on `games.players[].timeRemainingMs` (+ `turnStartedAt` while current) — Phase **6.3** / **6.3b**; Redis mirror optional later
-- Hot presence keys optional (else SFU + service memory for v1 — decide at presence phase)
+- Hot presence keys — **deferred**: Phase **7** uses SFU + service **memory** only; Redis presence keys when multi-instance / prod scale (typically **Phase 15**)
 
 ---
 
@@ -350,18 +350,18 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 **Mobile — incremental slices (implement one at a time)**
 
-| Slice   | Done when                                                                                  | Avoid           |
-| ------- | ------------------------------------------------------------------------------------------ | --------------- |
-| **4.0** | Landscape shell: 1:1 board placeholder + panel; reachable from home                        | Ring, walk      |
-| **4.1** | Empty ring of slots from `boardIndex` (geometry only)                                      | Colors, icons   |
-| **4.2** | Color bands + kind styling                                                                 | Icons, walk     |
-| **4.3** | Icons + `boardCode` / styling from `useLocations('africa-1')`                               | Walk, Enter     |
-| **4.4** | ✅ Center brand + Chance/Chest deck shapes (`layout.decks` obstacles reserved)              | Movement        |
-| **4.5** | ✅ Local avatar (pod + 1-letter) + joystick BR + edge/deck hard + pin soft; pin on GO       | Enter, net      |
-| **4.6** | ✅ Walk-near Enter (nearest glow) + Details `InfoModal` + hub placeholder + BoardSession   | SFU             |
-| **4.7** | ✅ __DEV__ multi-pin fan on GO (distinct colors; soft collide all); local pin from 4.5     | Full game rules |
-| **4.8** | ✅ Menu home + board ⋯ (Leave / logout; health+locations `__DEV__`); block board back       | Lobby, WS, RTC  |
-| **4.9** | ✅ Polish: attribution, Reanimated avatar, side-length, chrome; Phase 4 exit criteria       | New features    |
+| Slice   | Done when                                                                                | Avoid           |
+| ------- | ---------------------------------------------------------------------------------------- | --------------- |
+| **4.0** | Landscape shell: 1:1 board placeholder + panel; reachable from home                      | Ring, walk      |
+| **4.1** | Empty ring of slots from `boardIndex` (geometry only)                                    | Colors, icons   |
+| **4.2** | Color bands + kind styling                                                               | Icons, walk     |
+| **4.3** | Icons + `boardCode` / styling from `useLocations('africa-1')`                            | Walk, Enter     |
+| **4.4** | ✅ Center brand + Chance/Chest deck shapes (`layout.decks` obstacles reserved)           | Movement        |
+| **4.5** | ✅ Local avatar (pod + 1-letter) + joystick BR + edge/deck hard + pin soft; pin on GO    | Enter, net      |
+| **4.6** | ✅ Walk-near Enter (nearest glow) + Details `InfoModal` + hub placeholder + BoardSession | SFU             |
+| **4.7** | ✅ **DEV** multi-pin fan on GO (distinct colors; soft collide all); local pin from 4.5   | Full game rules |
+| **4.8** | ✅ Menu home + board ⋯ (Leave / logout; health+locations `__DEV__`); block board back    | Lobby, WS, RTC  |
+| **4.9** | ✅ Polish: attribution, Reanimated avatar, side-length, chrome; Phase 4 exit criteria    | New features    |
 
 **4.8 detail (locked)**
 
@@ -398,7 +398,7 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 - [x] Signed-in **menu home**; Play opens board; board leave only via **⋯**; system/gesture back blocked on board
 - [x] Smooth walk on mid-range targets (Reanimated avatar pose; memoized tiles; no per-frame React setState)
 
-**Note on later phases:** Phase 5 adds World picker + lobby before board. Phase 7 syncs **board** avatar positions (and hub poses). Pins stay authoritative via game WS. Rolling moves pins without forcing avatars.
+**Note on later phases:** Phase 5 adds World picker + lobby before board. Phase **7** syncs **board** avatar positions (DataChannels). Phase **8** adds hubs. Pins stay authoritative via game WS. Rolling moves pins without forcing avatars.
 
 ---
 
@@ -414,33 +414,33 @@ Menu → Play → World picker → Lobby (matchmaking pool) → all Ready (≥2)
 
 **Locks (Phase 5)**
 
-| Topic | Decision |
-| ----- | -------- |
-| Matchmaking | Pick World → join waiting pool for that World (no invite codes in v1 stub) |
-| Worlds list | All worlds from `GET /worlds` |
-| Capacity | **2–6** hard cap |
-| Ready | Disabled until ≥2 seated; toggle Ready anytime; bots auto-Ready after a short delay |
-| New joiner | Keep existing Readys; newcomer starts unready |
-| Start | When **every seated** player is Ready and count ≥2 → board (no separate Start/host) |
-| Leave | Voluntary Leave frees seat immediately |
-| Disconnect | Hold seat ~30–60s then free (stub timing OK) |
-| Transport | Lobby seating = **WebSocket** later; stub is local-only until **5.6** |
-| WebRTC | Not for lobby — Phase 7+ |
+| Topic       | Decision                                                                            |
+| ----------- | ----------------------------------------------------------------------------------- |
+| Matchmaking | Pick World → join waiting pool for that World (no invite codes in v1 stub)          |
+| Worlds list | All worlds from `GET /worlds`                                                       |
+| Capacity    | **2–6** hard cap                                                                    |
+| Ready       | Disabled until ≥2 seated; toggle Ready anytime; bots auto-Ready after a short delay |
+| New joiner  | Keep existing Readys; newcomer starts unready                                       |
+| Start       | When **every seated** player is Ready and count ≥2 → board (no separate Start/host) |
+| Leave       | Voluntary Leave frees seat immediately                                              |
+| Disconnect  | Hold seat ~30–60s then free (stub timing OK)                                        |
+| Transport   | Lobby seating = **WebSocket** later; stub is local-only until **5.6**               |
+| WebRTC      | Not for lobby — Phase 7+                                                            |
 
 - **World** = board pack (`africa-1`, …). Do **not** confuse with **Locations** (board spaces).
 - Pins packing **2×3** when 6 on one square → Phase 6 UI if needed.
 
 **Mobile — incremental slices (implement + test one at a time)**
 
-| Slice | Done when | Avoid |
-| ----- | --------- | ----- |
-| **5.0** | ✅ World picker from `useWorlds`; Play → picker; select World; temp Continue → board with `worldId` | Lobby, bots, Ready |
-| **5.1** | ✅ Lobby shell `lobby/[worldId]`; 6 seat slots UI; Leave → picker | Matchmaking logic, bots |
-| **5.2** | ✅ Local stub: enter pool as local seat; waiting copy until ≥2 | Bots, Ready, WS |
-| **5.3** | ✅ Slow fake joiners toward 6 (cap); newcomer unready rule | Ready start, WS |
-| **5.4** | ✅ Ready toggle (≥2); bots delayed auto-Ready; all Ready → board | Real WS |
-| **5.5** | ✅ Disconnect-hold stub (45s); polish lobby chrome | Backend |
-| **5.6** | ✅ Real `services/table` + WS matchmaking replaces local stub | Game M1 rules |
+| Slice   | Done when                                                                                           | Avoid                   |
+| ------- | --------------------------------------------------------------------------------------------------- | ----------------------- |
+| **5.0** | ✅ World picker from `useWorlds`; Play → picker; select World; temp Continue → board with `worldId` | Lobby, bots, Ready      |
+| **5.1** | ✅ Lobby shell `lobby/[worldId]`; 6 seat slots UI; Leave → picker                                   | Matchmaking logic, bots |
+| **5.2** | ✅ Local stub: enter pool as local seat; waiting copy until ≥2                                      | Bots, Ready, WS         |
+| **5.3** | ✅ Slow fake joiners toward 6 (cap); newcomer unready rule                                          | Ready start, WS         |
+| **5.4** | ✅ Ready toggle (≥2); bots delayed auto-Ready; all Ready → board                                    | Real WS                 |
+| **5.5** | ✅ Disconnect-hold stub (45s); polish lobby chrome                                                  | Backend                 |
+| **5.6** | ✅ Real `services/table` + WS matchmaking replaces local stub                                       | Game M1 rules           |
 
 **Backend (primarily 5.6)**
 
@@ -468,27 +468,27 @@ Menu → Play → World picker → Lobby (matchmaking pool) → all Ready (≥2)
 
 ### Phase 6 — Game M1: movement + turn loop (authoritative), then light economy
 
-**Goal:** Authoritative dice, pin movement, pass-GO income, turn order, **per-player time bank**. Property **buy / rent** follow once the movement loop is solid. Hubs/presence stay Phase 7+.
+**Goal:** Authoritative dice, pin movement, pass-GO income, turn order, **per-player time bank**. Property **buy / rent** follow once the movement loop is solid. Board avatar sync = Phase **7**; hubs = Phase **8**.
 
 **Rules source:** classic Monopoly (see `meetopoly-mobile/resources/Monopoly_Complete_Rules_Guide.pdf`). Meetopoly keeps its own economy numbers and phased delivery — do **not** reshape phases just to match the booklet order.
 
 **M1 economy / rules locks (do not re-litigate)**
 
-| Topic | Decision |
-| ----- | -------- |
-| Currency | **MeetCoin** — double-bar capital **M**; HUD `[symbol] amount` |
-| Start cash | **2000** MeetCoin (ignore classic $1500 editions) |
-| Pass / land GO | **+200** MeetCoin |
-| Free Parking | **Nothing** (no jackpot — that is a house rule) |
-| Rent (cities) | `rents[0]` unimproved; color-set doubling when monopoly logic exists |
-| Rent (airports / utilities) | Classic tables (rail 25/50/100/200; util 4× / 10× dice) |
-| Rent collection | **Auto-pay** on land (digital; do not use “owner forgot → no rent”) |
-| Unowned buyable | Official: **Buy at list price** *or* **Bank auctions** — auction ships in **Phase 13**, not here |
-| Doubles | Re-roll after resolving the space; **three doubles → Jail** in M3 (Phase 12) |
-| End turn | Explicit **End** after space is resolved (not auto-end mid-resolution) |
-| Turn order | **Seat order** (lowest seatIndex first) |
-| Devices | **2+** real accounts (no bots on production path) |
-| HUD balances | Show **all** players’ MeetCoin |
+| Topic                       | Decision                                                                                         |
+| --------------------------- | ------------------------------------------------------------------------------------------------ |
+| Currency                    | **MeetCoin** — double-bar capital **M**; HUD `[symbol] amount`                                   |
+| Start cash                  | **2000** MeetCoin (ignore classic $1500 editions)                                                |
+| Pass / land GO              | **+200** MeetCoin                                                                                |
+| Free Parking                | **Nothing** (no jackpot — that is a house rule)                                                  |
+| Rent (cities)               | `rents[0]` unimproved; color-set doubling when monopoly logic exists                             |
+| Rent (airports / utilities) | Classic tables (rail 25/50/100/200; util 4× / 10× dice)                                          |
+| Rent collection             | **Auto-pay** on land (digital; do not use “owner forgot → no rent”)                              |
+| Unowned buyable             | Official: **Buy at list price** _or_ **Bank auctions** — auction ships in **Phase 13**, not here |
+| Doubles                     | Re-roll after resolving the space; **three doubles → Jail** in M3 (Phase 12)                     |
+| End turn                    | Explicit **End** after space is resolved (not auto-end mid-resolution)                           |
+| Turn order                  | **Seat order** (lowest seatIndex first)                                                          |
+| Devices                     | **2+** real accounts (no bots on production path)                                                |
+| HUD balances                | Show **all** players’ MeetCoin                                                                   |
 
 **Turn shape (official-aligned)**
 
@@ -500,17 +500,17 @@ Roll → move (+pass GO if applicable) → resolve space →
 
 **Sub-phases (ship one at a time)**
 
-| Slice | Done when | Avoid |
-| ----- | --------- | ----- |
-| **6.0** | ✅ Create `games` on all-Ready; `GET /games/{id}`; pins on GO; MeetCoin HUD + toast; `gameId` nav | Dice, buy, timer |
-| **6.1** | ✅ Dice + pin move + pass-GO; tile-by-tile motion; auto-advance (interim) | Buy, rent, End UI |
-| **6.2** | ✅ Explicit **End** + **doubles** re-roll; stop auto-advance after roll; **game WS** push | Buy, auction, Jail |
-| **6.2b** | ✅ Dice **roll animation** (Moti) on all devices when `lastRoll` updates; hold pin walk until dice land | Timer, buy, Lottie pack unless asked |
-| **6.2c** | Leave board = **resign** (confirm); notify via game WS; last active player **wins** | Full bankruptcy asset transfer (→ Phase 14); app-kill hold |
-| **6.3** | ✅ Interim **3-min** per-turn AFK (`turnDeadline`) — **superseded by 6.3b** | — |
-| **6.3b** | ✅ **45-min per-player time bank**; drain only on your turn; bank = 0 → eliminate; all banks on every HUD | Phase 13 pause actions (auction/trade/…); hubs |
-| **6.4** | ✅ **Buy at list price** for unowned city / airport / utility; ownership on game doc; classic price/rent ladder in seeds; buy modal shows 1–4 houses + hotel; **owner color chip** on tiles; **tap any tile** → info sheet (deed / Chance / Chest / tax / …) | Auction (→ Phase 13); if player skips buy, property stays unowned until 13; mortgage chip later |
-| **6.5** | ✅ **Rent** (+ tax to Bank; own tile = noop); classic rail/util formulas; auto-collect on land; block End/Roll if unpaid remainder | Houses, mortgage, cards; full bankruptcy raise-funds (→ Phase 14) |
+| Slice    | Done when                                                                                                                                                                                                                                                    | Avoid                                                                                           |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| **6.0**  | ✅ Create `games` on all-Ready; `GET /games/{id}`; pins on GO; MeetCoin HUD + toast; `gameId` nav                                                                                                                                                            | Dice, buy, timer                                                                                |
+| **6.1**  | ✅ Dice + pin move + pass-GO; tile-by-tile motion; auto-advance (interim)                                                                                                                                                                                    | Buy, rent, End UI                                                                               |
+| **6.2**  | ✅ Explicit **End** + **doubles** re-roll; stop auto-advance after roll; **game WS** push                                                                                                                                                                    | Buy, auction, Jail                                                                              |
+| **6.2b** | ✅ Dice **roll animation** (Moti) on all devices when `lastRoll` updates; hold pin walk until dice land                                                                                                                                                      | Timer, buy, Lottie pack unless asked                                                            |
+| **6.2c** | Leave board = **resign** (confirm); notify via game WS; last active player **wins**                                                                                                                                                                          | Full bankruptcy asset transfer (→ Phase 14); game WS disconnect hold → **7.5**                  |
+| **6.3**  | ✅ Interim **3-min** per-turn AFK (`turnDeadline`) — **superseded by 6.3b**                                                                                                                                                                                  | —                                                                                               |
+| **6.3b** | ✅ **45-min per-player time bank**; drain only on your turn; bank = 0 → eliminate; all banks on every HUD                                                                                                                                                    | Phase 13 pause actions (auction/trade/…); hubs                                                  |
+| **6.4**  | ✅ **Buy at list price** for unowned city / airport / utility; ownership on game doc; classic price/rent ladder in seeds; buy modal shows 1–4 houses + hotel; **owner color chip** on tiles; **tap any tile** → info sheet (deed / Chance / Chest / tax / …) | Auction (→ Phase 13); if player skips buy, property stays unowned until 13; mortgage chip later |
+| **6.5**  | ✅ **Rent** (+ tax to Bank; own tile = noop); classic rail/util formulas; auto-collect on land; block End/Roll if unpaid remainder                                                                                                                           | Houses, mortgage, cards; full bankruptcy raise-funds (→ Phase 14)                               |
 
 **6.5 notes**
 
@@ -544,7 +544,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 - ⋯ Leave → confirm (“leaving = resigning”) → `POST /games/{id}/resign`.
 - Mark `resigned`; skip for turns; freeze assets until Phase 14.
 - Game WS pushes updated `Game`; if one active player left → `status: finished` + winner fields.
-- Explicit Leave only this slice (disconnect/app-kill hold later).
+- Explicit Leave only this slice. Game WS disconnect / app-kill hold → auto-resign is **Phase 7.5**.
 
 **6.2b notes (client-only)**
 
@@ -581,55 +581,114 @@ Roll → move (+pass GO if applicable) → resolve space →
 - [x] **6.3:** interim 3-min AFK (superseded)
 - [x] **6.3b:** 45-min bank; eliminate at 0; all banks on HUD
 - [x] **6.4:** buy at list price; deeds on game; skip leaves unowned
+- [x] **6.5:** rent + tax auto-collect; pendingPayment blocks End/Roll
+
 ---
 
-### Phase 7 — Dual presence + board/hub avatar sync (DataChannels)
+### Phase 7 — Board avatar sync (DataChannels)
 
-**Goal:** Pins on track vs avatars walking the **2D board** (and inside hubs); prediction + bounce-back.
+**Goal:** Dual presence on the **2D board** — rules **pins** (game WS) vs social **avatars** (WebRTC DataChannels); prediction + bounce-back. **Board-only** this phase; **hubs = Phase 8**.
+
+**Hot state (locked):** SFU + `services/presence` in **process memory** for v1. Redis presence keys → multi-instance / **Phase 15** (not required to exit Phase 7).
+
+**Sub-phases (ship one at a time)**
+
+| Slice   | Done when                                                                                                                                               | Avoid                                         |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| **7.0** | Pion SFU adapter + WS signaling; join/leave a **board presence room** per table/game; connect/disconnect lifecycle works (no pose payload yet)          | Pose messages, hubs, voice, Redis presence    |
+| **7.1** | DataChannel up; locked **pose message shape**; SFU fans out unvalidated; mobile `useWebRTC` / `useRoom` joins the board room                            | Server validation, interpolation polish, hubs |
+| **7.2** | Local avatar publishes ~10–20 Hz; remotes drawn + **interpolated** on the 2D board; pins still from game WS only                                        | Bounce-back, hubs, voice                      |
+| **7.3** | `services/presence` validates board moves (collision / illegal teleport); **bounce-back** only on the offender                                          | Hubs, voice, Redis presence                   |
+| **7.4** | Dual-presence proof: **Roll moves pins** while avatars keep walking; presence reconnect / leave room / rate-limit hardening; room-id hook ready for Phase 8 hubs | Full hub enter/UX (→ 8); voice (→ 10); game resign-on-disconnect |
+| **7.5** | Game WS disconnect hold (**3 min**, silent); reconnect cancels; expire → **auto-resign** (same fan-out as Leave); last active player wins; presence-only drops never resign | Resume-game CTA / SecureStore rejoin UI; pause time bank on disconnect; presence tear-down as resign |
+
+**7.0 notes**
+
+- Signaling over WebSocket (auth same family as table/game WS).
+- One **board** presence room per active table/game — not lobby seating (lobby stays WS-only).
+- No hub rooms yet; leave a stub room-id convention so Phase 8 can add `hub:{hubId}`.
+- **Done (2026-09-24):** Pion SFU (`internal/adapters/webrtc`), `GET /ws/presence/board/{gameId}?token=`, room `board:{gameId}`, Google STUN, idle DC label `presence`, mobile `useBoardPresence` + join/leave toasts. Requires Expo **dev client** (not Expo Go) for `react-native-webrtc`.
+
+**7.1–7.2 notes**
+
+- Unvalidated fan-out first so remotes are visible early; wire validation in **7.3**.
+- Pose payload: board-local `{ x, y, rot? }` (+ identity); ~10–20 Hz send; client interpolates remotes.
+- Pins remain authoritative via existing `/ws/games/{id}` — do not drive pins over DataChannel.
+
+**7.3 notes**
+
+- Validate against board collision rules (edge, decks, soft pins as already used locally).
+- Illegal teleport / out-of-bounds → bounce-back correction to offender only; others keep last good pose.
+
+**7.4 notes**
+
+- Prove independence: dice/pin walk must not snap or force social avatars.
+- Presence reconnect rejoins board room without breaking game WS; leave board tears down presence peer cleanly.
+- Harden WebRTC when PC/DC dies while presence signaling WS stays up (renegotiate or bounce socket).
+
+**7.5 notes (locked)**
+
+- Trigger: **`/ws/games/{gameId}`** closes only (app kill, long background, bad net). **Not** presence WS / WebRTC glitches.
+- Hold **3 minutes**, **silent** (no banner/toast for others while held).
+- Reconnect to game WS within hold → cancel; player stays in game.
+- Hold expires → same **Resign** path as ⋯ Leave → game WS fan-out; if one active player left → `finished` + winner.
+- ⋯ Leave remains **immediate** resign (confirm).
+- Time bank **keeps draining** on their turn while disconnected (no pause — pausing would be exploitable).
+- No Play-screen “resume game” / SecureStore rejoin UI in this slice (cold start after kill may miss rejoin; hold then resign is acceptable).
 
 **Backend**
 
-1. Pion SFU adapter + signaling over WebSocket
-2. Table/board presence room + hub rooms
-3. `services/presence` validates board/hub avatar moves (respect collision rules); bounce-back invalid
-4. On dice: update pin for all; do not force avatar off the board or out of hub
+1. WebRTC (Pion) adapter + signaling WS — **7.0**
+2. Board presence room join/leave — **7.0**
+3. DataChannel fan-out of pose messages — **7.1**
+4. `services/presence` board validation + bounce-back — **7.3**
+5. On dice: pin update via game WS only; do not force avatar pose — **7.4**
+6. Game WS disconnect hold (3 min) → auto-resign — **7.5**
 
 **Mobile**
 
-1. `hooks/useWebRTC` / `useRoom`
-2. Send local board (or hub) avatar pose 10–20 Hz
-3. Interpolate remote avatars
-4. Pins driven by game WS; avatars by DataChannel
+1. `hooks/useWebRTC` / `useRoom` / `useBoardPresence` — **7.0–7.1**
+2. Publish local board avatar pose ~10–20 Hz — **7.2**
+3. Interpolate / render remote board avatars — **7.2**
+4. Apply bounce-back corrections — **7.3**
+5. Pins from game WS; avatars from DataChannel — **throughout**
+6. Game WS reconnect stays client-side; server owns hold/resign — **7.5**
 
 **Exit criteria**
 
-- [ ] Two players see each other’s board avatars move smoothly
-- [ ] Illegal teleport gets bounce-back only on offender
-- [ ] Roll updates pins while avatars keep walking / stay in hub
+- [x] **7.0:** two clients join/leave the same board presence room reliably
+- [ ] **7.1:** pose messages fan out over DataChannel
+- [ ] **7.2:** two players see each other’s board avatars move smoothly
+- [ ] **7.3:** illegal teleport gets bounce-back only on offender
+- [ ] **7.4:** Roll updates pins while avatars keep walking (no forced avatar snap); presence reconnect hardened
+- [ ] **7.5:** game WS down 3 min → auto-resign + last-player-wins; presence-only drop does not resign
+- [ ] Hubs deferred — not required for Phase 7 exit (→ **Phase 8**)
 
 ---
 
 ### Phase 8 — Location hubs + turn notify while in hub
 
-**Goal:** Enter landmark; hub room; turn sheet without forcing board.
+**Goal:** Enter landmark; **hub** WebRTC presence room (extends Phase 7 room model); turn sheet without forcing board. Board avatar sync already shipped in Phase 7.
 
 **Backend**
 
-1. `services/hub` — enter/leave; hub WebRTC rooms by `hubId`
-2. On `turnStarted`, if player `hubId != null`, emit targeted notify
-3. Same room model ready for future voice (no mic yet)
+1. `services/hub` — enter/leave; hub WebRTC rooms by `hubId` (same Pion room model as board presence)
+2. On turn start, if player `hubId != null`, emit targeted notify
+3. Same room model ready for future voice (no mic yet — Phase 10)
+4. Presence validation for hub poses (reuse / extend `services/presence`)
 
 **Mobile**
 
-1. Hub scene load on Enter; leave returns to **board**
-2. Turn BottomSheet in hub: timer + Roll / basic actions + Open board
-3. Pin still updates on roll while staying in hub
+1. Hub scene load on Enter; leave returns to **board** (rejoin board presence room)
+2. Turn BottomSheet in hub: time bank + Roll / basic actions + Open board
+3. Pin still updates on roll while staying in hub (avatar stays in hub)
 
 **Exit criteria**
 
 - [ ] Players from same or different tables can meet in one hub (define cross-table policy in impl — default: **allow** per product)
-- [ ] Turn notify + 5‑min skip works while in hub
+- [ ] Turn notify works while in hub (bank rules stay **6.3b**; no inventing new AFK skips here)
 - [ ] Open board navigates to table/board view
+- [ ] Leave hub returns to board avatar sync without dropping game WS
 
 ---
 
@@ -711,6 +770,8 @@ Document the exact pause list in this phase’s implementation notes; do not inv
 
 **Ask before:** systemd unit contents, nginx vs Caddy, TURN (coturn).
 
+**Also consider here (if multi-instance):** Redis **hot presence** keys (Phase 7 ships memory-only).
+
 **Exit criteria**
 
 - [ ] Mobile points at prod API
@@ -779,51 +840,55 @@ Only when the user asks:
 
 ## 8. Changelog
 
-| Date       | Change                                                                                                            |
-| ---------- | ----------------------------------------------------------------------------------------------------------------- |
-| 2026-09-20 | Initial comprehensive plan from locked product/tech decisions                                                     |
-| 2026-09-20 | Worlds + SVGCities billboards; `locations.json` / `africa-1` replaces Nigeria districts                           |
-| 2026-09-20 | Expanded `locations.json` with all SVGCities Worlds (Europe×5, Asia×2, NA, SA, ME, Oceania, Central America)      |
-| 2026-09-20 | Linked all 304 city properties to `city-icons/icons/{cc}-*.svg` + About/attribution from SVGCities metadata       |
-| 2026-09-20 | Phase 0: chi HTTP `/health`, Mongo+Redis wiring, Expo Router + NativeWind + TanStack health screen                |
-| 2026-09-20 | Locked landscape orientation + theme tokens (forest/gold/warm paper)                                              |
-| 2026-09-21 | Locked fonts: Fraunces (display) + Figtree (UI/body); wired via expo-font                                         |
-| 2026-09-21 | Frontend perf rule: Compiler-first; selective memo only (skill `frontend.md`)                                     |
-| 2026-09-21 | Phase 1: orval OpenAPI codegen → `meetopoly-mobile/api/generated`; `useHealth` on generated client                |
-| 2026-09-21 | Phase 2: email signup (6-digit SMTP) + bcrypt + opaque Redis sessions; Expo `(auth)` + secure-store               |
-| 2026-09-21 | Locked forms: Formik `useFormik` + Yup in hooks (auth screens)                                                    |
-| 2026-09-21 | Auth UI: RN inputs + Moti city drift + Lottie sun; sunny paper afternoon vibe                                     |
-| 2026-09-22 | **Phase 4 pivot:** 2D Monopoly-style board (left) + right panel; drop GoG 3D overworld for v1; sub-phases 4.0–4.8 |
-| 2026-09-22 | **africa-1 → 40 spaces:** classic even sides (corners 0/10/20/30); dropped Zanzibar; reseed required              |
-| 2026-09-21 | Password reset (OTP) + session revoke-all; branded toasts via `notify()`                                          |
-| 2026-09-21 | Signup resume after password: `/auth/signup/status` + login `needsProfile`                                        |
-| 2026-09-21 | Phase 3: locations Mongo + seed CLI; Bearer `/worlds` + `/locations` (+ by id/slug); mobile `(app)/locations`     |
-| 2026-09-23 | **4.8:** menu home (not board-as-home); board leave via ⋯ + back lock; lobby/World funnel → Phase 5; 2–6 pins 2×3 |
-| 2026-09-23 | **4.9:** Reanimated avatar walk; attribution; BoardTile memo; Phase 4 exit criteria ticked |
-| 2026-09-23 | **Phase 5 split:** sub-phases 5.0–5.6; matchmaking + all-Ready locks; stub before WS |
-| 2026-09-23 | **5.1:** lobby shell `lobby/[worldId]`; 6 empty seats; Leave → Worlds; worlds Continue → lobby |
-| 2026-09-23 | **5.2:** `useLobbyStub` seats local player; waiting copy until ≥2; Leave frees seat |
-| 2026-09-23 | **5.3:** slow bot joiners (~3.2s) up to 6; newcomers always unready |
-| 2026-09-23 | **5.4:** Ready toggle (≥2); bots auto-Ready ~1.8s; all Ready → board |
-| 2026-09-23 | **5.5:** disconnect hold 45s (AppState + demo bot); Ready pills; hold banner |
-| 2026-09-23 | **5.6:** `services/table` + Mongo `tables`; WS `/ws/tables/{id}`; mobile `useTableLobby` |
-| 2026-09-23 | **Phase 6 split:** 6.0–6.5; M1 MeetCoin locks (2000 / pass GO 200 / seat-order / symbol HUD) |
-| 2026-09-23 | **6.0:** `games` repo+svc; create on all-Ready; `GET /games/{id}`; board HUD+pins+toast |
-| 2026-09-23 | Fix lobby matchmaking: never persist `starting` without game; abandon broken half-starts on Join |
-| 2026-09-23 | **6.1:** Roll 2d6 + move + pass-GO; HTTP roll + poll; Reanimated tile-by-tile pins; auto-advance turn |
-| 2026-09-23 | Rules alignment: Phase 6 = movement+turn loop first; official Buy→Auction stays Phase 13; Free Parking noop; MeetCoin 2000/200 |
-| 2026-09-23 | **6.2:** `end-turn` + doubles re-roll; `turnPhase` awaiting_roll/end; third doubles no move |
-| 2026-09-23 | **Game WS:** `/ws/games/{id}` push on roll/end-turn; mobile drops 2s poll (5s fallback if socket down) |
-| 2026-09-23 | **6.2b** added: synced dice roll animation (client Moti/Reanimated on `lastRoll`; pin walk waits) |
-| 2026-09-23 | **6.2b:** Moti dice overlay + `useDiceRollMotion`; pin `holdWalk` until tumble settles |
-| 2026-09-23 | **6.2c:** Leave = resign (confirm); last active player wins; `POST /games/{id}/resign` |
-| 2026-09-23 | **Timer:** 5→**3 min** AFK in 6.3; encompassing pause/sub-clock rules locked under **Phase 13** |
+| Date       | Change                                                                                                                                                                                                                                    |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-20 | Initial comprehensive plan from locked product/tech decisions                                                                                                                                                                             |
+| 2026-09-20 | Worlds + SVGCities billboards; `locations.json` / `africa-1` replaces Nigeria districts                                                                                                                                                   |
+| 2026-09-20 | Expanded `locations.json` with all SVGCities Worlds (Europe×5, Asia×2, NA, SA, ME, Oceania, Central America)                                                                                                                              |
+| 2026-09-20 | Linked all 304 city properties to `city-icons/icons/{cc}-*.svg` + About/attribution from SVGCities metadata                                                                                                                               |
+| 2026-09-20 | Phase 0: chi HTTP `/health`, Mongo+Redis wiring, Expo Router + NativeWind + TanStack health screen                                                                                                                                        |
+| 2026-09-20 | Locked landscape orientation + theme tokens (forest/gold/warm paper)                                                                                                                                                                      |
+| 2026-09-21 | Locked fonts: Fraunces (display) + Figtree (UI/body); wired via expo-font                                                                                                                                                                 |
+| 2026-09-21 | Frontend perf rule: Compiler-first; selective memo only (skill `frontend.md`)                                                                                                                                                             |
+| 2026-09-21 | Phase 1: orval OpenAPI codegen → `meetopoly-mobile/api/generated`; `useHealth` on generated client                                                                                                                                        |
+| 2026-09-21 | Phase 2: email signup (6-digit SMTP) + bcrypt + opaque Redis sessions; Expo `(auth)` + secure-store                                                                                                                                       |
+| 2026-09-21 | Locked forms: Formik `useFormik` + Yup in hooks (auth screens)                                                                                                                                                                            |
+| 2026-09-21 | Auth UI: RN inputs + Moti city drift + Lottie sun; sunny paper afternoon vibe                                                                                                                                                             |
+| 2026-09-22 | **Phase 4 pivot:** 2D Monopoly-style board (left) + right panel; drop GoG 3D overworld for v1; sub-phases 4.0–4.8                                                                                                                         |
+| 2026-09-22 | **africa-1 → 40 spaces:** classic even sides (corners 0/10/20/30); dropped Zanzibar; reseed required                                                                                                                                      |
+| 2026-09-21 | Password reset (OTP) + session revoke-all; branded toasts via `notify()`                                                                                                                                                                  |
+| 2026-09-21 | Signup resume after password: `/auth/signup/status` + login `needsProfile`                                                                                                                                                                |
+| 2026-09-21 | Phase 3: locations Mongo + seed CLI; Bearer `/worlds` + `/locations` (+ by id/slug); mobile `(app)/locations`                                                                                                                             |
+| 2026-09-23 | **4.8:** menu home (not board-as-home); board leave via ⋯ + back lock; lobby/World funnel → Phase 5; 2–6 pins 2×3                                                                                                                         |
+| 2026-09-23 | **4.9:** Reanimated avatar walk; attribution; BoardTile memo; Phase 4 exit criteria ticked                                                                                                                                                |
+| 2026-09-23 | **Phase 5 split:** sub-phases 5.0–5.6; matchmaking + all-Ready locks; stub before WS                                                                                                                                                      |
+| 2026-09-23 | **5.1:** lobby shell `lobby/[worldId]`; 6 empty seats; Leave → Worlds; worlds Continue → lobby                                                                                                                                            |
+| 2026-09-23 | **5.2:** `useLobbyStub` seats local player; waiting copy until ≥2; Leave frees seat                                                                                                                                                       |
+| 2026-09-23 | **5.3:** slow bot joiners (~3.2s) up to 6; newcomers always unready                                                                                                                                                                       |
+| 2026-09-23 | **5.4:** Ready toggle (≥2); bots auto-Ready ~1.8s; all Ready → board                                                                                                                                                                      |
+| 2026-09-23 | **5.5:** disconnect hold 45s (AppState + demo bot); Ready pills; hold banner                                                                                                                                                              |
+| 2026-09-23 | **5.6:** `services/table` + Mongo `tables`; WS `/ws/tables/{id}`; mobile `useTableLobby`                                                                                                                                                  |
+| 2026-09-23 | **Phase 6 split:** 6.0–6.5; M1 MeetCoin locks (2000 / pass GO 200 / seat-order / symbol HUD)                                                                                                                                              |
+| 2026-09-23 | **6.0:** `games` repo+svc; create on all-Ready; `GET /games/{id}`; board HUD+pins+toast                                                                                                                                                   |
+| 2026-09-23 | Fix lobby matchmaking: never persist `starting` without game; abandon broken half-starts on Join                                                                                                                                          |
+| 2026-09-23 | **6.1:** Roll 2d6 + move + pass-GO; HTTP roll + poll; Reanimated tile-by-tile pins; auto-advance turn                                                                                                                                     |
+| 2026-09-23 | Rules alignment: Phase 6 = movement+turn loop first; official Buy→Auction stays Phase 13; Free Parking noop; MeetCoin 2000/200                                                                                                            |
+| 2026-09-23 | **6.2:** `end-turn` + doubles re-roll; `turnPhase` awaiting_roll/end; third doubles no move                                                                                                                                               |
+| 2026-09-23 | **Game WS:** `/ws/games/{id}` push on roll/end-turn; mobile drops 2s poll (5s fallback if socket down)                                                                                                                                    |
+| 2026-09-23 | **6.2b** added: synced dice roll animation (client Moti/Reanimated on `lastRoll`; pin walk waits)                                                                                                                                         |
+| 2026-09-23 | **6.2b:** Moti dice overlay + `useDiceRollMotion`; pin `holdWalk` until tumble settles                                                                                                                                                    |
+| 2026-09-23 | **6.2c:** Leave = resign (confirm); last active player wins; `POST /games/{id}/resign`                                                                                                                                                    |
+| 2026-09-23 | **Timer:** 5→**3 min** AFK in 6.3; encompassing pause/sub-clock rules locked under **Phase 13**                                                                                                                                           |
 | 2026-09-23 | **Timer 6.3b (locked):** **45 min/player** bank; drains on turn only; **0 → eliminate**; all banks on every HUD; Phase 13 adds auction/trade/raise-funds pauses. Interim 3‑min AFK superseded. HTTP commands + WS fan-out kept for scale. |
-| 2026-09-23 | **6.3b shipped:** `timeRemainingMs` + `turnStartedAt`; bank drain/eliminate; HUD all banks |
-| 2026-09-23 | **6.4:** `POST /buy`; deeds + buyOffer/canBuy; skip = End without auction (→ 13) |
-| 2026-09-23 | **6.4 polish:** classic rent/price ladder in seeds by boardIndex; buy modal 4 houses + icon/name align |
-| 2026-09-23 | **6.4 polish:** owner pinColor chip on tiles; tap-any-square TileInfoOverlay (buy taps disabled for buyer only) |
-| 2026-09-23 | **6.5:** auto rent/tax on land; lastPayment + pendingPayment; block End/Roll if unpaid; monopoly ×2 base |
-| 2026-09-23 | **6.5 UX:** gate buy modal + Pass-GO/rent toasts until pin settles; `POST /pin-color` syncs avatar accent; cash tick animation |
-| 2026-09-24 | **UX polish:** buy toast titles by kind; hide local HUD row; Title-Case usernames on signup + display; winner modal row CTAs |
-| 2026-09-24 | **Lobby pin colors:** unique `pinColor` on seat join → game; HUD You · turn + filter; stop random accent overwrite |
+| 2026-09-23 | **6.3b shipped:** `timeRemainingMs` + `turnStartedAt`; bank drain/eliminate; HUD all banks                                                                                                                                                |
+| 2026-09-23 | **6.4:** `POST /buy`; deeds + buyOffer/canBuy; skip = End without auction (→ 13)                                                                                                                                                          |
+| 2026-09-23 | **6.4 polish:** classic rent/price ladder in seeds by boardIndex; buy modal 4 houses + icon/name align                                                                                                                                    |
+| 2026-09-23 | **6.4 polish:** owner pinColor chip on tiles; tap-any-square TileInfoOverlay (buy taps disabled for buyer only)                                                                                                                           |
+| 2026-09-23 | **6.5:** auto rent/tax on land; lastPayment + pendingPayment; block End/Roll if unpaid; monopoly ×2 base                                                                                                                                  |
+| 2026-09-23 | **6.5 UX:** gate buy modal + Pass-GO/rent toasts until pin settles; `POST /pin-color` syncs avatar accent; cash tick animation                                                                                                            |
+| 2026-09-24 | **UX polish:** buy toast titles by kind; hide local HUD row; Title-Case usernames on signup + display; winner modal row CTAs                                                                                                              |
+| 2026-09-24 | **Lobby pin colors:** unique `pinColor` on seat join → game; HUD You · turn + filter; stop random accent overwrite                                                                                                                        |
+| 2026-09-24 | **Phase 7 split:** 7.0–7.4 board avatar DataChannels (memory SFU); hubs stay **Phase 8**; Redis presence → 15 / multi-node                                                                                                                |
+| 2026-09-24 | **7.0:** Pion SFU + `/ws/presence/board/{gameId}`; STUN; idle `presence` DC; mobile `useBoardPresence` + join/leave toasts (dev client)                                                                                                   |
+| 2026-09-24 | **7.5 locked (plan):** game WS 3‑min silent hold → auto-resign; presence drop ≠ resign; bank keeps draining; no resume CTA this slice                                                                                                     |
+| 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                         |
