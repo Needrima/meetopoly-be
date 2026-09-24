@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
@@ -119,6 +120,8 @@ func (h *GameHub) HandleGame(w http.ResponseWriter, r *http.Request) {
 		send:   make(chan []byte, 16),
 	}
 	h.add(c)
+	// Reconnect within hold cancels auto-resign (Phase 7.5).
+	h.games.CancelDisconnectHold(gameID, userID)
 
 	ev := gamesvc.Event{Type: "state", Game: view}
 	if b, err := json.Marshal(ev); err == nil {
@@ -158,6 +161,16 @@ func (c *gameClient) readPump(h *GameHub) {
 		h.remove(c)
 		close(c.send)
 		_ = c.conn.Close()
+		// Phase 7.5: last game WS for this user → silent disconnect hold → Resign.
+		if !h.userHasConnection(c.gameID, c.userID) {
+			if err := h.games.Disconnect(context.Background(), c.gameID, c.userID); err != nil {
+				slog.Warn("game disconnect hold",
+					"gameId", c.gameID,
+					"userId", c.userID,
+					"err", err,
+				)
+			}
+		}
 	}()
 
 	for {
@@ -177,4 +190,15 @@ func (c *gameClient) readPump(h *GameHub) {
 			}
 		}
 	}
+}
+
+func (h *GameHub) userHasConnection(gameID, userID string) bool {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	for c := range h.rooms[gameID] {
+		if c.userID == userID {
+			return true
+		}
+	}
+	return false
 }

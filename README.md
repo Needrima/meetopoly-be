@@ -50,6 +50,7 @@ Server listens on `:8080` by default.
 | `LOG_FORMAT` | `text` (use `json` in prod if you want) |
 | `SIGNUP_TOKEN_TTL_MINUTES` | `30` |
 | `VERIFICATION_CODE_TTL_MINUTES` | `2` |
+| `GAME_DISCONNECT_HOLD` | `3m` (Go duration; local `.env` often `45s` for faster Phase 7.5 testing) |
 | `SMTP_HOST` | `smtp.gmail.com` |
 | `SMTP_PORT` | `587` |
 | `SMTP_USER` | _(required for mail)_ |

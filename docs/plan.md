@@ -600,7 +600,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 | **7.2** | Local avatar publishes ~10–20 Hz; remotes drawn + **interpolated** on the 2D board; pins still from game WS only                                        | Bounce-back, hubs, voice                      |
 | **7.3** | ~~`services/presence` validates board moves; bounce-back~~ — **SKIPPED** (see notes)                                                                 | Hubs, voice, Redis presence                   |
 | **7.4** | Dual-presence proof: **Roll moves pins** while avatars keep walking; presence reconnect / leave room / rate-limit hardening; room-id hook ready for Phase 8 hubs | Full hub enter/UX (→ 8); voice (→ 10); game resign-on-disconnect |
-| **7.5** | Game WS disconnect hold (**3 min**, silent); reconnect cancels; expire → **auto-resign** (same fan-out as Leave); last active player wins; presence-only drops never resign | Resume-game CTA / SecureStore rejoin UI; pause time bank on disconnect; presence tear-down as resign |
+| **7.5** | Game WS disconnect hold (`GAME_DISCONNECT_HOLD`, default 3m / local 45s); reconnect cancels; expire → auto-resign; presence-only drops never resign; hide resigned pins | Resume-game CTA / SecureStore rejoin UI; pause time bank on disconnect; presence tear-down as resign |
 
 **7.0 notes**
 
@@ -635,12 +635,14 @@ Roll → move (+pass GO if applicable) → resolve space →
 **7.5 notes (locked)**
 
 - Trigger: **`/ws/games/{gameId}`** closes only (app kill, long background, bad net). **Not** presence WS / WebRTC glitches.
-- Hold **3 minutes**, **silent** (no banner/toast for others while held).
+- Hold via env **`GAME_DISCONNECT_HOLD`** (Go duration; default **3m**; local `.env` **45s** for faster testing). Silent (no banner/toast for others while held).
 - Reconnect to game WS within hold → cancel; player stays in game.
 - Hold expires → same **Resign** path as ⋯ Leave → game WS fan-out; if one active player left → `finished` + winner.
 - ⋯ Leave remains **immediate** resign (confirm).
 - Time bank **keeps draining** on their turn while disconnected (no pause — pausing would be exploitable).
 - No Play-screen “resume game” / SecureStore rejoin UI in this slice (cold start after kill may miss rejoin; hold then resign is acceptable).
+- Resigned players’ pins are hidden on the board (HUD still shows “out”).
+- **Done (2026-09-24) 7.5:** `games.Disconnect` / `CancelDisconnectHold`; GameHub wires close→hold and reconnect→cancel; resigned pins filtered in `asPins`.
 
 **Backend**
 
@@ -669,7 +671,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 - [x] **7.2:** two players see each other’s board avatars move smoothly
 - [x] **7.3:** SKIPPED — no server bounce-back / avatar↔avatar collision (client edge+deck+pin soft only)
 - [x] **7.4:** Roll updates pins while avatars keep walking (no forced avatar snap); presence reconnect hardened
-- [ ] **7.5:** game WS down 3 min → auto-resign + last-player-wins; presence-only drop does not resign
+- [x] **7.5:** game WS down hold → auto-resign + last-player-wins; presence-only drop does not resign
 - [ ] Hubs deferred — not required for Phase 7 exit (→ **Phase 8**)
 
 ---

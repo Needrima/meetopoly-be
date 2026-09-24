@@ -105,7 +105,9 @@ func main() {
 	})
 	userSvc := usersvc.New(users)
 	locationSvc := locationsvc.New(locations)
-	gameSvc := gamesvc.New(repoGames, gamesvc.NewLocationSpaceCatalog(locations))
+	gameSvc := gamesvc.New(repoGames, gamesvc.NewLocationSpaceCatalog(locations), gamesvc.Config{
+		DisconnectHold: cfg.GameDisconnectHold,
+	})
 	tableSvc := tablesvc.New(tables, tablesvc.Config{
 		DisconnectHold: 45 * time.Second,
 	})

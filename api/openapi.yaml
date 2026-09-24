@@ -583,7 +583,10 @@ paths:
         Authoritative game state (players, MeetCoin balances, pin boardIndex, whose turn).
         Created when a lobby reaches all-Ready (Phase 6.0).
         Live updates: connect to `GET /ws/games/{gameId}?token=` (same auth as table lobby WS);
-        server pushes `{ "type": "state", "game": Game }` after roll / end-turn.
+        server pushes `{ "type": "state", "game": Game }` after roll / end-turn / resign / buy.
+        Phase 7.5: if the game WS closes, the server starts a silent disconnect hold
+        (`GAME_DISCONNECT_HOLD`, default `3m`); reconnect cancels; expire → same Resign as Leave.
+        Presence WS / WebRTC drops do **not** resign.
         Board presence (Phase 7.0–7.4): `GET /ws/presence/board/{gameId}?token=` — WebRTC signaling +
         Pion SFU PeerConnection; room id `board:{gameId}` (`HubRoomID` stub for Phase 8 hubs);
         STUN `stun:stun.l.google.com:19302`.

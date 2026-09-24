@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"log/slog"
 	"sort"
 	"strings"
 	"sync"
@@ -157,7 +158,17 @@ type Service interface {
 	Resign(ctx context.Context, gameID, userID string) (*View, error)
 	Buy(ctx context.Context, gameID, userID string) (*View, error)
 	SetPinColor(ctx context.Context, gameID, userID, pinColor string) (*View, error)
+	// Disconnect starts a silent hold; expire → Resign (Phase 7.5). Presence must not call this.
+	Disconnect(ctx context.Context, gameID, userID string) error
+	// CancelDisconnectHold clears a pending auto-resign when the game WS reconnects.
+	CancelDisconnectHold(gameID, userID string)
 	SetBroadcaster(b Broadcaster)
+}
+
+// Config tunes game service timers (Phase 7.5 disconnect hold).
+type Config struct {
+	// DisconnectHold is how long after game WS drop before auto-resign. Default 3m.
+	DisconnectHold time.Duration
 }
 
 var pinPalette = []string{
@@ -172,17 +183,24 @@ var pinPalette = []string{
 type service struct {
 	repo       gamerepo.Repository
 	spaces     SpaceCatalog
+	cfg        Config
 	mu         sync.Mutex
 	bcast      Broadcaster
 	bankTimers map[string]*time.Timer
+	holds      map[string]*time.Timer // gameID\0userID → disconnect hold
 }
 
 // New builds a game Service. spaces may be nil in unit tests that never buy.
-func New(repo gamerepo.Repository, spaces SpaceCatalog) Service {
+func New(repo gamerepo.Repository, spaces SpaceCatalog, cfg Config) Service {
+	if cfg.DisconnectHold <= 0 {
+		cfg.DisconnectHold = 3 * time.Minute
+	}
 	return &service{
 		repo:       repo,
 		spaces:     spaces,
+		cfg:        cfg,
 		bankTimers: make(map[string]*time.Timer),
+		holds:      make(map[string]*time.Timer),
 	}
 }
 
@@ -476,6 +494,82 @@ func (s *service) EndTurn(ctx context.Context, gameID, userID string) (*View, er
 func (s *service) Resign(ctx context.Context, gameID, userID string) (*View, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.resignLocked(ctx, gameID, userID)
+}
+
+// Disconnect starts a silent auto-resign hold (Phase 7.5). No broadcast while held.
+func (s *service) Disconnect(ctx context.Context, gameID, userID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	g, err := s.repo.FindByID(ctx, gameID)
+	if err != nil {
+		if errors.Is(err, gamerepo.ErrNotFound) {
+			return nil
+		}
+		return err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return nil
+	}
+	var found, alreadyOut bool
+	for i := range g.Players {
+		if g.Players[i].UserID == userID {
+			found = true
+			alreadyOut = g.Players[i].Resigned
+			break
+		}
+	}
+	if !found || alreadyOut {
+		return nil
+	}
+
+	s.clearDisconnectHoldLocked(gameID, userID)
+	key := disconnectHoldKey(gameID, userID)
+	hold := s.cfg.DisconnectHold
+	s.holds[key] = time.AfterFunc(hold, func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		delete(s.holds, key)
+		if _, err := s.resignLocked(context.Background(), gameID, userID); err != nil {
+			if !errors.Is(err, ErrAlreadyOut) && !errors.Is(err, ErrInactive) && !errors.Is(err, ErrNotFound) && !errors.Is(err, ErrNotPlayer) {
+				slog.Warn("game disconnect hold resign",
+					"gameId", gameID,
+					"userId", userID,
+					"err", err,
+				)
+			}
+		}
+	})
+	slog.Info("game disconnect hold started",
+		"gameId", gameID,
+		"userId", userID,
+		"hold", hold.String(),
+	)
+	return nil
+}
+
+// CancelDisconnectHold clears a pending auto-resign (game WS reconnected).
+func (s *service) CancelDisconnectHold(gameID, userID string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.clearDisconnectHoldLocked(gameID, userID)
+}
+
+func disconnectHoldKey(gameID, userID string) string {
+	return gameID + "\x00" + userID
+}
+
+func (s *service) clearDisconnectHoldLocked(gameID, userID string) {
+	key := disconnectHoldKey(gameID, userID)
+	if t, ok := s.holds[key]; ok {
+		t.Stop()
+		delete(s.holds, key)
+	}
+}
+
+func (s *service) resignLocked(ctx context.Context, gameID, userID string) (*View, error) {
+	s.clearDisconnectHoldLocked(gameID, userID)
 
 	g, err := s.repo.FindByID(ctx, gameID)
 	if err != nil {

@@ -21,6 +21,9 @@ type Config struct {
 	LogFile       string
 	LogFormat     string
 
+	// GameDisconnectHold: silent auto-resign after game WS drop (Phase 7.5). Default 3m.
+	GameDisconnectHold time.Duration
+
 	SignupTokenTTL      time.Duration
 	VerificationCodeTTL time.Duration
 	SMTPHost            string
@@ -45,6 +48,8 @@ func Load() Config {
 		Version:       getenv("APP_VERSION", "0.3.0-phase3"),
 		LogFile:       getenv("LOG_FILE", "app.log"),
 		LogFormat:     getenv("LOG_FORMAT", "text"),
+
+		GameDisconnectHold: getenvDuration("GAME_DISCONNECT_HOLD", 3*time.Minute),
 
 		SignupTokenTTL:      time.Duration(getenvInt("SIGNUP_TOKEN_TTL_MINUTES", 30)) * time.Minute,
 		VerificationCodeTTL: time.Duration(getenvInt("VERIFICATION_CODE_TTL_MINUTES", 2)) * time.Minute,
@@ -74,4 +79,16 @@ func getenvInt(key string, fallback int) int {
 		return fallback
 	}
 	return n
+}
+
+func getenvDuration(key string, fallback time.Duration) time.Duration {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil || d <= 0 {
+		return fallback
+	}
+	return d
 }

@@ -98,7 +98,7 @@ func seedTwoPlayer(t *testing.T, repo *memRepo) {
 
 func TestRollDoesNotAdvanceTurn_EndTurnDoes(t *testing.T) {
 	repo := newMemRepo()
-	svc := New(repo, nil)
+	svc := New(repo, nil, Config{})
 	seedTwoPlayer(t, repo)
 
 	var view *View
@@ -143,7 +143,7 @@ func TestRollDoesNotAdvanceTurn_EndTurnDoes(t *testing.T) {
 
 func TestThirdDoublesSkipsMoveAndRequiresEnd(t *testing.T) {
 	repo := newMemRepo()
-	svc := New(repo, nil)
+	svc := New(repo, nil, Config{})
 	seedTwoPlayer(t, repo)
 
 	// Force doubles streak to 2, then inject a doubles roll via mutating before Roll
@@ -194,7 +194,7 @@ func TestThirdDoublesSkipsMoveAndRequiresEnd(t *testing.T) {
 
 func TestPassGoStillWorks(t *testing.T) {
 	repo := newMemRepo()
-	svc := New(repo, nil)
+	svc := New(repo, nil, Config{})
 	seedTwoPlayer(t, repo)
 	cur, _ := repo.FindByID(context.Background(), "g1")
 	cur.Players[0].BoardIndex = 38
@@ -238,7 +238,7 @@ func TestPassGoStillWorks(t *testing.T) {
 
 func TestResignLastPlayerWins(t *testing.T) {
 	repo := newMemRepo()
-	svc := New(repo, nil)
+	svc := New(repo, nil, Config{})
 	seedTwoPlayer(t, repo)
 
 	view, err := svc.Resign(context.Background(), "g1", "a")
@@ -261,7 +261,7 @@ func TestResignLastPlayerWins(t *testing.T) {
 
 func TestResignAdvancesTurnWhenCurrentLeaves(t *testing.T) {
 	repo := newMemRepo()
-	svc := New(repo, nil)
+	svc := New(repo, nil, Config{})
 	bank := gamerepo.TimeBankDuration.Milliseconds()
 	g := &gamerepo.Game{
 		ID:      "g2",
@@ -296,7 +296,7 @@ func TestResignAdvancesTurnWhenCurrentLeaves(t *testing.T) {
 
 func TestTimeBankExhaustedEliminatesPlayer(t *testing.T) {
 	repo := newMemRepo()
-	svc := New(repo, nil)
+	svc := New(repo, nil, Config{})
 	bank := gamerepo.TimeBankDuration.Milliseconds()
 	g := &gamerepo.Game{
 		ID:      "g1",
@@ -333,7 +333,7 @@ func TestTimeBankExhaustedEliminatesPlayer(t *testing.T) {
 
 func TestEndTurnPausesBankAndStartsNext(t *testing.T) {
 	repo := newMemRepo()
-	svc := New(repo, nil)
+	svc := New(repo, nil, Config{})
 	seedTwoPlayer(t, repo)
 
 	g, err := repo.FindByID(context.Background(), "g1")
@@ -374,7 +374,7 @@ func TestBuyUnownedProperty(t *testing.T) {
 		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
 		{BoardIndex: 5, Slug: "air-1", Name: "Air Hub", Kind: "railroad", Price: 200},
 	}
-	svc := New(repo, spaces)
+	svc := New(repo, spaces, Config{})
 	seedTwoPlayer(t, repo)
 
 	g, _ := repo.FindByID(context.Background(), "g1")
@@ -415,7 +415,7 @@ func TestBuyCannotAfford(t *testing.T) {
 	spaces := memSpaces{
 		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
 	}
-	svc := New(repo, spaces)
+	svc := New(repo, spaces, Config{})
 	seedTwoPlayer(t, repo)
 
 	g, _ := repo.FindByID(context.Background(), "g1")
@@ -459,7 +459,7 @@ func TestBuyAlreadyOwned(t *testing.T) {
 	spaces := memSpaces{
 		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
 	}
-	svc := New(repo, spaces)
+	svc := New(repo, spaces, Config{})
 	seedTwoPlayer(t, repo)
 
 	g, _ := repo.FindByID(context.Background(), "g1")
@@ -483,7 +483,7 @@ func TestRentAutoCollectOnRoll(t *testing.T) {
 	spaces := memSpaces{
 		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60, Rents: []int{2}, ColorGroup: "brown"},
 	}
-	svc := New(repo, spaces).(*service)
+	svc := New(repo, spaces, Config{}).(*service)
 	seedTwoPlayer(t, repo)
 
 	g, _ := repo.FindByID(context.Background(), "g1")
@@ -508,7 +508,7 @@ func TestTaxAutoCollect(t *testing.T) {
 	spaces := memSpaces{
 		{BoardIndex: 4, Slug: "tax", Name: "Income Tax", Kind: "special", SpecialType: "tax", TaxAmount: 200},
 	}
-	svc := New(repo, spaces).(*service)
+	svc := New(repo, spaces, Config{}).(*service)
 	seedTwoPlayer(t, repo)
 
 	g, _ := repo.FindByID(context.Background(), "g1")
@@ -528,7 +528,7 @@ func TestOwnTileNoRent(t *testing.T) {
 	spaces := memSpaces{
 		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60, Rents: []int{2}, ColorGroup: "brown"},
 	}
-	svc := New(repo, spaces).(*service)
+	svc := New(repo, spaces, Config{}).(*service)
 	seedTwoPlayer(t, repo)
 
 	g, _ := repo.FindByID(context.Background(), "g1")
@@ -546,7 +546,7 @@ func TestCannotAffordRentBlocksEnd(t *testing.T) {
 	spaces := memSpaces{
 		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60, Rents: []int{100}, ColorGroup: "brown"},
 	}
-	svc := New(repo, spaces).(*service)
+	svc := New(repo, spaces, Config{}).(*service)
 	seedTwoPlayer(t, repo)
 
 	g, _ := repo.FindByID(context.Background(), "g1")
@@ -610,7 +610,7 @@ func TestRailroadAndUtilityRent(t *testing.T) {
 
 func TestSetPinColor(t *testing.T) {
 	repo := newMemRepo()
-	svc := New(repo, nil)
+	svc := New(repo, nil, Config{})
 	bank := gamerepo.TimeBankDuration.Milliseconds()
 	g := &gamerepo.Game{
 		ID:      "g-pin",
@@ -653,5 +653,53 @@ func TestSetPinColor(t *testing.T) {
 	_, err = svc.SetPinColor(context.Background(), "g-pin", "z", "#112233")
 	if !errors.Is(err, ErrNotPlayer) {
 		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestDisconnectHoldExpiresResigns(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, nil, Config{DisconnectHold: 40 * time.Millisecond})
+	seedTwoPlayer(t, repo)
+
+	if err := svc.Disconnect(context.Background(), "g1", "a"); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(80 * time.Millisecond)
+
+	view, err := svc.Get(context.Background(), "g1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Status != gamerepo.StatusFinished {
+		t.Fatalf("status=%s", view.Status)
+	}
+	if view.WinnerUserID != "b" {
+		t.Fatalf("winner=%s", view.WinnerUserID)
+	}
+	if !view.Players[0].Resigned {
+		t.Fatal("a should be resigned after hold")
+	}
+}
+
+func TestCancelDisconnectHoldKeepsPlayer(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, nil, Config{DisconnectHold: 200 * time.Millisecond})
+	seedTwoPlayer(t, repo)
+
+	if err := svc.Disconnect(context.Background(), "g1", "a"); err != nil {
+		t.Fatal(err)
+	}
+	svc.CancelDisconnectHold("g1", "a")
+	time.Sleep(250 * time.Millisecond)
+
+	view, err := svc.Get(context.Background(), "g1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Status != gamerepo.StatusActive {
+		t.Fatalf("status=%s", view.Status)
+	}
+	if view.Players[0].Resigned {
+		t.Fatal("a should still be active after cancel")
 	}
 }
