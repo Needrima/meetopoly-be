@@ -116,7 +116,8 @@ func handleSetPinColor(games gamesvc.Service) http.HandlerFunc {
 }
 
 type enterHubRequest struct {
-	HubID string `json:"hubId"`
+	HubID        string `json:"hubId"`
+	HubRevision  *int64 `json:"hubRevision,omitempty"`
 }
 
 func handleEnterHub(games gamesvc.Service) http.HandlerFunc {
@@ -132,7 +133,7 @@ func handleEnterHub(games gamesvc.Service) http.HandlerFunc {
 			return
 		}
 		gameID := chi.URLParam(r, "gameId")
-		view, err := games.EnterHub(r.Context(), gameID, userID, req.HubID)
+		view, err := games.EnterHub(r.Context(), gameID, userID, req.HubID, req.HubRevision)
 		if err != nil {
 			mapGameError(w, err)
 			return

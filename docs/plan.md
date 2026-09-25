@@ -738,7 +738,9 @@ Roll → move (+pass GO if applicable) → resolve space →
 **8.4 notes**
 
 - Hardening pass: reconnect hub/board presence; Leave hub ↔ board; Open board; app background does **not** resign (7.5 still owns that).
-- Manual proof: two tables, same city hub, see each other; turn sheet while in hub; return to board cleanly.
+- **Stale enter guard:** `GamePlayer.hubRevision` bumps on every `leave-hub` (and resign). `enter-hub` may send `hubRevision`; if older than server, enter is ignored. Mobile aborts in-flight enter before leave.
+- **Hub presence:** seed remotes from `welcome.peers` (+ peer-joined) with frozen poses; clear remotes on soft reconnect; hub-full returns WS `{type:error}` and client stops retry thrash.
+- Manual proof: two tables, same city hub, see each other; turn sheet while in hub; return to board cleanly; rapid enter→X leave does not leave stuck `hubId`.
 
 **Backend**
 
@@ -746,7 +748,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 2. Hub pose fan-out (reuse StampPose / rate-limit) — **8.1**
 3. `hubId` on player / enter-leave service — **8.2**
 4. Hub max **16** on Attach + client turn detect on `state` — **8.3**
-5. Reconnect / leave-path hardening — **8.4**
+5. `hubRevision` stale-enter ignore + hub-full error frame — **8.4**
 
 **Mobile**
 
@@ -754,7 +756,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 2. Hub remotes + local pose publish — **8.1**
 3. Board “in hub” / frozen pose for peers — **8.2**
 4. Hub turn sheet + Open board + X-only leave + block system back — **8.3**
-5. Path polish / regression pass — **8.4**
+5. Enter/leave sequencing + welcome seed + hub-full stop + soft-reconnect clear — **8.4**
 
 **Exit criteria**
 
@@ -762,7 +764,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 - [x] **8.1:** two players see each other’s hub avatars move smoothly
 - [x] **8.2:** board peers see in-hub players correctly; pins still update on roll
 - [x] **8.3:** turn notify + sheet works in hub; Open board keeps hubId; X-only leave; hub cap 16
-- [ ] **8.4:** cross-table meet + leave/open/reconnect hardened; no false resign from hub flows
+- [x] **8.4:** cross-table meet + leave/open/reconnect hardened; no false resign from hub flows
 - [ ] Voice deferred — not required for Phase 8 exit (→ **Phase 10**)
 
 ---
@@ -978,4 +980,5 @@ Only when the user asks:
 | 2026-09-25 | **Hub locked:** max **16**/room; Leave = X only; 3-pane + country → Phase 9; **8.3** turn sheet + Open board keeps hubId                                                                                                               |
 | 2026-09-25 | **8.3:** SFU `MaxHubPeers=16`; hub turn toast + `HubTurnSheet` (Roll/End/Open board); X leave + block system back; Open board skips leave-hub                                                                                         |
 | 2026-09-25 | **8.3 polish:** turn sheet 2×2; hub End gated like board `turnBusy`; hub buy sheet Buy→End + Open board + time bank; strip world prefixes on deed names                                                                              |
+| 2026-09-25 | **8.4:** `hubRevision` stale-enter ignore; mobile abort enter-on-leave; hub welcome.peers seed + soft-reconnect clear; hub-full WS error stops retry                                                                                 |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                         |

@@ -54,6 +54,8 @@ type PlayerView struct {
 	TimeRemainingMs int64  `json:"timeRemainingMs"`
 	// HubID set while inside a hub (Phase 8.2); omitted when on the board.
 	HubID string `json:"hubId,omitempty"`
+	// HubRevision — bumps on leave/resign; clients send it on enter-hub to ignore stale enters (8.4).
+	HubRevision int64 `json:"hubRevision"`
 }
 
 // LastRollView is the public last-dice snapshot.
@@ -162,7 +164,8 @@ type Service interface {
 	Buy(ctx context.Context, gameID, userID string) (*View, error)
 	SetPinColor(ctx context.Context, gameID, userID, pinColor string) (*View, error)
 	// EnterHub marks the seated player as inside hubId (Phase 8.2); fans out via game WS.
-	EnterHub(ctx context.Context, gameID, userID, hubID string) (*View, error)
+	// clientRevision: when non-nil, ignore the enter if it is older than the player's HubRevision (8.4).
+	EnterHub(ctx context.Context, gameID, userID, hubID string, clientRevision *int64) (*View, error)
 	// LeaveHub clears hubId so board peers see them back on the board.
 	LeaveHub(ctx context.Context, gameID, userID string) (*View, error)
 	// Disconnect starts a silent hold; expire → Resign (Phase 7.5). Presence must not call this.
@@ -616,6 +619,7 @@ func (s *service) resignLocked(ctx context.Context, gameID, userID string) (*Vie
 	}
 	g.Players[playerIdx].Resigned = true
 	g.Players[playerIdx].HubID = ""
+	g.Players[playerIdx].HubRevision++
 	if wasCurrent {
 		g.PendingPayment = nil
 	}
@@ -746,7 +750,8 @@ func (s *service) SetPinColor(ctx context.Context, gameID, userID, pinColor stri
 }
 
 // EnterHub records that a seated active player is inside a location hub (Phase 8.2).
-func (s *service) EnterHub(ctx context.Context, gameID, userID, hubID string) (*View, error) {
+// When clientRevision is set and older than HubRevision, the enter is ignored (Phase 8.4 stale guard).
+func (s *service) EnterHub(ctx context.Context, gameID, userID, hubID string, clientRevision *int64) (*View, error) {
 	normalized, ok := normalizeHubID(hubID)
 	if !ok {
 		return nil, ErrInvalidHubID
@@ -779,6 +784,10 @@ func (s *service) EnterHub(ctx context.Context, gameID, userID, hubID string) (*
 	if g.Players[playerIdx].Resigned {
 		return nil, ErrAlreadyOut
 	}
+	if clientRevision != nil && *clientRevision < g.Players[playerIdx].HubRevision {
+		// Stale enter that lost a race with LeaveHub — keep current hubId.
+		return s.viewOf(ctx, g), nil
+	}
 	if g.Players[playerIdx].HubID == normalized {
 		return s.viewOf(ctx, g), nil
 	}
@@ -793,7 +802,7 @@ func (s *service) EnterHub(ctx context.Context, gameID, userID, hubID string) (*
 	return view, nil
 }
 
-// LeaveHub clears the player's hubId (Phase 8.2).
+// LeaveHub clears the player's hubId (Phase 8.2) and bumps HubRevision (Phase 8.4).
 func (s *service) LeaveHub(ctx context.Context, gameID, userID string) (*View, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -816,11 +825,20 @@ func (s *service) LeaveHub(ctx context.Context, gameID, userID string) (*View, e
 	if playerIdx < 0 {
 		return nil, ErrNotPlayer
 	}
-	if g.Players[playerIdx].HubID == "" {
+
+	// Always bump revision so in-flight EnterHub with an older revision cannot restick hubId.
+	g.Players[playerIdx].HubRevision++
+	changed := g.Players[playerIdx].HubID != ""
+	g.Players[playerIdx].HubID = ""
+	if !changed {
+		// Still persist revision bump even when hubId was already empty.
+		g.UpdatedAt = time.Now().UTC()
+		if err := s.repo.Update(ctx, g); err != nil {
+			return nil, err
+		}
 		return s.viewOf(ctx, g), nil
 	}
 
-	g.Players[playerIdx].HubID = ""
 	g.UpdatedAt = time.Now().UTC()
 	if err := s.repo.Update(ctx, g); err != nil {
 		return nil, err
@@ -1174,6 +1192,7 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 			Resigned:        p.Resigned,
 			TimeRemainingMs: liveRemainingMs(g, p, now),
 			HubID:           p.HubID,
+			HubRevision:     p.HubRevision,
 		}
 		if !p.Resigned && p.TurnOrder == g.CurrentTurn {
 			currentUserID = p.UserID

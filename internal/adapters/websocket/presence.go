@@ -193,21 +193,6 @@ func (h *PresenceHub) joinPresence(
 	r *http.Request,
 	roomID, gameID, userID, username string,
 ) {
-	if strings.HasPrefix(roomID, "hub:") {
-		roster := h.sfu.Roster(roomID, "")
-		already := false
-		for _, p := range roster {
-			if p.UserID == userID {
-				already = true
-				break
-			}
-		}
-		if !already && len(roster) >= rtcadapter.MaxHubPeers {
-			http.Error(w, "hub full", http.StatusConflict)
-			return
-		}
-	}
-
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		slog.Error("presence ws upgrade", "err", err)
@@ -234,7 +219,10 @@ func (h *PresenceHub) joinPresence(
 
 	if err := h.sfu.Attach(roomID, userID, username, c); err != nil {
 		if errors.Is(err, rtcadapter.ErrHubFull) {
-			_ = c.WriteJSON(map[string]any{"type": "error", "message": "hub full"})
+			// writePump not started yet — write the error frame directly.
+			if b, merr := json.Marshal(map[string]any{"type": "error", "message": "hub full"}); merr == nil {
+				_ = conn.WriteMessage(websocket.TextMessage, b)
+			}
 			_ = conn.Close()
 			return
 		}

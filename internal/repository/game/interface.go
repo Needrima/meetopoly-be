@@ -34,6 +34,8 @@ type Player struct {
 	PinColor   string `bson:"pinColor" json:"pinColor"`
 	// HubID is set while the player is inside a location hub (Phase 8.2); empty = on board.
 	HubID string `bson:"hubId,omitempty" json:"hubId,omitempty"`
+	// HubRevision increments on LeaveHub (and resign). EnterHub with an older revision is ignored (Phase 8.4).
+	HubRevision int64 `bson:"hubRevision,omitempty" json:"hubRevision,omitempty"`
 	// Resigned — left mid-game or time-bank eliminated; skipped for turns. Assets frozen until Phase 14.
 	Resigned bool `bson:"resigned,omitempty" json:"resigned,omitempty"`
 	// TimeRemainingMs — personal time left when their clock was last paused (Phase 6.3b).

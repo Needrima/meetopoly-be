@@ -680,7 +680,7 @@ func TestEnterLeaveHub(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	view, err := svc.EnterHub(context.Background(), "g-hub", "a", "hub:africa-1:lagos")
+	view, err := svc.EnterHub(context.Background(), "g-hub", "a", "hub:africa-1:lagos", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -688,7 +688,8 @@ func TestEnterLeaveHub(t *testing.T) {
 		t.Fatalf("hubId=%q", view.Players[0].HubID)
 	}
 
-	view, err = svc.EnterHub(context.Background(), "g-hub", "a", "hub:africa-1:lagos")
+	rev0 := int64(0)
+	view, err = svc.EnterHub(context.Background(), "g-hub", "a", "hub:africa-1:lagos", &rev0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -696,7 +697,7 @@ func TestEnterLeaveHub(t *testing.T) {
 		t.Fatal("idempotent enter")
 	}
 
-	_, err = svc.EnterHub(context.Background(), "g-hub", "a", "bad")
+	_, err = svc.EnterHub(context.Background(), "g-hub", "a", "bad", nil)
 	if !errors.Is(err, ErrInvalidHubID) {
 		t.Fatalf("err=%v", err)
 	}
@@ -707,6 +708,43 @@ func TestEnterLeaveHub(t *testing.T) {
 	}
 	if view.Players[0].HubID != "" {
 		t.Fatalf("cleared hubId=%q", view.Players[0].HubID)
+	}
+	if view.Players[0].HubRevision < 1 {
+		t.Fatalf("hubRevision=%d after leave", view.Players[0].HubRevision)
+	}
+
+	// Stale enter with revision from before leave must not restick hubId.
+	stale := int64(0)
+	view, err = svc.EnterHub(context.Background(), "g-hub", "a", "hub:africa-1:lagos", &stale)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Players[0].HubID != "" {
+		t.Fatalf("stale enter stuck hubId=%q", view.Players[0].HubID)
+	}
+
+	// Fresh enter with current revision succeeds.
+	cur := view.Players[0].HubRevision
+	view, err = svc.EnterHub(context.Background(), "g-hub", "a", "hub:africa-1:lagos", &cur)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Players[0].HubID != "hub:africa-1:lagos" {
+		t.Fatalf("fresh enter hubId=%q", view.Players[0].HubID)
+	}
+
+	// Leave while already empty still bumps revision (guards in-flight enter).
+	view, err = svc.LeaveHub(context.Background(), "g-hub", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	afterFirst := view.Players[0].HubRevision
+	view, err = svc.LeaveHub(context.Background(), "g-hub", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Players[0].HubRevision <= afterFirst {
+		t.Fatalf("empty leave should bump revision %d → %d", afterFirst, view.Players[0].HubRevision)
 	}
 }
 

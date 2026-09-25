@@ -594,7 +594,8 @@ paths:
         `hubId` is URL-encoded (e.g. `hub%3Aafrica-1%3Alagos`); room id from `HubRoomID` → `hub:{…}`.
         Auth: any logged-in user (not required to be seated in a game — cross-table meet).
         Enter hub: client leaves board presence room and joins hub; Leave hub: reverse. Game WS stays up.
-        Phase 8.2: `POST /games/{gameId}/enter-hub` `{hubId}` / `leave-hub` sets `GamePlayer.hubId` and
+        Phase 8.2: `POST /games/{gameId}/enter-hub` `{hubId, hubRevision?}` / `leave-hub` sets `GamePlayer.hubId`
+        (leave bumps `hubRevision`; enter with an older revision is ignored — Phase 8.4). Board peers show `Name(in CODE)`.
         fans out on game WS so board peers can show `Name(in CODE)` (presence linger unchanged).
         Phase 8.1: same pose JSON on hub rooms; clients publish ~10 Hz hub-local 0..1 and interpolate remotes.
         Messages: client `{type:offer|ice|ping}`, server `{type:welcome|answer|ice|peer-joined|peer-left|pong|error}`.
@@ -1416,6 +1417,12 @@ components:
           type: string
           description: Location hub id (e.g. `hub:africa-1:lagos`)
           example: hub:africa-1:lagos
+        hubRevision:
+          type: integer
+          format: int64
+          description: |
+            Phase 8.4 — client's observed `GamePlayer.hubRevision` at enter time.
+            If older than the server value (e.g. LeaveHub won the race), the enter is ignored.
     TableSeat:
       type: object
       additionalProperties: false
@@ -1520,6 +1527,12 @@ components:
           description: |
             Phase 8.2 — set while the player is inside a location hub
             (e.g. `hub:africa-1:lagos`); null/omitted when on the board.
+        hubRevision:
+          type: integer
+          format: int64
+          description: |
+            Phase 8.4 — monotonic counter bumped on leave-hub / resign.
+            Clients pass the observed value on enter-hub so a late enter cannot restick hubId.
     GameLastRoll:
       type: object
       additionalProperties: false
