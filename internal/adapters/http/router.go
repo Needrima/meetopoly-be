@@ -75,6 +75,8 @@ func NewRouter(deps Deps) http.Handler {
 		r.Post("/games/{gameId}/resign", handleResignGame(deps.Games))
 		r.Post("/games/{gameId}/buy", handleBuyProperty(deps.Games))
 		r.Post("/games/{gameId}/pin-color", handleSetPinColor(deps.Games))
+		r.Post("/games/{gameId}/enter-hub", handleEnterHub(deps.Games))
+		r.Post("/games/{gameId}/leave-hub", handleLeaveHub(deps.Games))
 	})
 
 	if deps.TableWS != nil {
@@ -85,6 +87,8 @@ func NewRouter(deps Deps) http.Handler {
 	}
 	if deps.PresenceWS != nil {
 		r.Get("/ws/presence/board/{gameId}", deps.PresenceWS.HandleBoardPresence)
+		// hubId is URL-encoded (colons → %3A), e.g. hub%3Aafrica-1%3Alagos
+		r.Get("/ws/presence/hub/{hubId}", deps.PresenceWS.HandleHubPresence)
 	}
 
 	return r

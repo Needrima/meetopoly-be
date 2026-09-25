@@ -32,6 +32,8 @@ type Player struct {
 	Cash       int    `bson:"cash" json:"cash"`
 	BoardIndex int    `bson:"boardIndex" json:"boardIndex"`
 	PinColor   string `bson:"pinColor" json:"pinColor"`
+	// HubID is set while the player is inside a location hub (Phase 8.2); empty = on board.
+	HubID string `bson:"hubId,omitempty" json:"hubId,omitempty"`
 	// Resigned — left mid-game or time-bank eliminated; skipped for turns. Assets frozen until Phase 14.
 	Resigned bool `bson:"resigned,omitempty" json:"resigned,omitempty"`
 	// TimeRemainingMs — personal time bank left when their clock was last paused (Phase 6.3b).

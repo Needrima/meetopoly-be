@@ -656,6 +656,60 @@ func TestSetPinColor(t *testing.T) {
 	}
 }
 
+func TestEnterLeaveHub(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, nil, Config{})
+	bank := gamerepo.TimeBankDuration.Milliseconds()
+	g := &gamerepo.Game{
+		ID:      "g-hub",
+		TableID: "t-hub",
+		WorldID: "africa-1",
+		Status:  gamerepo.StatusActive,
+		Players: []gamerepo.Player{
+			{UserID: "a", Username: "A", SeatIndex: 0, TurnOrder: 0, Cash: 2000, BoardIndex: 0, PinColor: "#ed1b24", TimeRemainingMs: bank},
+			{UserID: "b", Username: "B", SeatIndex: 1, TurnOrder: 1, Cash: 2000, BoardIndex: 0, PinColor: "#0072bb", TimeRemainingMs: bank},
+		},
+		CurrentTurn:   0,
+		PassGoBonus:   200,
+		TurnPhase:     gamerepo.TurnPhaseAwaitingRoll,
+		TurnStartedAt: time.Now().UTC(),
+		CreatedAt:     time.Now().UTC(),
+		UpdatedAt:     time.Now().UTC(),
+	}
+	if err := repo.Insert(context.Background(), g); err != nil {
+		t.Fatal(err)
+	}
+
+	view, err := svc.EnterHub(context.Background(), "g-hub", "a", "hub:africa-1:lagos")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Players[0].HubID != "hub:africa-1:lagos" {
+		t.Fatalf("hubId=%q", view.Players[0].HubID)
+	}
+
+	view, err = svc.EnterHub(context.Background(), "g-hub", "a", "hub:africa-1:lagos")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Players[0].HubID != "hub:africa-1:lagos" {
+		t.Fatal("idempotent enter")
+	}
+
+	_, err = svc.EnterHub(context.Background(), "g-hub", "a", "bad")
+	if !errors.Is(err, ErrInvalidHubID) {
+		t.Fatalf("err=%v", err)
+	}
+
+	view, err = svc.LeaveHub(context.Background(), "g-hub", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Players[0].HubID != "" {
+		t.Fatalf("cleared hubId=%q", view.Players[0].HubID)
+	}
+}
+
 func TestDisconnectHoldExpiresResigns(t *testing.T) {
 	repo := newMemRepo()
 	svc := New(repo, nil, Config{DisconnectHold: 40 * time.Millisecond})

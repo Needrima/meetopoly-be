@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/go-chi/chi/v5"
@@ -12,6 +14,7 @@ import (
 
 	rtcadapter "meetopoly-be/internal/adapters/webrtc"
 	gamesvc "meetopoly-be/internal/services/game"
+	usersvc "meetopoly-be/internal/services/user"
 )
 
 type presenceClient struct {
@@ -43,20 +46,27 @@ func (sendBufferFullError) Error() string { return "presence send buffer full" }
 
 var errSendBufferFull = sendBufferFullError{}
 
-// PresenceHub is Phase 7.0 board-presence signaling + Pion SFU join/leave.
+// PresenceHub is board + hub presence signaling + Pion SFU join/leave (Phase 7–8).
 type PresenceHub struct {
 	mu     sync.RWMutex
 	rooms  map[string]map[*presenceClient]struct{} // roomID → clients
 	games  gamesvc.Service
+	users  usersvc.Service
 	sfu    *rtcadapter.SFU
 	authOK func(r *http.Request) (userID string, err error)
 }
 
-// NewPresenceHub builds the board presence signaling hub.
-func NewPresenceHub(games gamesvc.Service, authOK func(r *http.Request) (string, error)) *PresenceHub {
+// NewPresenceHub builds the presence signaling hub.
+// users may be nil (username falls back to "Player" for hub joins).
+func NewPresenceHub(
+	games gamesvc.Service,
+	users usersvc.Service,
+	authOK func(r *http.Request) (string, error),
+) *PresenceHub {
 	return &PresenceHub{
 		rooms:  make(map[string]map[*presenceClient]struct{}),
 		games:  games,
+		users:  users,
 		sfu:    rtcadapter.NewSFU(),
 		authOK: authOK,
 	}
@@ -143,13 +153,51 @@ func (h *PresenceHub) HandleBoardPresence(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	h.joinPresence(w, r, rtcadapter.BoardRoomID(gameID), gameID, userID, username)
+}
+
+// HandleHubPresence upgrades to WebSocket for hub:{…} presence (Phase 8.0).
+// Auth: Bearer or ?token=; any logged-in user (cross-table meet allowed).
+// Path: /ws/presence/hub/{hubId} with hubId URL-encoded (e.g. hub%3Aafrica-1%3Alagos).
+func (h *PresenceHub) HandleHubPresence(w http.ResponseWriter, r *http.Request) {
+	raw := chi.URLParam(r, "hubId")
+	hubID, err := url.PathUnescape(raw)
+	if err != nil {
+		http.Error(w, "bad hub id", http.StatusBadRequest)
+		return
+	}
+	hubID = strings.TrimSpace(hubID)
+	if hubID == "" {
+		http.Error(w, "missing hub id", http.StatusBadRequest)
+		return
+	}
+	userID, err := h.authOK(r)
+	if err != nil || userID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	username := "Player"
+	if h.users != nil {
+		if profile, uerr := h.users.GetByID(r.Context(), userID); uerr == nil && profile != nil && profile.Username != "" {
+			username = profile.Username
+		}
+	}
+
+	h.joinPresence(w, r, rtcadapter.HubRoomID(hubID), "", userID, username)
+}
+
+func (h *PresenceHub) joinPresence(
+	w http.ResponseWriter,
+	r *http.Request,
+	roomID, gameID, userID, username string,
+) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		slog.Error("presence ws upgrade", "err", err)
 		return
 	}
 
-	roomID := rtcadapter.BoardRoomID(gameID)
 	c := &presenceClient{
 		conn:     conn,
 		gameID:   gameID,
@@ -169,7 +217,7 @@ func (h *PresenceHub) HandleBoardPresence(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := h.sfu.Attach(roomID, userID, username, c); err != nil {
-		slog.Error("presence sfu attach", "err", err)
+		slog.Error("presence sfu attach", "err", err, "roomId", roomID)
 		_ = conn.Close()
 		return
 	}

@@ -115,7 +115,7 @@ func main() {
 	resolveUser := httpadapter.ResolveWSUser(authSvc)
 	tableWS := wsadapter.NewHub(tableSvc, resolveUser)
 	gameWS := wsadapter.NewGameHub(gameSvc, resolveUser)
-	presenceWS := wsadapter.NewPresenceHub(gameSvc, resolveUser)
+	presenceWS := wsadapter.NewPresenceHub(gameSvc, userSvc, resolveUser)
 	healthSvc := health.New(
 		health.NewMongoPinger(mongoClient),
 		health.NewRedisPinger(redisClient),

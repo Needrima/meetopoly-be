@@ -115,6 +115,49 @@ func handleSetPinColor(games gamesvc.Service) http.HandlerFunc {
 	}
 }
 
+type enterHubRequest struct {
+	HubID string `json:"hubId"`
+}
+
+func handleEnterHub(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		var req enterHubRequest
+		if err := decodeJSON(r, &req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_body", "Invalid request body")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		view, err := games.EnterHub(r.Context(), gameID, userID, req.HubID)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
+func handleLeaveHub(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		view, err := games.LeaveHub(r.Context(), gameID, userID)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
 func mapGameError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, gamesvc.ErrNotFound):
@@ -143,6 +186,8 @@ func mapGameError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "must_settle", "Settle rent or tax before continuing (resign if you cannot pay)")
 	case errors.Is(err, gamesvc.ErrInvalidPinColor):
 		writeError(w, http.StatusBadRequest, "invalid_pin_color", "pinColor must be #RRGGBB")
+	case errors.Is(err, gamesvc.ErrInvalidHubID):
+		writeError(w, http.StatusBadRequest, "invalid_hub_id", "hubId must look like hub:{world}:{slug}")
 	default:
 		writeError(w, http.StatusInternalServerError, "internal_error", "Something went wrong")
 	}

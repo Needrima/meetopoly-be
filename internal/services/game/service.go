@@ -30,6 +30,7 @@ var (
 	ErrAlreadyOwned  = errors.New("space already owned")
 	ErrMustSettle       = errors.New("must settle rent or tax before continuing")
 	ErrInvalidPinColor  = errors.New("invalid pin color")
+	ErrInvalidHubID     = errors.New("invalid hub id")
 )
 
 // SeatInput is a seated lobby player used to bootstrap a game.
@@ -51,6 +52,8 @@ type PlayerView struct {
 	PinColor        string `json:"pinColor"`
 	Resigned        bool   `json:"resigned"`
 	TimeRemainingMs int64  `json:"timeRemainingMs"`
+	// HubID set while inside a hub (Phase 8.2); omitted when on the board.
+	HubID string `json:"hubId,omitempty"`
 }
 
 // LastRollView is the public last-dice snapshot.
@@ -158,6 +161,10 @@ type Service interface {
 	Resign(ctx context.Context, gameID, userID string) (*View, error)
 	Buy(ctx context.Context, gameID, userID string) (*View, error)
 	SetPinColor(ctx context.Context, gameID, userID, pinColor string) (*View, error)
+	// EnterHub marks the seated player as inside hubId (Phase 8.2); fans out via game WS.
+	EnterHub(ctx context.Context, gameID, userID, hubID string) (*View, error)
+	// LeaveHub clears hubId so board peers see them back on the board.
+	LeaveHub(ctx context.Context, gameID, userID string) (*View, error)
 	// Disconnect starts a silent hold; expire → Resign (Phase 7.5). Presence must not call this.
 	Disconnect(ctx context.Context, gameID, userID string) error
 	// CancelDisconnectHold clears a pending auto-resign when the game WS reconnects.
@@ -608,6 +615,7 @@ func (s *service) resignLocked(ctx context.Context, gameID, userID string) (*Vie
 		s.pauseCurrentBankLocked(g)
 	}
 	g.Players[playerIdx].Resigned = true
+	g.Players[playerIdx].HubID = ""
 	if wasCurrent {
 		g.PendingPayment = nil
 	}
@@ -735,6 +743,107 @@ func (s *service) SetPinColor(ctx context.Context, gameID, userID, pinColor stri
 	view := s.viewOf(ctx, g)
 	s.broadcast(gameID, Event{Type: "state", Game: view})
 	return view, nil
+}
+
+// EnterHub records that a seated active player is inside a location hub (Phase 8.2).
+func (s *service) EnterHub(ctx context.Context, gameID, userID, hubID string) (*View, error) {
+	normalized, ok := normalizeHubID(hubID)
+	if !ok {
+		return nil, ErrInvalidHubID
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	g, err := s.repo.FindByID(ctx, gameID)
+	if err != nil {
+		if errors.Is(err, gamerepo.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return nil, ErrInactive
+	}
+
+	playerIdx := -1
+	for i, p := range g.Players {
+		if p.UserID == userID {
+			playerIdx = i
+			break
+		}
+	}
+	if playerIdx < 0 {
+		return nil, ErrNotPlayer
+	}
+	if g.Players[playerIdx].Resigned {
+		return nil, ErrAlreadyOut
+	}
+	if g.Players[playerIdx].HubID == normalized {
+		return s.viewOf(ctx, g), nil
+	}
+
+	g.Players[playerIdx].HubID = normalized
+	g.UpdatedAt = time.Now().UTC()
+	if err := s.repo.Update(ctx, g); err != nil {
+		return nil, err
+	}
+	view := s.viewOf(ctx, g)
+	s.broadcast(gameID, Event{Type: "state", Game: view})
+	return view, nil
+}
+
+// LeaveHub clears the player's hubId (Phase 8.2).
+func (s *service) LeaveHub(ctx context.Context, gameID, userID string) (*View, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	g, err := s.repo.FindByID(ctx, gameID)
+	if err != nil {
+		if errors.Is(err, gamerepo.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	playerIdx := -1
+	for i, p := range g.Players {
+		if p.UserID == userID {
+			playerIdx = i
+			break
+		}
+	}
+	if playerIdx < 0 {
+		return nil, ErrNotPlayer
+	}
+	if g.Players[playerIdx].HubID == "" {
+		return s.viewOf(ctx, g), nil
+	}
+
+	g.Players[playerIdx].HubID = ""
+	g.UpdatedAt = time.Now().UTC()
+	if err := s.repo.Update(ctx, g); err != nil {
+		return nil, err
+	}
+	view := s.viewOf(ctx, g)
+	s.broadcast(gameID, Event{Type: "state", Game: view})
+	return view, nil
+}
+
+func normalizeHubID(raw string) (string, bool) {
+	id := strings.TrimSpace(raw)
+	if id == "" {
+		return "", false
+	}
+	if !strings.HasPrefix(id, "hub:") {
+		id = "hub:" + id
+	}
+	// hub:{world}:{slug} — at least one colon after the prefix.
+	rest := strings.TrimPrefix(id, "hub:")
+	if rest == "" || !strings.Contains(rest, ":") {
+		return "", false
+	}
+	return id, true
 }
 
 func normalizePinColor(raw string) (string, bool) {
@@ -1064,6 +1173,7 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 			PinColor:        p.PinColor,
 			Resigned:        p.Resigned,
 			TimeRemainingMs: liveRemainingMs(g, p, now),
+			HubID:           p.HubID,
 		}
 		if !p.Resigned && p.TurnOrder == g.CurrentTurn {
 			currentUserID = p.UserID

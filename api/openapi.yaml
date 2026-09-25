@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.14.0
+  version: 0.15.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -588,8 +588,14 @@ paths:
         (`GAME_DISCONNECT_HOLD`, default `3m`); reconnect cancels; expire → same Resign as Leave.
         Presence WS / WebRTC drops do **not** resign.
         Board presence (Phase 7.0–7.4): `GET /ws/presence/board/{gameId}?token=` — WebRTC signaling +
-        Pion SFU PeerConnection; room id `board:{gameId}` (`HubRoomID` stub for Phase 8 hubs);
+        Pion SFU PeerConnection; room id `board:{gameId}`;
         STUN `stun:stun.l.google.com:19302`.
+        Hub presence (Phase 8.0): `GET /ws/presence/hub/{hubId}?token=` — same signaling/SFU/DC family;
+        `hubId` is URL-encoded (e.g. `hub%3Aafrica-1%3Alagos`); room id from `HubRoomID` → `hub:{…}`.
+        Auth: any logged-in user (not required to be seated in a game — cross-table meet).
+        Enter hub: client leaves board presence room and joins hub; Leave hub: reverse. Game WS stays up.
+        Phase 8.2: `POST /games/{gameId}/enter-hub` `{hubId}` / `leave-hub` sets `GamePlayer.hubId` and
+        fans out on game WS so board peers can show `Name(in CODE)` (presence linger unchanged).
         Messages: client `{type:offer|ice|ping}`, server `{type:welcome|answer|ice|peer-joined|peer-left|pong|error}`.
         DataChannel label `presence`. Pose fan-out: client sends JSON
         `{type:"pose",userId?,username?,x,y,rot?,t?}` (board-normalized 0..1); SFU stamps
@@ -863,6 +869,111 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /games/{gameId}/enter-hub:
+    post:
+      operationId: enterHub
+      summary: Mark player as inside a location hub
+      description: |
+        Phase 8.2 — sets the caller's `hubId` so board peers can show an in-hub badge
+        (e.g. `Needrima(in LOS)`). Presence room switch remains on the client (8.0);
+        this only fans out via game WS state. Idempotent when already in the same hub.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnterHubRequest"
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "400":
+          description: Invalid hubId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Inactive game or already resigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /games/{gameId}/leave-hub:
+    post:
+      operationId: leaveHub
+      summary: Clear in-hub marker
+      description: |
+        Phase 8.2 — clears the caller's `hubId` so board peers see them back on the board.
+        Idempotent when already clear. Does not resign or drop the game WS.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
         "401":
           description: Unauthorized
           content:
@@ -1294,6 +1405,16 @@ components:
           description: Hex accent `#RRGGBB` matching the player's avatar/joystick color
           pattern: "^#[0-9A-Fa-f]{6}$"
           example: "#ED1B24"
+    EnterHubRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - hubId
+      properties:
+        hubId:
+          type: string
+          description: Location hub id (e.g. `hub:africa-1:lagos`)
+          example: hub:africa-1:lagos
     TableSeat:
       type: object
       additionalProperties: false
@@ -1392,6 +1513,12 @@ components:
             Personal time bank remaining in milliseconds (Phase 6.3b).
             For the current player this is live (bank minus elapsed on this turn).
             For others it is the paused remainder. Starts at 45 minutes.
+        hubId:
+          type: string
+          nullable: true
+          description: |
+            Phase 8.2 — set while the player is inside a location hub
+            (e.g. `hub:africa-1:lagos`); null/omitted when on the board.
     GameLastRoll:
       type: object
       additionalProperties: false
