@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -192,6 +193,21 @@ func (h *PresenceHub) joinPresence(
 	r *http.Request,
 	roomID, gameID, userID, username string,
 ) {
+	if strings.HasPrefix(roomID, "hub:") {
+		roster := h.sfu.Roster(roomID, "")
+		already := false
+		for _, p := range roster {
+			if p.UserID == userID {
+				already = true
+				break
+			}
+		}
+		if !already && len(roster) >= rtcadapter.MaxHubPeers {
+			http.Error(w, "hub full", http.StatusConflict)
+			return
+		}
+	}
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		slog.Error("presence ws upgrade", "err", err)
@@ -217,6 +233,11 @@ func (h *PresenceHub) joinPresence(
 	}
 
 	if err := h.sfu.Attach(roomID, userID, username, c); err != nil {
+		if errors.Is(err, rtcadapter.ErrHubFull) {
+			_ = c.WriteJSON(map[string]any{"type": "error", "message": "hub full"})
+			_ = conn.Close()
+			return
+		}
 		slog.Error("presence sfu attach", "err", err, "roomId", roomID)
 		_ = conn.Close()
 		return

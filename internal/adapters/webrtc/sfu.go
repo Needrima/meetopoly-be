@@ -16,9 +16,15 @@ const (
 	PresenceDataChannelLabel = "presence"
 	// MaxPoseHz caps stamped pose fan-out per peer (Phase 7.4). Clients send ~10 Hz.
 	MaxPoseHz = 20
+	// MaxHubPeers is the locked cap for a single hub SFU room (Phase 8.3).
+	MaxHubPeers = 16
 )
 
-var poseMinInterval = time.Second / MaxPoseHz
+var (
+	poseMinInterval = time.Second / MaxPoseHz
+	// ErrHubFull is returned when Attach would exceed MaxHubPeers on a hub room.
+	ErrHubFull = fmt.Errorf("hub room full")
+)
 
 // SignalWriter sends JSON signaling messages to one peer's WebSocket.
 type SignalWriter interface {
@@ -114,6 +120,7 @@ func (s *SFU) Roster(roomID, excludeUserID string) []PeerInfo {
 
 // Attach registers a signaling sink for userID before SDP exchange.
 // If the user was already attached, the previous PeerConnection is closed.
+// Hub rooms (`hub:…`) reject a new userId when the room already has MaxHubPeers.
 func (s *SFU) Attach(roomID, userID, username string, signal SignalWriter) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -126,6 +133,8 @@ func (s *SFU) Attach(roomID, userID, username string, signal SignalWriter) error
 	if old, ok := r.peers[userID]; ok {
 		s.closePeerLocked(old)
 		delete(r.peers, userID)
+	} else if strings.HasPrefix(roomID, "hub:") && len(r.peers) >= MaxHubPeers {
+		return ErrHubFull
 	}
 	r.peers[userID] = &peer{
 		userID:   userID,

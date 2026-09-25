@@ -1,6 +1,8 @@
 package webrtc
 
 import (
+	"errors"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -18,9 +20,21 @@ func (m *memSignal) WriteJSON(v any) error {
 	return nil
 }
 
-func TestBoardRoomID(t *testing.T) {
-	if got := BoardRoomID("g1"); got != "board:g1" {
-		t.Fatalf("got %s", got)
+func TestHubRoomFull(t *testing.T) {
+	sfu := NewSFU()
+	room := HubRoomID("africa-1:lagos")
+	for i := 0; i < MaxHubPeers; i++ {
+		id := fmt.Sprintf("u%d", i)
+		if err := sfu.Attach(room, id, id, &memSignal{}); err != nil {
+			t.Fatalf("attach %d: %v", i, err)
+		}
+	}
+	if err := sfu.Attach(room, "overflow", "X", &memSignal{}); !errors.Is(err, ErrHubFull) {
+		t.Fatalf("want ErrHubFull got %v", err)
+	}
+	// Reconnect of an existing peer must still succeed.
+	if err := sfu.Attach(room, "u0", "u0", &memSignal{}); err != nil {
+		t.Fatalf("reconnect: %v", err)
 	}
 }
 

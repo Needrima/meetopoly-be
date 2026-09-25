@@ -596,6 +596,7 @@ paths:
         Enter hub: client leaves board presence room and joins hub; Leave hub: reverse. Game WS stays up.
         Phase 8.2: `POST /games/{gameId}/enter-hub` `{hubId}` / `leave-hub` sets `GamePlayer.hubId` and
         fans out on game WS so board peers can show `Name(in CODE)` (presence linger unchanged).
+        Phase 8.1: same pose JSON on hub rooms; clients publish ~10 Hz hub-local 0..1 and interpolate remotes.
         Messages: client `{type:offer|ice|ping}`, server `{type:welcome|answer|ice|peer-joined|peer-left|pong|error}`.
         DataChannel label `presence`. Pose fan-out: client sends JSON
         `{type:"pose",userId?,username?,x,y,rot?,t?}` (board-normalized 0..1); SFU stamps

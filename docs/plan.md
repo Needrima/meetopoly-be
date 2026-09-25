@@ -684,6 +684,12 @@ Roll → move (+pass GO if applicable) → resolve space →
 
 **Cross-table (locked):** Players from **different tables/games may meet** in the same location hub (product default: **allow**).
 
+**Hub capacity (locked):** **Max 16** peers per hub SFU room (reject join when full). Driven by mobile pose/UI comfort; raise later only if measured OK. Redis presence (Phase 15) is multi-instance sharing — not required for this cap.
+
+**Hub leave (locked):** Leave only via explicit **X** control. Block Android back + iOS swipe-back on the hub screen (same idea as board ⋯).
+
+**Hub chrome (deferred → Phase 9):** 3-pane landscape — left media stub (cameras / Phase 10), center walk floor with location name + description underfoot, right worldwide roster (pin color + username + country) + joystick BR + X. Country on hub roster and board HUD when available. Placeholder hub UI is fine until that slice.
+
 **Collision / bounce-back:** Not required this phase (Phase **7.3 skipped**; hub walk stays client-side / simple scene).
 
 **Sub-phases (ship one at a time)**
@@ -714,14 +720,20 @@ Roll → move (+pass GO if applicable) → resolve space →
 
 - Persist or fan-out `hubId` (game player field and/or presence service) so board clients know who left for a hub.
 - Dual presence proof: board peers don’t require that player’s board DC; pin still moves on dice via game WS.
+- Board remotes: prefer live/linger poses; if `hubId` set and no pose (e.g. after board presence reconnect), draw a frozen avatar at the hub tile center.
 - Avoid treating hub enter as presence “left game” toast (already softened in 7.5 polish).
 
 **8.3 notes**
 
-- On turn start, if `hubId != null`, targeted notify to that player (and compact UI on their hub screen).
-- Sheet: remaining bank (6.3b rules unchanged) + Roll / End (as allowed) + Open board.
+- On turn start, if local player `hubId != null`, client toast + compact turn sheet (game WS `state` is enough — no new event type).
+- Sheet: remaining bank (6.3b) + **2×2** actions — Roll | End · Open board | Keep walking.
+- **End / Roll gate:** same settle window as board (`turnBusy` = dice hold + pin walk estimate) so End does not light up mid-roll.
+- **Unowned land from hub:** compact `HubBuySheet` — stripped deed name + time bank + **Buy** (affordability check) | **Open board**; after buy, primary becomes **End turn**; **Not now** dismisses to turn sheet / keep walking. Skip-buy still leaves deed unowned until Phase 13 auction.
+- Hub = lightweight turn actions; board = full economy UI (buy deed, later auction/trade/raise-funds).
 - Rolling from hub moves **pin** on the board for everyone; hub avatar does not snap to the pin.
-- Open board → board view without dropping game WS; decide whether leaving hub presence is required to walk the board again (default: Open board can keep `hubId` until explicit Leave hub — confirm in impl if UX fights that).
+- **Open board:** pop to board **without** `leave-hub` (keep `hubId` until explicit X Leave).
+- Hub: `gestureEnabled: false` + `useBlockHardwareBack`; Leave = X icon only.
+- SFU rejects new hub joins when room already has 16 distinct peers (reconnect of same userId still allowed).
 
 **8.4 notes**
 
@@ -733,7 +745,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 1. Hub presence WS + SFU room join/leave — **8.0**
 2. Hub pose fan-out (reuse StampPose / rate-limit) — **8.1**
 3. `hubId` on player / enter-leave service — **8.2**
-4. Turn-start notify when `hubId != null` — **8.3**
+4. Hub max **16** on Attach + client turn detect on `state` — **8.3**
 5. Reconnect / leave-path hardening — **8.4**
 
 **Mobile**
@@ -741,15 +753,15 @@ Roll → move (+pass GO if applicable) → resolve space →
 1. Enter/Leave switches presence rooms; game WS untouched — **8.0**
 2. Hub remotes + local pose publish — **8.1**
 3. Board “in hub” / frozen pose for peers — **8.2**
-4. Hub turn BottomSheet + Open board — **8.3**
+4. Hub turn sheet + Open board + X-only leave + block system back — **8.3**
 5. Path polish / regression pass — **8.4**
 
 **Exit criteria**
 
 - [x] **8.0:** enter hub joins hub room and leaves board presence; leave hub rejoins board; game WS never drops for that alone
-- [ ] **8.1:** two players see each other’s hub avatars move smoothly
+- [x] **8.1:** two players see each other’s hub avatars move smoothly
 - [x] **8.2:** board peers see in-hub players correctly; pins still update on roll
-- [ ] **8.3:** turn notify + sheet works in hub; Open board reaches board view
+- [x] **8.3:** turn notify + sheet works in hub; Open board keeps hubId; X-only leave; hub cap 16
 - [ ] **8.4:** cross-table meet + leave/open/reconnect hardened; no false resign from hub flows
 - [ ] Voice deferred — not required for Phase 8 exit (→ **Phase 10**)
 
@@ -757,17 +769,19 @@ Roll → move (+pass GO if applicable) → resolve space →
 
 ### Phase 9 — Polish M1 UX + economy feedback
 
-**Goal:** Property cards, rent toasts, Moti transitions, `@expo/ui` settings.
+**Goal:** Property cards, rent toasts, Moti transitions, `@expo/ui` settings; **hub scene chrome** (3-pane + roster + country) per Phase 8 locked notes.
 
 **Mobile**
 
 - Branded cards (NativeWind + Moti)
 - Settings switches via `@expo/ui`
 - Error/empty states
+- **Hub scene:** left media stub, center branded floor, right worldwide roster (≤16) + country; board HUD country when exposed
 
 **Exit criteria**
 
 - [ ] New player can finish signup → join table → play M1 → visit a hub without developer intervention
+- [ ] Hub chrome matches locked 3-pane brief (or listed deferrals)
 
 ---
 
@@ -802,6 +816,8 @@ Roll → move (+pass GO if applicable) → resolve space →
 ### Phase 13 — Rules M4 (trading + auctions)
 
 **Official alignment:** Players may trade deeds, cash, and Get Out of Jail Free cards. **When a player lands on unowned property and does not buy at list price, the Bank auctions it immediately** — all players may bid (including the one who declined). Also: house-shortage auctions if not done in M2; bankruptcy-to-bank may re-auction deeds (coord with Phase 14).
+
+**Hub → board (locked with 8.3):** Auction, trade, and raise-funds UIs live **on the board only**. When an auction (or similar multi-step economy phase) starts, clients still in a hub get a strong notify and **prefer auto Open board** (keep `hubId` like 8.3). Do not rebuild auction/trade clients inside the hub sheet.
 
 **Time bank pauses (encompassing — locked here)**
 
@@ -957,4 +973,9 @@ Only when the user asks:
 | 2026-09-24 | **Phase 8 split:** 8.0 hub room lifecycle; 8.1 hub poses; 8.2 hubId + board in-hub affordance; 8.3 turn notify + sheet; 8.4 harden; cross-table meet **allow**; voice → 10                                                              |
 | 2026-09-24 | **8.0:** `GET /ws/presence/hub/{hubId}`; Enter leaves board SFU room / joins hub; Leave reverse; game WS stays; mobile `useHubPresence` + board `useFocusEffect`                                                                 |
 | 2026-09-25 | **8.2:** `POST enter-hub` / `leave-hub`; `GamePlayer.hubId`; panel `Name(in CODE)`; Board pin/avatar layers memoized to cut avatar hitch during pin walks                                                                              |
+| 2026-09-25 | **8.1:** hub walk surface + ~10 Hz pose publish; remotes via `BoardRemoteAvatar`; `useHubWalk` + `HubScene` (SFU pose path unchanged)                                                                                                   |
+| 2026-09-25 | **8.2 polish:** `buildBoardRemoteAvatars` seeds frozen tile-center poses from `hubId` when board presence remotes were cleared (returner sees in-hub peers)                                                                           |
+| 2026-09-25 | **Hub locked:** max **16**/room; Leave = X only; 3-pane + country → Phase 9; **8.3** turn sheet + Open board keeps hubId                                                                                                               |
+| 2026-09-25 | **8.3:** SFU `MaxHubPeers=16`; hub turn toast + `HubTurnSheet` (Roll/End/Open board); X leave + block system back; Open board skips leave-hub                                                                                         |
+| 2026-09-25 | **8.3 polish:** turn sheet 2×2; hub End gated like board `turnBusy`; hub buy sheet Buy→End + Open board + time bank; strip world prefixes on deed names                                                                              |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                         |

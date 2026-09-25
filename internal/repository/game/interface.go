@@ -36,7 +36,7 @@ type Player struct {
 	HubID string `bson:"hubId,omitempty" json:"hubId,omitempty"`
 	// Resigned — left mid-game or time-bank eliminated; skipped for turns. Assets frozen until Phase 14.
 	Resigned bool `bson:"resigned,omitempty" json:"resigned,omitempty"`
-	// TimeRemainingMs — personal time bank left when their clock was last paused (Phase 6.3b).
+	// TimeRemainingMs — personal time left when their clock was last paused (Phase 6.3b).
 	TimeRemainingMs int64 `bson:"timeRemainingMs" json:"timeRemainingMs"`
 }
 
