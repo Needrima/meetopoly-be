@@ -25,15 +25,15 @@ func TestHubRoomFull(t *testing.T) {
 	room := HubRoomID("africa-1:lagos")
 	for i := 0; i < MaxHubPeers; i++ {
 		id := fmt.Sprintf("u%d", i)
-		if err := sfu.Attach(room, id, id, &memSignal{}); err != nil {
+		if err := sfu.Attach(room, id, id, "", &memSignal{}); err != nil {
 			t.Fatalf("attach %d: %v", i, err)
 		}
 	}
-	if err := sfu.Attach(room, "overflow", "X", &memSignal{}); !errors.Is(err, ErrHubFull) {
+	if err := sfu.Attach(room, "overflow", "X", "", &memSignal{}); !errors.Is(err, ErrHubFull) {
 		t.Fatalf("want ErrHubFull got %v", err)
 	}
 	// Reconnect of an existing peer must still succeed.
-	if err := sfu.Attach(room, "u0", "u0", &memSignal{}); err != nil {
+	if err := sfu.Attach(room, "u0", "u0", "", &memSignal{}); err != nil {
 		t.Fatalf("reconnect: %v", err)
 	}
 }
@@ -51,7 +51,7 @@ func TestAllowPoseRateLimit(t *testing.T) {
 	sfu := NewSFU()
 	room := BoardRoomID("rate")
 	sig := &memSignal{}
-	if err := sfu.Attach(room, "u1", "Ada", sig); err != nil {
+	if err := sfu.Attach(room, "u1", "Ada", "", sig); err != nil {
 		t.Fatal(err)
 	}
 	if !sfu.allowPose(room, "u1") {
@@ -75,10 +75,10 @@ func TestAttachDetachRoster(t *testing.T) {
 	room := BoardRoomID("game-a")
 	a := &memSignal{}
 	b := &memSignal{}
-	if err := sfu.Attach(room, "u1", "Ada", a); err != nil {
+	if err := sfu.Attach(room, "u1", "Ada", "", a); err != nil {
 		t.Fatal(err)
 	}
-	if err := sfu.Attach(room, "u2", "Bob", b); err != nil {
+	if err := sfu.Attach(room, "u2", "Bob", "", b); err != nil {
 		t.Fatal(err)
 	}
 	roster := sfu.Roster(room, "u1")
@@ -106,10 +106,10 @@ func TestDetachIgnoresStaleSignal(t *testing.T) {
 	room := BoardRoomID("game-b")
 	oldSig := &memSignal{}
 	newSig := &memSignal{}
-	if err := sfu.Attach(room, "u1", "Ada", oldSig); err != nil {
+	if err := sfu.Attach(room, "u1", "Ada", "", oldSig); err != nil {
 		t.Fatal(err)
 	}
-	if err := sfu.Attach(room, "u1", "Ada", newSig); err != nil {
+	if err := sfu.Attach(room, "u1", "Ada", "", newSig); err != nil {
 		t.Fatal(err)
 	}
 	if _, ok := sfu.Detach(room, "u1", oldSig); ok {

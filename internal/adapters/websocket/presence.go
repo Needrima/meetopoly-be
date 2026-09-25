@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -24,6 +25,7 @@ type presenceClient struct {
 	roomID   string
 	userID   string
 	username string
+	country  string
 	send     chan []byte
 	hub      *PresenceHub
 }
@@ -153,8 +155,9 @@ func (h *PresenceHub) HandleBoardPresence(w http.ResponseWriter, r *http.Request
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
+	country := profileCountry(r.Context(), h.users, userID)
 
-	h.joinPresence(w, r, rtcadapter.BoardRoomID(gameID), gameID, userID, username)
+	h.joinPresence(w, r, rtcadapter.BoardRoomID(gameID), gameID, userID, username, country)
 }
 
 // HandleHubPresence upgrades to WebSocket for hub:{…} presence (Phase 8.0).
@@ -179,19 +182,23 @@ func (h *PresenceHub) HandleHubPresence(w http.ResponseWriter, r *http.Request) 
 	}
 
 	username := "Player"
+	country := ""
 	if h.users != nil {
-		if profile, uerr := h.users.GetByID(r.Context(), userID); uerr == nil && profile != nil && profile.Username != "" {
-			username = profile.Username
+		if profile, uerr := h.users.GetByID(r.Context(), userID); uerr == nil && profile != nil {
+			if profile.Username != "" {
+				username = profile.Username
+			}
+			country = strings.ToUpper(strings.TrimSpace(profile.Country))
 		}
 	}
 
-	h.joinPresence(w, r, rtcadapter.HubRoomID(hubID), "", userID, username)
+	h.joinPresence(w, r, rtcadapter.HubRoomID(hubID), "", userID, username, country)
 }
 
 func (h *PresenceHub) joinPresence(
 	w http.ResponseWriter,
 	r *http.Request,
-	roomID, gameID, userID, username string,
+	roomID, gameID, userID, username, country string,
 ) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -205,6 +212,7 @@ func (h *PresenceHub) joinPresence(
 		roomID:   roomID,
 		userID:   userID,
 		username: username,
+		country:  country,
 		send:     make(chan []byte, 32),
 		hub:      h,
 	}
@@ -217,7 +225,7 @@ func (h *PresenceHub) joinPresence(
 		}
 	}
 
-	if err := h.sfu.Attach(roomID, userID, username, c); err != nil {
+	if err := h.sfu.Attach(roomID, userID, username, country, c); err != nil {
 		if errors.Is(err, rtcadapter.ErrHubFull) {
 			// writePump not started yet — write the error frame directly.
 			if b, merr := json.Marshal(map[string]any{"type": "error", "message": "hub full"}); merr == nil {
@@ -238,6 +246,7 @@ func (h *PresenceHub) joinPresence(
 		"roomId":     roomID,
 		"userId":     userID,
 		"username":   username,
+		"country":    country,
 		"peers":      h.sfu.Roster(roomID, userID),
 		"iceServers": h.sfu.ICEServersJSON(),
 	}
@@ -249,15 +258,30 @@ func (h *PresenceHub) joinPresence(
 	}
 
 	if !alreadyPresent {
-		h.broadcast(roomID, userID, map[string]any{
+		joined := map[string]any{
 			"type":     "peer-joined",
 			"userId":   userID,
 			"username": username,
-		})
+		}
+		if country != "" {
+			joined["country"] = country
+		}
+		h.broadcast(roomID, userID, joined)
 	}
 
 	go c.writePump()
 	c.readPump()
+}
+
+func profileCountry(ctx context.Context, users usersvc.Service, userID string) string {
+	if users == nil || userID == "" {
+		return ""
+	}
+	profile, err := users.GetByID(ctx, userID)
+	if err != nil || profile == nil {
+		return ""
+	}
+	return strings.ToUpper(strings.TrimSpace(profile.Country))
 }
 
 func playerUsername(view *gamesvc.View, userID string) (string, bool) {

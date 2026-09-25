@@ -593,13 +593,13 @@ Roll → move (+pass GO if applicable) → resolve space →
 
 **Sub-phases (ship one at a time)**
 
-| Slice   | Done when                                                                                                                                               | Avoid                                         |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| **7.0** | Pion SFU adapter + WS signaling; join/leave a **board presence room** per table/game; connect/disconnect lifecycle works (no pose payload yet)          | Pose messages, hubs, voice, Redis presence    |
-| **7.1** | DataChannel up; locked **pose message shape**; SFU fans out unvalidated; mobile `useWebRTC` / `useRoom` joins the board room                            | Server validation, interpolation polish, hubs |
-| **7.2** | Local avatar publishes ~10–20 Hz; remotes drawn + **interpolated** on the 2D board; pins still from game WS only                                        | Bounce-back, hubs, voice                      |
-| **7.3** | ~~`services/presence` validates board moves; bounce-back~~ — **SKIPPED** (see notes)                                                                 | Hubs, voice, Redis presence                   |
-| **7.4** | Dual-presence proof: **Roll moves pins** while avatars keep walking; presence reconnect / leave room / rate-limit hardening; room-id hook ready for Phase 8 hubs | Full hub enter/UX (→ 8); voice (→ 10); game resign-on-disconnect |
+| Slice   | Done when                                                                                                                                                               | Avoid                                                                                                |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **7.0** | Pion SFU adapter + WS signaling; join/leave a **board presence room** per table/game; connect/disconnect lifecycle works (no pose payload yet)                          | Pose messages, hubs, voice, Redis presence                                                           |
+| **7.1** | DataChannel up; locked **pose message shape**; SFU fans out unvalidated; mobile `useWebRTC` / `useRoom` joins the board room                                            | Server validation, interpolation polish, hubs                                                        |
+| **7.2** | Local avatar publishes ~10–20 Hz; remotes drawn + **interpolated** on the 2D board; pins still from game WS only                                                        | Bounce-back, hubs, voice                                                                             |
+| **7.3** | ~~`services/presence` validates board moves; bounce-back~~ — **SKIPPED** (see notes)                                                                                    | Hubs, voice, Redis presence                                                                          |
+| **7.4** | Dual-presence proof: **Roll moves pins** while avatars keep walking; presence reconnect / leave room / rate-limit hardening; room-id hook ready for Phase 8 hubs        | Full hub enter/UX (→ 8); voice (→ 10); game resign-on-disconnect                                     |
 | **7.5** | Game WS disconnect hold (`GAME_DISCONNECT_HOLD`, default 3m / local 45s); reconnect cancels; expire → auto-resign; presence-only drops never resign; hide resigned pins | Resume-game CTA / SecureStore rejoin UI; pause time bank on disconnect; presence tear-down as resign |
 
 **7.0 notes**
@@ -694,13 +694,13 @@ Roll → move (+pass GO if applicable) → resolve space →
 
 **Sub-phases (ship one at a time)**
 
-| Slice   | Done when                                                                                                                                                         | Avoid                                      |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Slice   | Done when                                                                                                                                                        | Avoid                                      |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
 | **8.0** | Hub presence **signaling + room lifecycle**: Enter leaves **board** presence and joins `hub:{hubId}`; Leave hub rejoins **board** presence; **game WS stays up** | Hub poses, turn sheet, voice, polish scene |
-| **8.1** | Hub DataChannel poses (reuse locked **pose** shape; hub-local 0..1); remotes drawn + interpolated in the hub scene                                                  | Turn notify, voice, board “in hub” chrome  |
+| **8.1** | Hub DataChannel poses (reuse locked **pose** shape; hub-local 0..1); remotes drawn + interpolated in the hub scene                                               | Turn notify, voice, board “in hub” chrome  |
 | **8.2** | Server/game knows `hubId` when entered; peers still on the **board** see that player as in-hub (frozen last board pose and/or clear “in hub” affordance)         | Turn sheet, voice                          |
-| **8.3** | **Turn notify** while in hub + compact sheet: time bank + Roll / basic actions + **Open board**; pin updates on roll while avatar stays in hub                    | Voice (→ 10); auctions/trades              |
-| **8.4** | Path hardening: Open board / Leave hub / presence reconnect without dropping game WS; no false resign; cross-table meet verified                                  | Voice; hub presence validation server-side |
+| **8.3** | **Turn notify** while in hub + compact sheet: time bank + Roll / basic actions + **Open board**; pin updates on roll while avatar stays in hub                   | Voice (→ 10); auctions/trades              |
+| **8.4** | Path hardening: Open board / Leave hub / presence reconnect without dropping game WS; no false resign; cross-table meet verified                                 | Voice; hub presence validation server-side |
 
 **8.0 notes**
 
@@ -780,10 +780,41 @@ Roll → move (+pass GO if applicable) → resolve space →
 - Error/empty states
 - **Hub scene:** left media stub, center branded floor, right worldwide roster (≤16) + country; board HUD country when exposed
 
+**Hub chrome sub-slices (9.0)**
+
+| Slice | Done when |
+| ----- | --------- |
+| **9.0a** | Country on presence `welcome` / `peer-joined` / roster peers; `GamePlayer.country` enriched from user profile; board HUD shows country; presence hook exposes `roster` |
+| **9.0b** | Equal 3-pane hub shell, full height, 2px middle borders, per-tile floor color |
+| **9.0c** | Center copy: name + code + centered `about` with height-based ellipsis; walk square = avatars only |
+| **9.0d** | `HubRoster` (`IN HUB · n/16`, 2-col, country, X) + joystick BR |
+| **9.0e** | Plan smoke checklist |
+
+**9.0a notes**
+
+- Presence: `PeerInfo.country` + `Attach(..., country, ...)`; hub/board load ISO code from user profile.
+- Game: `CountryLookup` enriches `PlayerView.country` on read (not persisted on game docs).
+- Mobile: `PresenceRosterEntry` + `roster` on presence channel; `GamePlayer.country`; BoardPanel country label.
+
+**9.0b notes**
+
+- Equal `flex: 1` panes; horizontal safe-area only (rails stretch to bottom like board).
+- Center: 2px side borders; `floorColor = tileVisual.bandColor ?? fill`; `HubScene` single-color square (no two-tone).
+- Left media stub + Live/Time; right X leave + joystick stub until 9.0d.
+
+**9.0c notes**
+
+- `HubLocationCopy` on the **rail** (not inside the walk square): name + code + `about` (fallback aboutShort/description).
+- Height-based `numberOfLines` + tail ellipsis — no ScrollView.
+- `HubScene` = avatars only (`pointerEvents="box-none"`) above copy; rail owns floor color.
+
 **Exit criteria**
 
 - [ ] New player can finish signup → join table → play M1 → visit a hub without developer intervention
 - [ ] Hub chrome matches locked 3-pane brief (or listed deferrals)
+- [x] **9.0a:** country on presence roster + game players + board HUD
+- [x] **9.0b:** equal 3-pane shell + per-tile floor + middle borders
+- [x] **9.0c:** center name/code/about with ellipsis; walk square avatars-only
 
 ---
 
@@ -972,13 +1003,16 @@ Only when the user asks:
 | 2026-09-24 | **Phase 7 split:** 7.0–7.4 board avatar DataChannels (memory SFU); hubs stay **Phase 8**; Redis presence → 15 / multi-node                                                                                                                |
 | 2026-09-24 | **7.0:** Pion SFU + `/ws/presence/board/{gameId}`; STUN; idle `presence` DC; mobile `useBoardPresence` + join/leave toasts (dev client)                                                                                                   |
 | 2026-09-24 | **7.5 locked (plan):** game WS 3‑min silent hold → auto-resign; presence drop ≠ resign; bank keeps draining; no resume CTA this slice                                                                                                     |
-| 2026-09-24 | **Phase 8 split:** 8.0 hub room lifecycle; 8.1 hub poses; 8.2 hubId + board in-hub affordance; 8.3 turn notify + sheet; 8.4 harden; cross-table meet **allow**; voice → 10                                                              |
-| 2026-09-24 | **8.0:** `GET /ws/presence/hub/{hubId}`; Enter leaves board SFU room / joins hub; Leave reverse; game WS stays; mobile `useHubPresence` + board `useFocusEffect`                                                                 |
-| 2026-09-25 | **8.2:** `POST enter-hub` / `leave-hub`; `GamePlayer.hubId`; panel `Name(in CODE)`; Board pin/avatar layers memoized to cut avatar hitch during pin walks                                                                              |
-| 2026-09-25 | **8.1:** hub walk surface + ~10 Hz pose publish; remotes via `BoardRemoteAvatar`; `useHubWalk` + `HubScene` (SFU pose path unchanged)                                                                                                   |
-| 2026-09-25 | **8.2 polish:** `buildBoardRemoteAvatars` seeds frozen tile-center poses from `hubId` when board presence remotes were cleared (returner sees in-hub peers)                                                                           |
-| 2026-09-25 | **Hub locked:** max **16**/room; Leave = X only; 3-pane + country → Phase 9; **8.3** turn sheet + Open board keeps hubId                                                                                                               |
-| 2026-09-25 | **8.3:** SFU `MaxHubPeers=16`; hub turn toast + `HubTurnSheet` (Roll/End/Open board); X leave + block system back; Open board skips leave-hub                                                                                         |
-| 2026-09-25 | **8.3 polish:** turn sheet 2×2; hub End gated like board `turnBusy`; hub buy sheet Buy→End + Open board + time bank; strip world prefixes on deed names                                                                              |
-| 2026-09-25 | **8.4:** `hubRevision` stale-enter ignore; mobile abort enter-on-leave; hub welcome.peers seed + soft-reconnect clear; hub-full WS error stops retry                                                                                 |
-| 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                         |
+| 2026-09-24 | **Phase 8 split:** 8.0 hub room lifecycle; 8.1 hub poses; 8.2 hubId + board in-hub affordance; 8.3 turn notify + sheet; 8.4 harden; cross-table meet **allow**; voice → 10                                                                |
+| 2026-09-24 | **8.0:** `GET /ws/presence/hub/{hubId}`; Enter leaves board SFU room / joins hub; Leave reverse; game WS stays; mobile `useHubPresence` + board `useFocusEffect`                                                                          |
+| 2026-09-25 | **8.2:** `POST enter-hub` / `leave-hub`; `GamePlayer.hubId`; panel `Name(in CODE)`; Board pin/avatar layers memoized to cut avatar hitch during pin walks                                                                                 |
+| 2026-09-25 | **8.1:** hub walk surface + ~10 Hz pose publish; remotes via `BoardRemoteAvatar`; `useHubWalk` + `HubScene` (SFU pose path unchanged)                                                                                                     |
+| 2026-09-25 | **8.2 polish:** `buildBoardRemoteAvatars` seeds frozen tile-center poses from `hubId` when board presence remotes were cleared (returner sees in-hub peers)                                                                               |
+| 2026-09-25 | **Hub locked:** max **16**/room; Leave = X only; 3-pane + country → Phase 9; **8.3** turn sheet + Open board keeps hubId                                                                                                                  |
+| 2026-09-25 | **8.3:** SFU `MaxHubPeers=16`; hub turn toast + `HubTurnSheet` (Roll/End/Open board); X leave + block system back; Open board skips leave-hub                                                                                             |
+| 2026-09-25 | **8.3 polish:** turn sheet 2×2; hub End gated like board `turnBusy`; hub buy sheet Buy→End + Open board + time bank; strip world prefixes on deed names                                                                                   |
+| 2026-09-25 | **8.4:** `hubRevision` stale-enter ignore; mobile abort enter-on-leave; hub welcome.peers seed + soft-reconnect clear; hub-full WS error stops retry                                                                                      |
+| 2026-09-25 | **9.0a:** presence `country` on welcome/peers/peer-joined; `GamePlayer.country` via user lookup; board HUD country; presence `roster` for hub chrome                                                                                       |
+| 2026-09-25 | **9.0b:** equal 3-pane hub shell; full-height rails; 2px center borders; per-tile `HubScene` floor                                                                                                                                         |
+| 2026-09-25 | **9.0c:** `HubLocationCopy` on rail (about + ellipsis); `HubScene` avatars-only above copy                                                                                                                                                 |
+| 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

@@ -599,6 +599,7 @@ paths:
         fans out on game WS so board peers can show `Name(in CODE)` (presence linger unchanged).
         Phase 8.1: same pose JSON on hub rooms; clients publish ~10 Hz hub-local 0..1 and interpolate remotes.
         Messages: client `{type:offer|ice|ping}`, server `{type:welcome|answer|ice|peer-joined|peer-left|pong|error}`.
+        Phase 9.0a: `welcome` / `peer-joined` / roster peers include optional `country` (ISO 3166-1 alpha-2).
         DataChannel label `presence`. Pose fan-out: client sends JSON
         `{type:"pose",userId?,username?,x,y,rot?,t?}` (board-normalized 0..1); SFU stamps
         `userId`/`username`, rate-limits ~20 Hz/peer, and forwards to other peers' open DCs.
@@ -1521,6 +1522,11 @@ components:
             Personal time bank remaining in milliseconds (Phase 6.3b).
             For the current player this is live (bank minus elapsed on this turn).
             For others it is the paused remainder. Starts at 45 minutes.
+        country:
+          type: string
+          description: |
+            Phase 9.0a — ISO 3166-1 alpha-2 from the user profile (enriched on read;
+            not stored on the game document).
         hubId:
           type: string
           nullable: true

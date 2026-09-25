@@ -52,6 +52,8 @@ type PlayerView struct {
 	PinColor        string `json:"pinColor"`
 	Resigned        bool   `json:"resigned"`
 	TimeRemainingMs int64  `json:"timeRemainingMs"`
+	// Country — ISO 3166-1 alpha-2 from the user profile (Phase 9.0a); not stored on the game doc.
+	Country string `json:"country,omitempty"`
 	// HubID set while inside a hub (Phase 8.2); omitted when on the board.
 	HubID string `json:"hubId,omitempty"`
 	// HubRevision — bumps on leave/resign; clients send it on enter-hub to ignore stale enters (8.4).
@@ -173,6 +175,8 @@ type Service interface {
 	// CancelDisconnectHold clears a pending auto-resign when the game WS reconnects.
 	CancelDisconnectHold(gameID, userID string)
 	SetBroadcaster(b Broadcaster)
+	// SetCountryLookup enriches PlayerView.Country from user profiles (Phase 9.0a).
+	SetCountryLookup(l CountryLookup)
 }
 
 // Config tunes game service timers (Phase 7.5 disconnect hold).
@@ -196,6 +200,7 @@ type service struct {
 	cfg        Config
 	mu         sync.Mutex
 	bcast      Broadcaster
+	countries  CountryLookup
 	bankTimers map[string]*time.Timer
 	holds      map[string]*time.Timer // gameID\0userID → disconnect hold
 }
@@ -218,6 +223,11 @@ func (s *service) SetBroadcaster(b Broadcaster) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.bcast = b
+}
+
+func (s *service) SetCountryLookup(l CountryLookup) {
+	// Boot-only; read lock-free from viewOf (may already hold s.mu).
+	s.countries = l
 }
 
 func (s *service) broadcast(gameID string, ev Event) {
@@ -1169,7 +1179,21 @@ func (s *service) loadSpaces(ctx context.Context, worldID string) []Space {
 }
 
 func (s *service) viewOf(ctx context.Context, g *gamerepo.Game) *View {
-	return toView(g, s.loadSpaces(ctx, g.WorldID))
+	v := toView(g, s.loadSpaces(ctx, g.WorldID))
+	s.enrichCountries(ctx, v)
+	return v
+}
+
+func (s *service) enrichCountries(ctx context.Context, v *View) {
+	if v == nil || s.countries == nil {
+		return
+	}
+	lookup := s.countries
+	for i := range v.Players {
+		if c := strings.ToUpper(strings.TrimSpace(lookup.CountryForUser(ctx, v.Players[i].UserID))); c != "" {
+			v.Players[i].Country = c
+		}
+	}
 }
 
 func toView(g *gamerepo.Game, spaces []Space) *View {

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -108,6 +109,7 @@ func main() {
 	gameSvc := gamesvc.New(repoGames, gamesvc.NewLocationSpaceCatalog(locations), gamesvc.Config{
 		DisconnectHold: cfg.GameDisconnectHold,
 	})
+	gameSvc.SetCountryLookup(userCountryLookup{users: userSvc})
 	tableSvc := tablesvc.New(tables, tablesvc.Config{
 		DisconnectHold: 45 * time.Second,
 	})
@@ -161,4 +163,20 @@ func main() {
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		slog.Error("shutdown error", "err", err)
 	}
+}
+
+// userCountryLookup adapts usersvc → gamesvc.CountryLookup (Phase 9.0a).
+type userCountryLookup struct {
+	users usersvc.Service
+}
+
+func (u userCountryLookup) CountryForUser(ctx context.Context, userID string) string {
+	if u.users == nil || userID == "" {
+		return ""
+	}
+	profile, err := u.users.GetByID(ctx, userID)
+	if err != nil || profile == nil {
+		return ""
+	}
+	return strings.ToUpper(strings.TrimSpace(profile.Country))
 }

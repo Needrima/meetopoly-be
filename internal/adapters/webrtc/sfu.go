@@ -35,6 +35,8 @@ type SignalWriter interface {
 type PeerInfo struct {
 	UserID   string `json:"userId"`
 	Username string `json:"username"`
+	// Country is ISO 3166-1 alpha-2 when known (Phase 9.0a).
+	Country string `json:"country,omitempty"`
 }
 
 // ICEServerJSON is exposed to clients in the welcome message.
@@ -57,6 +59,7 @@ type room struct {
 type peer struct {
 	userID     string
 	username   string
+	country    string
 	pc         *webrtc.PeerConnection
 	dc         *webrtc.DataChannel
 	signal     SignalWriter
@@ -113,7 +116,7 @@ func (s *SFU) Roster(roomID, excludeUserID string) []PeerInfo {
 		if excludeUserID != "" && id == excludeUserID {
 			continue
 		}
-		out = append(out, PeerInfo{UserID: p.userID, Username: p.username})
+		out = append(out, PeerInfo{UserID: p.userID, Username: p.username, Country: p.country})
 	}
 	return out
 }
@@ -121,7 +124,8 @@ func (s *SFU) Roster(roomID, excludeUserID string) []PeerInfo {
 // Attach registers a signaling sink for userID before SDP exchange.
 // If the user was already attached, the previous PeerConnection is closed.
 // Hub rooms (`hub:…`) reject a new userId when the room already has MaxHubPeers.
-func (s *SFU) Attach(roomID, userID, username string, signal SignalWriter) error {
+// country is optional ISO 3166-1 alpha-2 (Phase 9.0a).
+func (s *SFU) Attach(roomID, userID, username, country string, signal SignalWriter) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -139,6 +143,7 @@ func (s *SFU) Attach(roomID, userID, username string, signal SignalWriter) error
 	r.peers[userID] = &peer{
 		userID:   userID,
 		username: username,
+		country:  strings.ToUpper(strings.TrimSpace(country)),
 		signal:   signal,
 	}
 	return nil
@@ -161,7 +166,7 @@ func (s *SFU) Detach(roomID, userID string, signal SignalWriter) (info PeerInfo,
 	if signal != nil && p.signal != signal {
 		return PeerInfo{}, false
 	}
-	info = PeerInfo{UserID: p.userID, Username: p.username}
+	info = PeerInfo{UserID: p.userID, Username: p.username, Country: p.country}
 	s.closePeerLocked(p)
 	delete(r.peers, userID)
 	if len(r.peers) == 0 {
