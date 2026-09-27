@@ -995,13 +995,40 @@ Manual (2 clients preferred; BE running; landscape):
 - [x] **10.3:** hub mute UI + smoke
 - [x] **10.4:** board/table voice + mute CTA
 
+**Deferred (not Phase 10):** With hubs up to **16**, selective listen (“choose who I hear”) ships with **video / camera tiles** — same roster UX. Locked under **Phase 16** (ask before). Until then: everyone-audio + global `muteMic` only.
+
 ---
 
-### Phase 11 — Rules M2 (houses / hotels / light mortgage)
+### Phase 11 — Rules M2 (houses / hotels / light mortgage) — NEXT
 
-**Official alignment:** even-build across a color group; max 4 houses then hotel; sell buildings back at half price; cannot build if any deed in the set is mortgaged; house shortage → auction for last houses.
+**Official alignment:** even-build across a color group; max 4 houses then hotel; sell buildings back at half price; cannot build if any deed in the set is mortgaged; house shortage → auction for last houses (**→ Phase 13**, not here).
 
-**Exit criteria:** Even-build enforced server-side; UI to buy/sell houses (and hotels).
+**Locked**
+
+- Ship **one sub-slice at a time** — ask before each.
+- Board-only build/sell/mortgage UI (same as auction/trade rule: not in hub sheets).
+- Classic house/hotel costs from seed rent ladder already shown on buy modal (6.4).
+- `Deed.houses` **0–5** (`5` = hotel); no separate `hotel` bool.
+- `mortgaged` field on deed; actions in **11.3** (until then always false).
+- Undeveloped monopoly rent = **2×** site (`Rents[0]`) — already in Phase 6.5; building tiers when monopoly + houses ≥ 1.
+
+**Sub-slices**
+
+| Slice | Done when | Avoid |
+| ----- | --------- | ----- |
+| **11.0** | `Deed` gains `houses` (0–5; **5 = hotel**) + `mortgaged` (always false until 11.3); rent uses `Rents[houses]` when monopoly (undeveloped monopoly stays **2×** `Rents[0]`); OpenAPI + mobile types | Build/sell HTTP, UI, mortgage actions |
+| **11.1** | `POST /games/{id}/build` — buy house/hotel; even-build + full color group + cash; WS fan-out | Sell, mortgage UI |
+| **11.2** | `POST /games/{id}/sell-building` — sell house/hotel at half cost; even-sell down | Mortgage UI |
+| **11.3** | `POST` mortgage + redeem (list/half rules); block build if any deed in color set mortgaged | House-shortage auction |
+| **11.4** | Board UI: build/sell/mortgage on owned deeds + house/hotel markers on tiles | Hub rebuild UI |
+| **11.5** | Smoke checklist for M2 path | Jail/cards (12), auction (13) |
+
+**Exit criteria**
+
+- [ ] Even-build enforced server-side
+- [ ] UI to buy/sell houses (and hotels)
+- [ ] Light mortgage + redeem; mortgaged set blocks build
+- [ ] **11.0** … **11.5** ticked
 
 ---
 
@@ -1068,6 +1095,7 @@ Only when the user asks:
 - Web R3F client + Wails desktop
 - TURN, recording, moderation tools
 - More countries’ seed packs
+- **Hub/board video (cameras)** + **selective listen** (pick who you hear/see in hubs ≤16) — same media rail / roster UX; do not build listen-matrix before video
 
 ---
 
@@ -1195,4 +1223,7 @@ Only when the user asks:
 | 2026-09-27 | **10.2b:** hub loudspeaker via `react-native-incall-manager` (`startHubSpeaker` / `stopHubSpeaker`); needs rebuilt dev client                                                                                                  |
 | 2026-09-27 | **10.3:** hub left-rail `HubMediaRail` Live + mute CTA (`muteMic`); Settings hint; smoke checklist; Phase 10 hub voice exit                                                                                                            |
 | 2026-09-27 | **10.4:** board SFU voice (`IsVoiceRoom`); `useBoardPresence` mic + playback; shared `MuteMicButton` on board panel; Phase 10 complete                                                                                             |
+| 2026-09-27 | **Phase 10 DONE:** selective listen deferred → Phase 16 with video; everyone-audio + muteMic for now                                                                                                                                  |
+| 2026-09-27 | **Phase 11 split:** 11.0–11.5 houses/hotels/light mortgage; house-shortage auction stays Phase 13; ask before each slice                                                                                                               |
+| 2026-09-27 | Skill + plan: Phase 10 voice locks; Phase 11.0 `houses` 0–5 (5=hotel); selective listen/video → 16                                                                                                                                        |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
