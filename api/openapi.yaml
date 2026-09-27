@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.16.0
+  version: 0.17.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -835,6 +835,71 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /games/{gameId}/build:
+    post:
+      operationId: buildOnDeed
+      summary: Buy one house or hotel step on an owned city
+      description: |
+        Phase 11.1 — current player only (awaiting_roll or awaiting_end). Body selects the
+        deed (`boardIndex`). Requires full color group, even-build, cash ≥ seed `houseCost`,
+        and no mortgaged deed in the set. One step per call (`houses` 0→1…→5; 5 = hotel).
+        Fans out updated game via WebSocket `state`.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BuildRequest"
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "400":
+          description: Invalid body or boardIndex
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: |
+            Not your turn, must settle, not buildable, not owner, no monopoly,
+            uneven build, max built, mortgaged set, cannot afford, or inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /games/{gameId}/pin-color:
     post:
       operationId: setPinColor
@@ -1408,6 +1473,17 @@ components:
           description: Hex accent `#RRGGBB` matching the player's avatar/joystick color
           pattern: "^#[0-9A-Fa-f]{6}$"
           example: "#ED1B24"
+    BuildRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - boardIndex
+      properties:
+        boardIndex:
+          type: integer
+          description: Board space to build one house/hotel step on (must be an owned city)
+          minimum: 0
+          maximum: 39
     EnterHubRequest:
       type: object
       additionalProperties: false

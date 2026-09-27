@@ -868,7 +868,7 @@ Manual (landscape device / simulator; BE running; 2 clients preferred):
 | CHANCE / CHEST card modals                   | Card draw UI                 | **12**           |
 | JUST VISITING                                | Jail visit notify            | **12**           |
 | AUCTION bid/fold/slider                      | Bank auction                 | **13**           |
-| BUILD / SELL / MORTGAGE / REDEEM / TRADE bar | Buildings / mortgage / trade | **11 / 13 / 14** |
+| BUILD / SELL / MORTGAGE / REDEEM / TRADE bar | Economy CTAs in board panel (wrap ok); Roll/End → icon boxes by joystick | **11.4** (+ trade **13**) |
 
 **9.4 notes**
 
@@ -1007,28 +1007,30 @@ Manual (2 clients preferred; BE running; landscape):
 
 - Ship **one sub-slice at a time** — ask before each.
 - Board-only build/sell/mortgage UI (same as auction/trade rule: not in hub sheets).
-- Classic house/hotel costs from seed rent ladder already shown on buy modal (6.4).
+- Classic house/hotel costs from seed `houseCost` (hotel step = same cost as a house).
 - `Deed.houses` **0–5** (`5` = hotel); no separate `hotel` bool.
 - `mortgaged` field on deed; actions in **11.3** (until then always false).
 - Undeveloped monopoly rent = **2×** site (`Rents[0]`) — already in Phase 6.5; building tiers when monopoly + houses ≥ 1.
+- **Build API (11.1):** `POST /games/{id}/build` body `{ boardIndex }` — **one step** per call; current player only (no off-turn); allowed in `awaiting_roll` **or** `awaiting_end`; blocked by `pendingPayment`; full color group + even-build + cash ≥ `houseCost`; WS `state` fan-out.
+- **Board economy bar (UI → 11.4):** reference CTA row **BUILD · SELL · MORTGAGE · REDEEM · TRADE** in the board controls (left/panel); wrap to a 2nd row if needed. **Roll** / **End turn** move beside the joystick as **icon boxes** (FontAwesome5 dice + left arrow) — not text buttons in that economy row. Build CTA enabled only on your turn (time bank still drains while building).
 
 **Sub-slices**
 
 | Slice | Done when | Avoid |
 | ----- | --------- | ----- |
 | **11.0** | ✅ `Deed` gains `houses` (0–5; **5 = hotel**) + `mortgaged` (always false until 11.3); rent uses `Rents[houses]` when monopoly (undeveloped monopoly stays **2×** `Rents[0]`); OpenAPI + mobile types | Build/sell HTTP, UI, mortgage actions |
-| **11.1** | `POST /games/{id}/build` — buy house/hotel; even-build + full color group + cash; WS fan-out | Sell, mortgage UI |
+| **11.1** | ✅ `POST /games/{id}/build` — buy house/hotel; even-build + full color group + cash; WS fan-out | Sell, mortgage UI |
 | **11.2** | `POST /games/{id}/sell-building` — sell house/hotel at half cost; even-sell down | Mortgage UI |
 | **11.3** | `POST` mortgage + redeem (list/half rules); block build if any deed in color set mortgaged | House-shortage auction |
-| **11.4** | Board UI: build/sell/mortgage on owned deeds + house/hotel markers on tiles | Hub rebuild UI |
+| **11.4** | Board UI: economy CTA bar + house/hotel markers; Roll/End icon boxes by joystick | Hub rebuild UI |
 | **11.5** | Smoke checklist for M2 path | Jail/cards (12), auction (13) |
 
 **Exit criteria**
 
-- [ ] Even-build enforced server-side
+- [x] Even-build enforced server-side (11.1)
 - [ ] UI to buy/sell houses (and hotels)
 - [ ] Light mortgage + redeem; mortgaged set blocks build
-- [x] **11.0** ticked (deed fields + rent tiers + OpenAPI); **11.1** … **11.5** pending
+- [x] **11.0** + **11.1** ticked; **11.2** … **11.5** pending
 
 ---
 
@@ -1227,4 +1229,6 @@ Only when the user asks:
 | 2026-09-27 | **Phase 11 split:** 11.0–11.5 houses/hotels/light mortgage; house-shortage auction stays Phase 13; ask before each slice                                                                                                               |
 | 2026-09-27 | Skill + plan: Phase 10 voice locks; Phase 11.0 `houses` 0–5 (5=hotel); selective listen/video → 16                                                                                                                                        |
 | 2026-09-27 | **11.0:** `Deed.houses` 0–5 + `mortgaged`; monopoly rent 2× site / `Rents[houses]` when built; OpenAPI 0.16 + mobile types; no build/sell UI                                                                                           |
+| 2026-09-27 | **11.1 locks:** build body `{boardIndex}` one step; current-player only; economy CTA bar + Roll/End icon boxes → 11.4 UI                                                                                                              |
+| 2026-09-27 | **11.1:** `POST /games/{id}/build`; even-build + monopoly + `houseCost`; OpenAPI 0.17; no board UI yet                                                                                                                                 |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

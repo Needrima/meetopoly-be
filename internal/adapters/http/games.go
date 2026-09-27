@@ -89,6 +89,32 @@ func handleBuyProperty(games gamesvc.Service) http.HandlerFunc {
 	}
 }
 
+type buildRequest struct {
+	BoardIndex int `json:"boardIndex"`
+}
+
+func handleBuild(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		var req buildRequest
+		if err := decodeJSON(r, &req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_body", "Invalid request body")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		view, err := games.Build(r.Context(), gameID, userID, req.BoardIndex)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
 type setPinColorRequest struct {
 	PinColor string `json:"pinColor"`
 }
@@ -116,8 +142,8 @@ func handleSetPinColor(games gamesvc.Service) http.HandlerFunc {
 }
 
 type enterHubRequest struct {
-	HubID        string `json:"hubId"`
-	HubRevision  *int64 `json:"hubRevision,omitempty"`
+	HubID       string `json:"hubId"`
+	HubRevision *int64 `json:"hubRevision,omitempty"`
 }
 
 func handleEnterHub(games gamesvc.Service) http.HandlerFunc {
@@ -189,6 +215,20 @@ func mapGameError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusBadRequest, "invalid_pin_color", "pinColor must be #RRGGBB")
 	case errors.Is(err, gamesvc.ErrInvalidHubID):
 		writeError(w, http.StatusBadRequest, "invalid_hub_id", "hubId must look like hub:{world}:{slug}")
+	case errors.Is(err, gamesvc.ErrNotBuildable):
+		writeError(w, http.StatusConflict, "not_buildable", "This space cannot be built on")
+	case errors.Is(err, gamesvc.ErrNotOwner):
+		writeError(w, http.StatusConflict, "not_owner", "You do not own this deed")
+	case errors.Is(err, gamesvc.ErrNoMonopoly):
+		writeError(w, http.StatusConflict, "no_monopoly", "Own the full color group before building")
+	case errors.Is(err, gamesvc.ErrUnevenBuild):
+		writeError(w, http.StatusConflict, "uneven_build", "Build evenly across the color group")
+	case errors.Is(err, gamesvc.ErrMaxBuilt):
+		writeError(w, http.StatusConflict, "max_built", "Hotel already built on this deed")
+	case errors.Is(err, gamesvc.ErrMortgagedSet):
+		writeError(w, http.StatusConflict, "mortgaged_set", "Cannot build while a deed in the set is mortgaged")
+	case errors.Is(err, gamesvc.ErrInvalidBoardIndex):
+		writeError(w, http.StatusBadRequest, "invalid_board_index", "Invalid boardIndex")
 	default:
 		writeError(w, http.StatusInternalServerError, "internal_error", "Something went wrong")
 	}

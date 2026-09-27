@@ -481,6 +481,158 @@ func TestRentWithHousesAndHotel(t *testing.T) {
 	}
 }
 
+func seedBrownMonopoly(t *testing.T, repo *memRepo, ownerID string, houses1, houses3 int) {
+	t.Helper()
+	g, err := repo.FindByID(context.Background(), "g1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	g.Deeds = []gamerepo.Deed{
+		{BoardIndex: 1, OwnerUserID: ownerID, Houses: houses1},
+		{BoardIndex: 3, OwnerUserID: ownerID, Houses: houses3},
+	}
+	if err := repo.Update(context.Background(), g); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func brownBuildSpaces() memSpaces {
+	return memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60, Rents: []int{2, 10, 30, 90, 160, 250}, ColorGroup: "brown", HouseCost: 50},
+		{BoardIndex: 3, Slug: "accra", Name: "Accra", Kind: "property", Price: 60, Rents: []int{4, 20, 60, 180, 320, 450}, ColorGroup: "brown", HouseCost: 50},
+	}
+}
+
+func TestBuildHouseOnMonopoly(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 0, 0)
+
+	view, err := svc.Build(context.Background(), "g1", "a", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Players[0].Cash != 1950 {
+		t.Fatalf("cash=%d want 1950", view.Players[0].Cash)
+	}
+	var h1, h3 int
+	for _, d := range view.Deeds {
+		switch d.BoardIndex {
+		case 1:
+			h1 = d.Houses
+		case 3:
+			h3 = d.Houses
+		}
+	}
+	if h1 != 1 || h3 != 0 {
+		t.Fatalf("houses board1=%d board3=%d want 1/0", h1, h3)
+	}
+}
+
+func TestBuildEvenBuildEnforced(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 1, 0)
+
+	_, err := svc.Build(context.Background(), "g1", "a", 1)
+	if !errors.Is(err, ErrUnevenBuild) {
+		t.Fatalf("err=%v want ErrUnevenBuild", err)
+	}
+	view, err := svc.Build(context.Background(), "g1", "a", 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, d := range view.Deeds {
+		if d.BoardIndex == 3 && d.Houses != 1 {
+			t.Fatalf("board3 houses=%d want 1", d.Houses)
+		}
+	}
+}
+
+func TestBuildRequiresMonopoly(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Deeds = []gamerepo.Deed{{BoardIndex: 1, OwnerUserID: "a"}}
+	_ = repo.Update(context.Background(), g)
+
+	_, err := svc.Build(context.Background(), "g1", "a", 1)
+	if !errors.Is(err, ErrNoMonopoly) {
+		t.Fatalf("err=%v want ErrNoMonopoly", err)
+	}
+}
+
+func TestBuildCannotAfford(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 0, 0)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].Cash = 40
+	_ = repo.Update(context.Background(), g)
+
+	_, err := svc.Build(context.Background(), "g1", "a", 1)
+	if !errors.Is(err, ErrCannotAfford) {
+		t.Fatalf("err=%v want ErrCannotAfford", err)
+	}
+}
+
+func TestBuildHotelAndMax(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 4, 4)
+
+	view, err := svc.Build(context.Background(), "g1", "a", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, d := range view.Deeds {
+		if d.BoardIndex == 1 && d.Houses != 5 {
+			t.Fatalf("hotel houses=%d want 5", d.Houses)
+		}
+	}
+	_, err = svc.Build(context.Background(), "g1", "a", 1)
+	if !errors.Is(err, ErrMaxBuilt) {
+		t.Fatalf("err=%v want ErrMaxBuilt", err)
+	}
+}
+
+func TestBuildNotYourTurn(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "b", 0, 0)
+
+	_, err := svc.Build(context.Background(), "g1", "b", 1)
+	if !errors.Is(err, ErrNotYourTurn) {
+		t.Fatalf("err=%v want ErrNotYourTurn", err)
+	}
+}
+
+func TestBuildMortgagedSetBlocked(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Deeds = []gamerepo.Deed{
+		{BoardIndex: 1, OwnerUserID: "a", Houses: 0, Mortgaged: true},
+		{BoardIndex: 3, OwnerUserID: "a", Houses: 0},
+	}
+	_ = repo.Update(context.Background(), g)
+
+	_, err := svc.Build(context.Background(), "g1", "a", 3)
+	if !errors.Is(err, ErrMortgagedSet) {
+		t.Fatalf("err=%v want ErrMortgagedSet", err)
+	}
+}
+
 func TestBuyAlreadyOwned(t *testing.T) {
 	repo := newMemRepo()
 	spaces := memSpaces{

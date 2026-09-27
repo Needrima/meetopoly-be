@@ -8,18 +8,19 @@ import (
 	locationrepo "meetopoly-be/internal/repository/location"
 )
 
-// Space is a board tile used for buy / rent / tax rules (Phase 6.4+).
+// Space is a board tile used for buy / rent / tax / build rules (Phase 6.4+ / 11.1).
 type Space struct {
-	BoardIndex          int
-	Slug                string
-	Name                string
-	Kind                string
-	Price               int
-	Rents               []int
-	UtilityMultiplier   []int
-	TaxAmount           int
-	SpecialType         string
-	ColorGroup          string
+	BoardIndex        int
+	Slug              string
+	Name              string
+	Kind              string
+	Price             int
+	Rents             []int
+	UtilityMultiplier []int
+	TaxAmount         int
+	SpecialType       string
+	ColorGroup        string
+	HouseCost         int // MeetCoin per house/hotel step; 0 = not buildable
 }
 
 // SpaceCatalog loads world board tiles for the game service.
@@ -72,6 +73,9 @@ func (c *locationSpaceCatalog) ListSpaces(ctx context.Context, worldID string) (
 		}
 		if loc.TaxAmount != nil {
 			sp.TaxAmount = *loc.TaxAmount
+		}
+		if loc.HouseCost != nil {
+			sp.HouseCost = *loc.HouseCost
 		}
 		out = append(out, sp)
 	}
@@ -141,6 +145,7 @@ func countOwnedKind(spaces []Space, deeds []gamerepo.Deed, ownerUserID, kind str
 	return n
 }
 
+// ownsFullColorGroup reports whether ownerUserID owns every property in colorGroup.
 func ownsFullColorGroup(spaces []Space, deeds []gamerepo.Deed, ownerUserID, colorGroup string) bool {
 	if colorGroup == "" {
 		return false
@@ -163,6 +168,56 @@ func ownsFullColorGroup(spaces []Space, deeds []gamerepo.Deed, ownerUserID, colo
 	}
 	// Classic sets are 2–3; avoid false monopoly when catalog is incomplete in tests.
 	return inGroup >= 2
+}
+
+// minHousesInColorGroup is the lowest house count among deeds the owner holds in the set.
+func minHousesInColorGroup(spaces []Space, deeds []gamerepo.Deed, ownerUserID, colorGroup string) int {
+	byIndex := make(map[int]gamerepo.Deed, len(deeds))
+	for _, d := range deeds {
+		if d.OwnerUserID == ownerUserID {
+			byIndex[d.BoardIndex] = d
+		}
+	}
+	minH := -1
+	for _, sp := range spaces {
+		if sp.Kind != "property" || sp.ColorGroup != colorGroup {
+			continue
+		}
+		d, ok := byIndex[sp.BoardIndex]
+		if !ok {
+			continue
+		}
+		h := d.Houses
+		if h < 0 {
+			h = 0
+		}
+		if h > 5 {
+			h = 5
+		}
+		if minH < 0 || h < minH {
+			minH = h
+		}
+	}
+	if minH < 0 {
+		return 0
+	}
+	return minH
+}
+
+// colorGroupHasMortgage is true when any deed in the color group is mortgaged.
+func colorGroupHasMortgage(spaces []Space, deeds []gamerepo.Deed, colorGroup string) bool {
+	inGroup := make(map[int]bool)
+	for _, sp := range spaces {
+		if sp.Kind == "property" && sp.ColorGroup == colorGroup {
+			inGroup[sp.BoardIndex] = true
+		}
+	}
+	for _, d := range deeds {
+		if inGroup[d.BoardIndex] && d.Mortgaged {
+			return true
+		}
+	}
+	return false
 }
 
 // rentDueForLanding computes MeetCoin owed when payer lands on boardIndex (0 = nothing).

@@ -16,21 +16,28 @@ import (
 )
 
 var (
-	ErrNotFound      = errors.New("game not found")
-	ErrAlreadyExists = errors.New("game already exists for table")
-	ErrNeedPlayers   = errors.New("need at least 2 players to start")
-	ErrNotYourTurn   = errors.New("not your turn")
-	ErrNotPlayer     = errors.New("not a player in this game")
-	ErrInactive      = errors.New("game is not active")
-	ErrMustEndTurn   = errors.New("must end turn before rolling again")
-	ErrMustRoll      = errors.New("must roll before ending turn")
-	ErrAlreadyOut    = errors.New("already resigned")
-	ErrNotBuyable    = errors.New("space is not buyable")
-	ErrCannotAfford  = errors.New("insufficient MeetCoin")
-	ErrAlreadyOwned  = errors.New("space already owned")
-	ErrMustSettle       = errors.New("must settle rent or tax before continuing")
-	ErrInvalidPinColor  = errors.New("invalid pin color")
-	ErrInvalidHubID     = errors.New("invalid hub id")
+	ErrNotFound          = errors.New("game not found")
+	ErrAlreadyExists     = errors.New("game already exists for table")
+	ErrNeedPlayers       = errors.New("need at least 2 players to start")
+	ErrNotYourTurn       = errors.New("not your turn")
+	ErrNotPlayer         = errors.New("not a player in this game")
+	ErrInactive          = errors.New("game is not active")
+	ErrMustEndTurn       = errors.New("must end turn before rolling again")
+	ErrMustRoll          = errors.New("must roll before ending turn")
+	ErrAlreadyOut        = errors.New("already resigned")
+	ErrNotBuyable        = errors.New("space is not buyable")
+	ErrCannotAfford      = errors.New("insufficient MeetCoin")
+	ErrAlreadyOwned      = errors.New("space already owned")
+	ErrMustSettle        = errors.New("must settle rent or tax before continuing")
+	ErrInvalidPinColor   = errors.New("invalid pin color")
+	ErrInvalidHubID      = errors.New("invalid hub id")
+	ErrNotBuildable      = errors.New("space is not buildable")
+	ErrNotOwner          = errors.New("you do not own this deed")
+	ErrNoMonopoly        = errors.New("need full color group to build")
+	ErrUnevenBuild       = errors.New("must build evenly across the color group")
+	ErrMaxBuilt          = errors.New("hotel already built")
+	ErrMortgagedSet      = errors.New("cannot build while a deed in the set is mortgaged")
+	ErrInvalidBoardIndex = errors.New("invalid board index")
 )
 
 // SeatInput is a seated lobby player used to bootstrap a game.
@@ -166,6 +173,8 @@ type Service interface {
 	EndTurn(ctx context.Context, gameID, userID string) (*View, error)
 	Resign(ctx context.Context, gameID, userID string) (*View, error)
 	Buy(ctx context.Context, gameID, userID string) (*View, error)
+	// Build buys one house/hotel step on an owned city (Phase 11.1).
+	Build(ctx context.Context, gameID, userID string, boardIndex int) (*View, error)
 	SetPinColor(ctx context.Context, gameID, userID, pinColor string) (*View, error)
 	// EnterHub marks the seated player as inside hubId (Phase 8.2); fans out via game WS.
 	// clientRevision: when non-nil, ignore the enter if it is older than the player's HubRevision (8.4).
@@ -704,6 +713,88 @@ func (s *service) Buy(ctx context.Context, gameID, userID string) (*View, error)
 		Houses:      0,
 		Mortgaged:   false,
 	})
+	g.UpdatedAt = time.Now().UTC()
+	if err := s.repo.Update(ctx, g); err != nil {
+		return nil, err
+	}
+	view := s.viewOf(ctx, g)
+	s.broadcast(gameID, Event{Type: "state", Game: view})
+	return view, nil
+}
+
+// Build purchases one house/hotel step on an owned property (Phase 11.1).
+func (s *service) Build(ctx context.Context, gameID, userID string, boardIndex int) (*View, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	g, err := s.repo.FindByID(ctx, gameID)
+	if err != nil {
+		if errors.Is(err, gamerepo.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return nil, ErrInactive
+	}
+	normalizeTurnPhase(g)
+	if _, err := s.syncTimeBankLocked(ctx, g); err != nil {
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return s.viewOf(ctx, g), nil
+	}
+
+	playerIdx, err := requireCurrentPlayer(g, userID)
+	if err != nil {
+		return nil, err
+	}
+	if hasPendingPayment(g) {
+		return nil, ErrMustSettle
+	}
+
+	spaces := s.loadSpaces(ctx, g.WorldID)
+	sp := spaceAt(spaces, boardIndex)
+	if sp == nil {
+		return nil, ErrInvalidBoardIndex
+	}
+	if sp.Kind != "property" || sp.ColorGroup == "" || sp.HouseCost <= 0 {
+		return nil, ErrNotBuildable
+	}
+
+	deedIdx := -1
+	for i, d := range g.Deeds {
+		if d.BoardIndex == boardIndex {
+			deedIdx = i
+			break
+		}
+	}
+	if deedIdx < 0 || g.Deeds[deedIdx].OwnerUserID != userID {
+		return nil, ErrNotOwner
+	}
+	if g.Deeds[deedIdx].Houses >= 5 {
+		return nil, ErrMaxBuilt
+	}
+	if !ownsFullColorGroup(spaces, g.Deeds, userID, sp.ColorGroup) {
+		return nil, ErrNoMonopoly
+	}
+	if colorGroupHasMortgage(spaces, g.Deeds, sp.ColorGroup) {
+		return nil, ErrMortgagedSet
+	}
+	minH := minHousesInColorGroup(spaces, g.Deeds, userID, sp.ColorGroup)
+	curH := g.Deeds[deedIdx].Houses
+	if curH < 0 {
+		curH = 0
+	}
+	if curH != minH {
+		return nil, ErrUnevenBuild
+	}
+	if g.Players[playerIdx].Cash < sp.HouseCost {
+		return nil, ErrCannotAfford
+	}
+
+	g.Players[playerIdx].Cash -= sp.HouseCost
+	g.Deeds[deedIdx].Houses = curH + 1
 	g.UpdatedAt = time.Now().UTC()
 	if err := s.repo.Update(ctx, g); err != nil {
 		return nil, err
