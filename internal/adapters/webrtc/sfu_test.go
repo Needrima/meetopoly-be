@@ -142,9 +142,15 @@ func TestIsHubRoom(t *testing.T) {
 	if IsHubRoom(BoardRoomID("g1")) {
 		t.Fatal("board must not be hub")
 	}
+	if !IsBoardRoom(BoardRoomID("g1")) {
+		t.Fatal("expected board")
+	}
+	if !IsVoiceRoom(HubRoomID("africa-1:lagos")) || !IsVoiceRoom(BoardRoomID("g1")) {
+		t.Fatal("hub and board are voice rooms")
+	}
 }
 
-func TestHubRoomGetsAudioPubsMap(t *testing.T) {
+func TestVoiceRoomsGetAudioPubsMap(t *testing.T) {
 	sfu := NewSFU()
 	hub := HubRoomID("africa-1:cairo")
 	board := BoardRoomID("game-audio")
@@ -161,17 +167,14 @@ func TestHubRoomGetsAudioPubsMap(t *testing.T) {
 	if hr == nil || hr.audioPubs == nil {
 		t.Fatal("hub room must allocate audioPubs")
 	}
-	if br == nil {
-		t.Fatal("missing board room")
-	}
-	if br.audioPubs != nil {
-		t.Fatal("board room must not allocate audioPubs")
+	if br == nil || br.audioPubs == nil {
+		t.Fatal("board room must allocate audioPubs (Phase 10.4)")
 	}
 	if sfu.HubAudioPublisherCount(hub) != 0 {
 		t.Fatal("no pubs yet")
 	}
 	if sfu.HubAudioPublisherCount(board) != 0 {
-		t.Fatal("board count always 0")
+		t.Fatal("no pubs yet")
 	}
 }
 

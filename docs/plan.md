@@ -782,13 +782,13 @@ Roll → move (+pass GO if applicable) → resolve space →
 
 **Hub chrome sub-slices (9.0)**
 
-| Slice | Done when |
-| ----- | --------- |
+| Slice    | Done when                                                                                                                                                              |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **9.0a** | Country on presence `welcome` / `peer-joined` / roster peers; `GamePlayer.country` enriched from user profile; board HUD shows country; presence hook exposes `roster` |
-| **9.0b** | Equal 3-pane hub shell, full height, 2px middle borders, per-tile floor color |
-| **9.0c** | Center copy: name + code + centered `about` with height-based ellipsis; walk square = avatars only |
-| **9.0d** | `HubRoster` (`IN HUB · n/16`, 2-col, country, X) + joystick BR |
-| **9.0e** | Plan smoke checklist |
+| **9.0b** | Equal 3-pane hub shell, full height, 2px middle borders, per-tile floor color                                                                                          |
+| **9.0c** | Center copy: name + code + centered `about` with height-based ellipsis; walk square = avatars only                                                                     |
+| **9.0d** | `HubRoster` (`IN HUB · n/16`, 2-col, country, X) + joystick BR                                                                                                         |
+| **9.0e** | Plan smoke checklist                                                                                                                                                   |
 
 **9.0a notes**
 
@@ -830,12 +830,12 @@ Manual (landscape device / simulator; BE running; 2 clients preferred):
 
 **Remaining Phase 9 sub-slices (ship one at a time — ask before starting each)**
 
-| Slice | Done when | Avoid |
-| ----- | --------- | ----- |
-| **9.1** | Shared branded `DeedCard` on **buy** + **tile-info** overlays (group-color strip border, Moti stagger, rent grid); specials keep a lighter branded sheet | Settings, economy toasts, hub buy compact redesign |
-| **9.2** | Home `/(app)/settings`: RN Mute mic Switch (SecureStore); Leave stays board ⋯; report deferred | Board settings sheet; report API; `@expo/ui` Switch on Android; property cards; rent toasts |
-| **9.3** | Board economy **modals** (buy / rent / tax / salary) for involved players; spectators + hub get short toasts; 3s/5s `__DEV__` queue | Cash HUD flash; Chance/Auction/Jail modals; settings redesign |
-| **9.4** | Leftover playtest bugs + smoke: signup → join → play → buy → rent → hub enter/exit → leave | New features |
+| Slice   | Done when                                                                                                                                                | Avoid                                                                                       |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| **9.1** | Shared branded `DeedCard` on **buy** + **tile-info** overlays (group-color strip border, Moti stagger, rent grid); specials keep a lighter branded sheet | Settings, economy toasts, hub buy compact redesign                                          |
+| **9.2** | Home `/(app)/settings`: RN Mute mic Switch (SecureStore); Leave stays board ⋯; report deferred                                                           | Board settings sheet; report API; `@expo/ui` Switch on Android; property cards; rent toasts |
+| **9.3** | Board economy **modals** (buy / rent / tax / salary) for involved players; spectators + hub get short toasts; 3s/5s `__DEV__` queue                      | Cash HUD flash; Chance/Auction/Jail modals; settings redesign                               |
+| **9.4** | Leftover playtest bugs + smoke: signup → join → play → buy → rent → hub enter/exit → leave                                                               | New features                                                                                |
 
 **9.1 notes**
 
@@ -863,11 +863,11 @@ Manual (landscape device / simulator; BE running; 2 clients preferred):
 
 **Reference screenshots → later phases (do not build in 9.3)**
 
-| Ref | Action | Phase |
-| --- | ------ | ----- |
-| CHANCE / CHEST card modals | Card draw UI | **12** |
-| JUST VISITING | Jail visit notify | **12** |
-| AUCTION bid/fold/slider | Bank auction | **13** |
+| Ref                                          | Action                       | Phase            |
+| -------------------------------------------- | ---------------------------- | ---------------- |
+| CHANCE / CHEST card modals                   | Card draw UI                 | **12**           |
+| JUST VISITING                                | Jail visit notify            | **12**           |
+| AUCTION bid/fold/slider                      | Bank auction                 | **13**           |
 | BUILD / SELL / MORTGAGE / REDEEM / TRADE bar | Buildings / mortgage / trade | **11 / 13 / 14** |
 
 **9.4 notes**
@@ -917,9 +917,9 @@ Manual (2 clients preferred; BE running; landscape):
 
 ---
 
-### Phase 10 — Voice (same rooms) — IN PROGRESS
+### Phase 10 — Voice (same rooms) — DONE
 
-**Goal:** Mic audio in **hub** rooms first (same Pion presence SFU); board/table voice later.
+**Goal:** Mic audio in **hub** and **board** rooms (same Pion presence SFU).
 
 **Locked**
 
@@ -930,13 +930,13 @@ Manual (2 clients preferred; BE running; landscape):
 
 **Sub-slices**
 
-| Slice | Done when | Avoid |
-| ----- | --------- | ----- |
-| **10.0** | SFU: on `hub:*` only, `OnTrack` audio → forward to other peers; video ignored; Detach stops forward; board rooms stay pose-only; WS accepts renegotiation `answer` | Mobile mic, mute UI, board voice |
-| **10.1** | Mobile hub: permission + `getUserMedia({audio})` + `pc.addTrack`; apply `muteMic`; teardown on leave | Remote playback polish, board voice |
-| **10.2** | Mobile hub: `pc.ontrack` + handle SFU renegotiation offers; leave stops audio | Fancy speaking indicators |
-| **10.3** | Hub left rail Live + mute wired to `muteMic`; smoke checklist | Cameras, board voice |
-| **10.4** | Board/table voice (ask before) | — |
+| Slice    | Done when                                                                                                                                                          | Avoid                               |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
+| **10.0** | SFU: on `hub:*` only, `OnTrack` audio → forward to other peers; video ignored; Detach stops forward; board rooms stay pose-only; WS accepts renegotiation `answer` | Mobile mic, mute UI, board voice    |
+| **10.1** | Mobile hub: permission + `getUserMedia({audio})` + `pc.addTrack`; apply `muteMic`; teardown on leave                                                               | Remote playback polish, board voice |
+| **10.2** | Mobile hub: `pc.ontrack` + handle SFU renegotiation offers; leave stops audio                                                                                      | Fancy speaking indicators           |
+| **10.3** | Hub left rail Live + mute wired to `muteMic`; smoke checklist                                                                                                      | Cameras, board voice                |
+| **10.4** | Board/table voice (ask before)                                                                                                                                     | —                                   |
 
 **10.0 notes**
 
@@ -944,13 +944,56 @@ Manual (2 clients preferred; BE running; landscape):
 - Presence WS: handle client `answer` for renegotiation (`HandleAnswer`).
 - Board `board:*`: no audio forward even if offer includes audio.
 
+**10.1 notes**
+
+- Hub only: `useHubPresence` → `getUserMedia({ audio: true })` + `pc.addTrack` before `createOffer`.
+- `muteMic` (SecureStore) shared via `useMuteMic`; muted → `track.enabled = false` (no renegotiation).
+- Leave / PC teardown stops local tracks. Board presence stays pose-only (no publish).
+- Remote playback + SFU renegotiation offers → **10.2**.
+
+**10.2 notes**
+
+- Hub `pc.ontrack`: keep remote audio streams/tracks so RN playout stays alive.
+- WS `offer` from SFU → `setRemoteDescription` + `createAnswer` + send `answer` (mid-session pubs).
+- Leave / PC teardown stops remote tracks too. Board ignores (no `publishLocalAudio`).
+- Loudspeaker: `react-native-incall-manager` via `lib/hubAudioRoute.ts` — `startHubSpeaker` on hub PC start, `stopHubSpeaker` on leave (requires rebuilt dev client).
+- Hub mute CTA / left-rail Live → **10.3**.
+
+**10.3 notes**
+
+- Left rail: `HubMediaRail` — Voice eyebrow, Live/Connecting status, mute CTA → `useMuteMic` / SecureStore `muteMic` (same SoT as Settings).
+- Cameras still deferred. Board voice → **10.4**.
+- Settings hint updated to mention hub Voice rail.
+
+**10.3 — smoke checklist (hub voice)**
+
+1. **Live** — Enter hub: left rail shows Voice + Live (when DC open); Time bank when in a game.
+2. **Mute CTA** — Tap Mic on → Muted (brand fill + mic-off); remote peers stop hearing you; tap again → Mic on.
+3. **Settings sync** — Mute in hub → home Settings switch matches; toggle Settings → hub CTA matches (shared cache).
+4. **Leave** — X leave hub stops local + remote audio; speaker session ends.
+5. **Two-device** — Both unmuted → hear each other on loudspeaker; mute one → other goes silent for that pub.
+
+**10.4 notes**
+
+- SFU: `IsVoiceRoom` = hub + board; board rooms allocate `audioPubs` and forward mic like hub.
+- Mobile: `useBoardPresence` publishes/plays audio + `muteMic`; speaker via same `hubAudioRoute`.
+- Board panel: shared `MuteMicButton` above joystick. Hub handoff still disables board presence (one voice room).
+
+**10.4 — smoke checklist (board voice)**
+
+1. **Two on board** — Both unmuted → hear each other; mute CTA above joystick.
+2. **Mute** — Board mute ↔ Settings / hub mute SoT.
+3. **Hub handoff** — Enter hub leaves board SFU; return board restores board voice.
+4. **Leave** — Leaving board presence stops board audio.
+
 **Exit criteria**
 
-- [ ] Hear others in hub; leave hub stops hub audio (after 10.0–10.3)
+- [x] Hear others in hub; leave hub stops hub audio (after 10.0–10.3)
 - [x] **10.0:** hub SFU audio forward + board pose-only
-- [ ] **10.1:** hub mic publish + mute pref
-- [ ] **10.2:** hub remote playback + renegotiation
-- [ ] **10.3:** hub mute UI + smoke
+- [x] **10.1:** hub mic publish + mute pref
+- [x] **10.2:** hub remote playback + renegotiation
+- [x] **10.3:** hub mute UI + smoke
+- [x] **10.4:** board/table voice + mute CTA
 
 ---
 
@@ -1136,15 +1179,20 @@ Only when the user asks:
 | 2026-09-25 | **8.3:** SFU `MaxHubPeers=16`; hub turn toast + `HubTurnSheet` (Roll/End/Open board); X leave + block system back; Open board skips leave-hub                                                                                             |
 | 2026-09-25 | **8.3 polish:** turn sheet 2×2; hub End gated like board `turnBusy`; hub buy sheet Buy→End + Open board + time bank; strip world prefixes on deed names                                                                                   |
 | 2026-09-25 | **8.4:** `hubRevision` stale-enter ignore; mobile abort enter-on-leave; hub welcome.peers seed + soft-reconnect clear; hub-full WS error stops retry                                                                                      |
-| 2026-09-25 | **9.0a:** presence `country` on welcome/peers/peer-joined; `GamePlayer.country` via user lookup; board HUD country; presence `roster` for hub chrome                                                                                       |
-| 2026-09-25 | **9.0b:** equal 3-pane hub shell; full-height rails; 2px center borders; per-tile `HubScene` floor                                                                                                                                         |
-| 2026-09-25 | **9.0c:** `HubLocationCopy` on rail (about + ellipsis); `HubScene` avatars-only above copy                                                                                                                                                 |
-| 2026-09-25 | **9.0d:** `HubRoster` IN HUB n/16 · 2-col · country · X; right-rail joystick                                                                                                                                                               |
+| 2026-09-25 | **9.0a:** presence `country` on welcome/peers/peer-joined; `GamePlayer.country` via user lookup; board HUD country; presence `roster` for hub chrome                                                                                      |
+| 2026-09-25 | **9.0b:** equal 3-pane hub shell; full-height rails; 2px center borders; per-tile `HubScene` floor                                                                                                                                        |
+| 2026-09-25 | **9.0c:** `HubLocationCopy` on rail (about + ellipsis); `HubScene` avatars-only above copy                                                                                                                                                |
+| 2026-09-25 | **9.0d:** `HubRoster` IN HUB n/16 · 2-col · country · X; right-rail joystick                                                                                                                                                              |
 | 2026-09-25 | **9.0e:** hub chrome smoke checklist (shell/copy/walk/roster/country/presence/leave)                                                                                                                                                      |
 | 2026-09-25 | **9.1:** shared `DeedCard` (strip border + Moti stagger); buy + tile-info overlays; Phase 9.1–9.4 sub-slices locked                                                                                                                       |
-| 2026-09-25 | **9.2:** home Settings `@expo/ui` Mute mic (SecureStore); Leave board-only; report deferred until picker + API                                                                                                                             |
-| 2026-09-27 | **9.3:** board economy modals (buy/rent/tax/salary, 2.5s queue, involved-only); hub/spectators toasts; Chance/Auction/Jail refs → later phases                                                                                              |
-| 2026-09-27 | **9.4:** HubRoster ReactNode tsc fix; economy queue unique ids; Phase 9 full-match smoke checklist documented                                                                                                                               |
-| 2026-09-27 | **Phase 10 split:** 10.0–10.4 hub-first voice; muteMic SoT; audio-only; STUN; board voice = 10.4 ask-before                                                                                                                                |
-| 2026-09-27 | **10.0:** hub `OnTrack` audio → `TrackLocalStaticRTP` forward; SFU renegotiation `offer` + WS `answer`; board rooms stay pose-only; video ignored                                                                                          |
+| 2026-09-25 | **9.2:** home Settings `@expo/ui` Mute mic (SecureStore); Leave board-only; report deferred until picker + API                                                                                                                            |
+| 2026-09-27 | **9.3:** board economy modals (buy/rent/tax/salary, 2.5s queue, involved-only); hub/spectators toasts; Chance/Auction/Jail refs → later phases                                                                                            |
+| 2026-09-27 | **9.4:** HubRoster ReactNode tsc fix; economy queue unique ids; Phase 9 full-match smoke checklist documented                                                                                                                             |
+| 2026-09-27 | **Phase 10 split:** 10.0–10.4 hub-first voice; muteMic SoT; audio-only; STUN; board voice = 10.4 ask-before                                                                                                                               |
+| 2026-09-27 | **10.0:** hub `OnTrack` audio → `TrackLocalStaticRTP` forward; SFU renegotiation `offer` + WS `answer`; board rooms stay pose-only; video ignored                                                                                         |
+| 2026-09-27 | **10.1:** hub `getUserMedia` + `addTrack`; `muteMic` → `track.enabled`; teardown stops mic; board pose-only; remote playback → 10.2                                                                                                       |
+| 2026-09-27 | **10.2:** hub `ontrack` remote audio; answer SFU renegotiation `offer`; leave stops remote playout                                                                                                                                        |
+| 2026-09-27 | **10.2b:** hub loudspeaker via `react-native-incall-manager` (`startHubSpeaker` / `stopHubSpeaker`); needs rebuilt dev client                                                                                                  |
+| 2026-09-27 | **10.3:** hub left-rail `HubMediaRail` Live + mute CTA (`muteMic`); Settings hint; smoke checklist; Phase 10 hub voice exit                                                                                                            |
+| 2026-09-27 | **10.4:** board SFU voice (`IsVoiceRoom`); `useBoardPresence` mic + playback; shared `MuteMicButton` on board panel; Phase 10 complete                                                                                             |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

@@ -55,7 +55,7 @@ type SFU struct {
 type room struct {
 	id    string
 	peers map[string]*peer // userID → peer
-	// audioPubs: hub-only published mic relays (Phase 10.0). Key = publisher userID.
+	// audioPubs: voice rooms (hub + board) published mic relays (Phase 10). Key = publisher userID.
 	audioPubs map[string]*hubAudioPub
 }
 
@@ -89,6 +89,16 @@ func NewSFU() *SFU {
 // IsHubRoom reports whether roomID is a hub presence room (Phase 8 / 10).
 func IsHubRoom(roomID string) bool {
 	return strings.HasPrefix(roomID, "hub:")
+}
+
+// IsBoardRoom reports whether roomID is a board presence room (Phase 7 / 10.4).
+func IsBoardRoom(roomID string) bool {
+	return strings.HasPrefix(roomID, "board:")
+}
+
+// IsVoiceRoom reports rooms that forward mic audio (hub + board, Phase 10).
+func IsVoiceRoom(roomID string) bool {
+	return IsHubRoom(roomID) || IsBoardRoom(roomID)
 }
 
 // BoardRoomID returns the locked room id for a game board presence room.
@@ -136,7 +146,7 @@ func (s *SFU) Roster(roomID, excludeUserID string) []PeerInfo {
 	return out
 }
 
-// HubAudioPublisherCount returns how many hub audio pubs are active (tests / debug).
+// HubAudioPublisherCount returns how many voice audio pubs are active (tests / debug).
 func (s *SFU) HubAudioPublisherCount(roomID string) int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -158,7 +168,7 @@ func (s *SFU) Attach(roomID, userID, username, country string, signal SignalWrit
 	r := s.rooms[roomID]
 	if r == nil {
 		r = &room{id: roomID, peers: make(map[string]*peer)}
-		if IsHubRoom(roomID) {
+		if IsVoiceRoom(roomID) {
 			r.audioPubs = make(map[string]*hubAudioPub)
 		}
 		s.rooms[roomID] = r
@@ -207,7 +217,7 @@ func (s *SFU) Detach(roomID, userID string, signal SignalWriter) (info PeerInfo,
 }
 
 // HandleOffer accepts a client SDP offer, answers, and wires ICE + DataChannel.
-// Hub rooms also attach existing audio pubs before answering (Phase 10.0).
+// Voice rooms also attach existing audio pubs before answering (Phase 10).
 func (s *SFU) HandleOffer(roomID, userID string, sdp string) error {
 	s.mu.Lock()
 	r := s.rooms[roomID]
@@ -221,7 +231,7 @@ func (s *SFU) HandleOffer(roomID, userID string, sdp string) error {
 		return fmt.Errorf("peer not attached")
 	}
 	signal := p.signal
-	hub := IsHubRoom(roomID)
+	voice := IsVoiceRoom(roomID)
 	s.mu.Unlock()
 
 	cfg := webrtc.Configuration{ICEServers: s.iceServers}
@@ -283,7 +293,7 @@ func (s *SFU) HandleOffer(roomID, userID string, sdp string) error {
 		})
 	})
 
-	if hub {
+	if voice {
 		pc.OnTrack(func(remote *webrtc.TrackRemote, _ *webrtc.RTPReceiver) {
 			s.onHubTrack(roomID, userID, remote)
 		})
@@ -295,9 +305,9 @@ func (s *SFU) HandleOffer(roomID, userID string, sdp string) error {
 		return fmt.Errorf("set remote description: %w", err)
 	}
 
-	if hub {
+	if voice {
 		if err := s.addExistingHubAudioToPC(roomID, userID, pc); err != nil {
-			slog.Warn("hub add existing audio", "roomId", roomID, "userId", userID, "err", err)
+			slog.Warn("voice add existing audio", "roomId", roomID, "userId", userID, "err", err)
 		}
 	}
 
