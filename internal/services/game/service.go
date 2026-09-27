@@ -40,6 +40,10 @@ var (
 	ErrInvalidBoardIndex = errors.New("invalid board index")
 	ErrUnevenSell        = errors.New("must sell evenly across the color group")
 	ErrNothingToSell     = errors.New("no building to sell on this deed")
+	ErrAlreadyMortgaged  = errors.New("deed is already mortgaged")
+	ErrNotMortgaged      = errors.New("deed is not mortgaged")
+	ErrMustSellBuildings = errors.New("sell all buildings on the color group before mortgaging")
+	ErrCannotMortgage    = errors.New("space cannot be mortgaged")
 )
 
 // SeatInput is a seated lobby player used to bootstrap a game.
@@ -91,7 +95,7 @@ type DeedView struct {
 	OwnerUserID   string `json:"ownerUserId"`
 	OwnerUsername string `json:"ownerUsername"`
 	Houses        int    `json:"houses"`    // 0–5; 5 = hotel (Phase 11.0)
-	Mortgaged     bool   `json:"mortgaged"` // always false until Phase 11.3
+	Mortgaged     bool   `json:"mortgaged"` // Phase 11.3; no rent while true
 }
 
 // BuyOfferView is shown when the current player may buy the space they occupy.
@@ -179,6 +183,10 @@ type Service interface {
 	Build(ctx context.Context, gameID, userID string, boardIndex int) (*View, error)
 	// SellBuilding sells one house/hotel step at half houseCost (Phase 11.2).
 	SellBuilding(ctx context.Context, gameID, userID string, boardIndex int) (*View, error)
+	// Mortgage mortgages an owned deed for half list price (Phase 11.3).
+	Mortgage(ctx context.Context, gameID, userID string, boardIndex int) (*View, error)
+	// Redeem unmortgages a deed for mortgage value + 10% (Phase 11.3).
+	Redeem(ctx context.Context, gameID, userID string, boardIndex int) (*View, error)
 	SetPinColor(ctx context.Context, gameID, userID, pinColor string) (*View, error)
 	// EnterHub marks the seated player as inside hubId (Phase 8.2); fans out via game WS.
 	// clientRevision: when non-nil, ignore the enter if it is older than the player's HubRevision (8.4).
@@ -876,6 +884,162 @@ func (s *service) SellBuilding(ctx context.Context, gameID, userID string, board
 	g.Players[playerIdx].Cash += refund
 	g.Deeds[deedIdx].Houses = curH - 1
 	trySettlePendingLocked(g, playerIdx)
+	g.UpdatedAt = time.Now().UTC()
+	if err := s.repo.Update(ctx, g); err != nil {
+		return nil, err
+	}
+	view := s.viewOf(ctx, g)
+	s.broadcast(gameID, Event{Type: "state", Game: view})
+	return view, nil
+}
+
+// mortgageValue is half the list price (classic bank loan).
+func mortgageValue(listPrice int) int {
+	if listPrice <= 0 {
+		return 0
+	}
+	return listPrice / 2
+}
+
+// redeemCost is mortgage value + 10% interest (classic).
+func redeemCost(listPrice int) int {
+	mv := mortgageValue(listPrice)
+	return mv + mv/10
+}
+
+// Mortgage mortgages an owned buyable deed for half list price (Phase 11.3).
+// Allowed during pendingPayment; payout applies toward outstanding debt.
+func (s *service) Mortgage(ctx context.Context, gameID, userID string, boardIndex int) (*View, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	g, err := s.repo.FindByID(ctx, gameID)
+	if err != nil {
+		if errors.Is(err, gamerepo.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return nil, ErrInactive
+	}
+	normalizeTurnPhase(g)
+	if _, err := s.syncTimeBankLocked(ctx, g); err != nil {
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return s.viewOf(ctx, g), nil
+	}
+
+	playerIdx, err := requireCurrentPlayer(g, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	spaces := s.loadSpaces(ctx, g.WorldID)
+	sp := spaceAt(spaces, boardIndex)
+	if sp == nil {
+		return nil, ErrInvalidBoardIndex
+	}
+	if !isBuyableKind(sp.Kind) || sp.Price <= 0 {
+		return nil, ErrCannotMortgage
+	}
+
+	deedIdx := -1
+	for i, d := range g.Deeds {
+		if d.BoardIndex == boardIndex {
+			deedIdx = i
+			break
+		}
+	}
+	if deedIdx < 0 || g.Deeds[deedIdx].OwnerUserID != userID {
+		return nil, ErrNotOwner
+	}
+	if g.Deeds[deedIdx].Mortgaged {
+		return nil, ErrAlreadyMortgaged
+	}
+	if sp.Kind == "property" && sp.ColorGroup != "" {
+		if colorGroupHasBuildings(spaces, g.Deeds, sp.ColorGroup) {
+			return nil, ErrMustSellBuildings
+		}
+	} else if g.Deeds[deedIdx].Houses > 0 {
+		return nil, ErrMustSellBuildings
+	}
+
+	payout := mortgageValue(sp.Price)
+	g.Deeds[deedIdx].Mortgaged = true
+	g.Players[playerIdx].Cash += payout
+	trySettlePendingLocked(g, playerIdx)
+	g.UpdatedAt = time.Now().UTC()
+	if err := s.repo.Update(ctx, g); err != nil {
+		return nil, err
+	}
+	view := s.viewOf(ctx, g)
+	s.broadcast(gameID, Event{Type: "state", Game: view})
+	return view, nil
+}
+
+// Redeem unmortgages an owned deed for mortgage value + 10% (Phase 11.3).
+func (s *service) Redeem(ctx context.Context, gameID, userID string, boardIndex int) (*View, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	g, err := s.repo.FindByID(ctx, gameID)
+	if err != nil {
+		if errors.Is(err, gamerepo.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return nil, ErrInactive
+	}
+	normalizeTurnPhase(g)
+	if _, err := s.syncTimeBankLocked(ctx, g); err != nil {
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return s.viewOf(ctx, g), nil
+	}
+
+	playerIdx, err := requireCurrentPlayer(g, userID)
+	if err != nil {
+		return nil, err
+	}
+	if hasPendingPayment(g) {
+		return nil, ErrMustSettle
+	}
+
+	spaces := s.loadSpaces(ctx, g.WorldID)
+	sp := spaceAt(spaces, boardIndex)
+	if sp == nil {
+		return nil, ErrInvalidBoardIndex
+	}
+	if !isBuyableKind(sp.Kind) || sp.Price <= 0 {
+		return nil, ErrCannotMortgage
+	}
+
+	deedIdx := -1
+	for i, d := range g.Deeds {
+		if d.BoardIndex == boardIndex {
+			deedIdx = i
+			break
+		}
+	}
+	if deedIdx < 0 || g.Deeds[deedIdx].OwnerUserID != userID {
+		return nil, ErrNotOwner
+	}
+	if !g.Deeds[deedIdx].Mortgaged {
+		return nil, ErrNotMortgaged
+	}
+
+	cost := redeemCost(sp.Price)
+	if g.Players[playerIdx].Cash < cost {
+		return nil, ErrCannotAfford
+	}
+
+	g.Players[playerIdx].Cash -= cost
+	g.Deeds[deedIdx].Mortgaged = false
 	g.UpdatedAt = time.Now().UTC()
 	if err := s.repo.Update(ctx, g); err != nil {
 		return nil, err

@@ -251,6 +251,34 @@ func colorGroupHasMortgage(spaces []Space, deeds []gamerepo.Deed, colorGroup str
 	return false
 }
 
+// colorGroupHasBuildings is true when any deed in the color group still has houses/hotel.
+func colorGroupHasBuildings(spaces []Space, deeds []gamerepo.Deed, colorGroup string) bool {
+	if colorGroup == "" {
+		return false
+	}
+	inGroup := make(map[int]bool)
+	for _, sp := range spaces {
+		if sp.Kind == "property" && sp.ColorGroup == colorGroup {
+			inGroup[sp.BoardIndex] = true
+		}
+	}
+	for _, d := range deeds {
+		if inGroup[d.BoardIndex] && d.Houses > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func deedMortgaged(deeds []gamerepo.Deed, boardIndex int) bool {
+	for _, d := range deeds {
+		if d.BoardIndex == boardIndex {
+			return d.Mortgaged
+		}
+	}
+	return false
+}
+
 // rentDueForLanding computes MeetCoin owed when payer lands on boardIndex (0 = nothing).
 func rentDueForLanding(
 	spaces []Space,
@@ -274,6 +302,10 @@ func rentDueForLanding(
 	}
 	ownerID := ownerOf(deeds, boardIndex)
 	if ownerID == "" || ownerID == payerUserID {
+		return 0, "", "", spaceName
+	}
+	// Mortgaged deeds collect no rent (Phase 11.3).
+	if deedMortgaged(deeds, boardIndex) {
 		return 0, "", "", spaceName
 	}
 

@@ -137,6 +137,50 @@ func handleSellBuilding(games gamesvc.Service) http.HandlerFunc {
 	}
 }
 
+func handleMortgage(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		var req buildRequest
+		if err := decodeJSON(r, &req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_body", "Invalid request body")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		view, err := games.Mortgage(r.Context(), gameID, userID, req.BoardIndex)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
+func handleRedeem(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		var req buildRequest
+		if err := decodeJSON(r, &req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_body", "Invalid request body")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		view, err := games.Redeem(r.Context(), gameID, userID, req.BoardIndex)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
 type setPinColorRequest struct {
 	PinColor string `json:"pinColor"`
 }
@@ -249,6 +293,14 @@ func mapGameError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "uneven_sell", "Sell evenly across the color group")
 	case errors.Is(err, gamesvc.ErrNothingToSell):
 		writeError(w, http.StatusConflict, "nothing_to_sell", "No building to sell on this deed")
+	case errors.Is(err, gamesvc.ErrAlreadyMortgaged):
+		writeError(w, http.StatusConflict, "already_mortgaged", "Deed is already mortgaged")
+	case errors.Is(err, gamesvc.ErrNotMortgaged):
+		writeError(w, http.StatusConflict, "not_mortgaged", "Deed is not mortgaged")
+	case errors.Is(err, gamesvc.ErrMustSellBuildings):
+		writeError(w, http.StatusConflict, "must_sell_buildings", "Sell all buildings on the color group before mortgaging")
+	case errors.Is(err, gamesvc.ErrCannotMortgage):
+		writeError(w, http.StatusConflict, "cannot_mortgage", "This space cannot be mortgaged")
 	case errors.Is(err, gamesvc.ErrMaxBuilt):
 		writeError(w, http.StatusConflict, "max_built", "Hotel already built on this deed")
 	case errors.Is(err, gamesvc.ErrMortgagedSet):

@@ -1013,7 +1013,8 @@ Manual (2 clients preferred; BE running; landscape):
 - Undeveloped monopoly rent = **2×** site (`Rents[0]`) — already in Phase 6.5; building tiers when monopoly + houses ≥ 1.
 - **Build API (11.1):** `POST /games/{id}/build` body `{ boardIndex }` — **one step** per call; current player only (no off-turn); allowed in `awaiting_roll` **or** `awaiting_end`; blocked by `pendingPayment`; full color group + even-build + cash ≥ `houseCost`; WS `state` fan-out.
 - **Sell API (11.2):** `POST /games/{id}/sell-building` body `{ boardIndex }` — one step down; refund `floor(houseCost/2)`; even-sell (sell from max houses first); current player only; **allowed during `pendingPayment`** (raise funds — refund applies toward debt); WS `state` fan-out.
-- **Board economy bar (UI → 11.4):** reference CTA row **BUILD · SELL · MORTGAGE · REDEEM · TRADE** in the board controls (left/panel); wrap to a 2nd row if needed. **Roll** / **End turn** move beside the joystick as **icon boxes** (FontAwesome5 dice + left arrow) — not text buttons in that economy row. Build/Sell CTAs enabled only on your turn (time bank still drains).
+- **Mortgage / redeem (11.3):** `POST /games/{id}/mortgage` + `POST /games/{id}/redeem` body `{ boardIndex }`; mortgage payout `floor(price/2)`; redeem = mortgage + 10%; cities must have **0 houses on the whole color group** before mortgage; mortgaged → **0 rent**; build blocked if any deed in set mortgaged; mortgage allowed during pendingPayment; redeem blocked while pending; current player only.
+- **Board economy bar (UI → 11.4):** reference CTA row **BUILD · SELL · MORTGAGE · REDEEM · TRADE** in the board controls (left/panel); wrap to a 2nd row if needed. **Roll** / **End turn** move beside the joystick as **icon boxes** (FontAwesome5 dice + left arrow) — not text buttons in that economy row. Build/Sell/Mortgage/Redeem CTAs enabled only on your turn (time bank still drains).
 
 **Sub-slices**
 
@@ -1022,7 +1023,7 @@ Manual (2 clients preferred; BE running; landscape):
 | **11.0** | ✅ `Deed` gains `houses` (0–5; **5 = hotel**) + `mortgaged` (always false until 11.3); rent uses `Rents[houses]` when monopoly (undeveloped monopoly stays **2×** `Rents[0]`); OpenAPI + mobile types | Build/sell HTTP, UI, mortgage actions |
 | **11.1** | ✅ `POST /games/{id}/build` — buy house/hotel; even-build + full color group + cash; WS fan-out | Sell, mortgage UI |
 | **11.2** | ✅ `POST /games/{id}/sell-building` — sell house/hotel at half cost; even-sell down; allowed during pendingPayment | Mortgage UI |
-| **11.3** | `POST` mortgage + redeem (list/half rules); block build if any deed in color set mortgaged | House-shortage auction |
+| **11.3** | ✅ `POST` mortgage + redeem (list/half + 10%); mortgaged = 0 rent; block build if set mortgaged | House-shortage auction |
 | **11.4** | Board UI: economy CTA bar + house/hotel markers; Roll/End icon boxes by joystick | Hub rebuild UI |
 | **11.5** | Smoke checklist for M2 path | Jail/cards (12), auction (13) |
 
@@ -1030,8 +1031,8 @@ Manual (2 clients preferred; BE running; landscape):
 
 - [x] Even-build enforced server-side (11.1); even-sell (11.2)
 - [ ] UI to buy/sell houses (and hotels)
-- [ ] Light mortgage + redeem; mortgaged set blocks build
-- [x] **11.0** … **11.2** ticked; **11.3** … **11.5** pending
+- [x] Light mortgage + redeem; mortgaged set blocks build
+- [x] **11.0** … **11.3** ticked; **11.4** … **11.5** pending
 
 ---
 
@@ -1233,4 +1234,5 @@ Only when the user asks:
 | 2026-09-27 | **11.1 locks:** build body `{boardIndex}` one step; current-player only; economy CTA bar + Roll/End icon boxes → 11.4 UI                                                                                                              |
 | 2026-09-27 | **11.1:** `POST /games/{id}/build`; even-build + monopoly + `houseCost`; OpenAPI 0.17; no board UI yet                                                                                                                                 |
 | 2026-09-27 | **11.2:** `POST /games/{id}/sell-building`; half `houseCost`; even-sell; allowed + auto-apply during pendingPayment; OpenAPI 0.18                                                                                                      |
+| 2026-09-27 | **11.3:** `POST` mortgage + redeem (½ price / +10%); 0 rent when mortgaged; sell buildings first; OpenAPI 0.19                                                                                                                         |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

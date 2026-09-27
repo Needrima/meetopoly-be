@@ -752,6 +752,190 @@ func TestSellBuildingPartialPending(t *testing.T) {
 	}
 }
 
+func TestMortgageAndRedeem(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60, Rents: []int{2, 10, 30, 90, 160, 250}, ColorGroup: "brown", HouseCost: 50},
+		{BoardIndex: 3, Slug: "accra", Name: "Accra", Kind: "property", Price: 60, Rents: []int{4, 20, 60, 180, 320, 450}, ColorGroup: "brown", HouseCost: 50},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 0, 0)
+
+	view, err := svc.Mortgage(context.Background(), "g1", "a", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// price 60 → mortgage 30; cash 2000+30.
+	if view.Players[0].Cash != 2030 {
+		t.Fatalf("cash=%d want 2030", view.Players[0].Cash)
+	}
+	var mortgaged bool
+	for _, d := range view.Deeds {
+		if d.BoardIndex == 1 {
+			mortgaged = d.Mortgaged
+		}
+	}
+	if !mortgaged {
+		t.Fatal("expected mortgaged")
+	}
+
+	// Redeem: 30 + 3 = 33.
+	view, err = svc.Redeem(context.Background(), "g1", "a", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Players[0].Cash != 1997 {
+		t.Fatalf("cash=%d want 1997", view.Players[0].Cash)
+	}
+	for _, d := range view.Deeds {
+		if d.BoardIndex == 1 && d.Mortgaged {
+			t.Fatal("expected unmortgaged")
+		}
+	}
+}
+
+func TestMortgageRequiresSellBuildings(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 1, 0)
+
+	_, err := svc.Mortgage(context.Background(), "g1", "a", 3)
+	if !errors.Is(err, ErrMustSellBuildings) {
+		t.Fatalf("err=%v want ErrMustSellBuildings", err)
+	}
+}
+
+func TestMortgageAlreadyMortgaged(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 0, 0)
+
+	if _, err := svc.Mortgage(context.Background(), "g1", "a", 1); err != nil {
+		t.Fatal(err)
+	}
+	_, err := svc.Mortgage(context.Background(), "g1", "a", 1)
+	if !errors.Is(err, ErrAlreadyMortgaged) {
+		t.Fatalf("err=%v want ErrAlreadyMortgaged", err)
+	}
+}
+
+func TestRedeemNotMortgaged(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 0, 0)
+
+	_, err := svc.Redeem(context.Background(), "g1", "a", 1)
+	if !errors.Is(err, ErrNotMortgaged) {
+		t.Fatalf("err=%v want ErrNotMortgaged", err)
+	}
+}
+
+func TestRedeemCannotAfford(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 0, 0)
+
+	if _, err := svc.Mortgage(context.Background(), "g1", "a", 1); err != nil {
+		t.Fatal(err)
+	}
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].Cash = 10
+	_ = repo.Update(context.Background(), g)
+
+	_, err := svc.Redeem(context.Background(), "g1", "a", 1)
+	if !errors.Is(err, ErrCannotAfford) {
+		t.Fatalf("err=%v want ErrCannotAfford", err)
+	}
+}
+
+func TestMortgageDuringPendingAppliesPayout(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 0, 0)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].Cash = 0
+	g.PendingPayment = &gamerepo.PendingPayment{
+		Kind: "rent", Amount: 20, ToUserID: "b", BoardIndex: 5, SpaceName: "Debt",
+	}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.Mortgage(context.Background(), "g1", "a", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// +30 mortgage → pay 20 pending → cash 10.
+	if view.Players[0].Cash != 10 {
+		t.Fatalf("cash=%d want 10", view.Players[0].Cash)
+	}
+	if view.PendingPayment != nil {
+		t.Fatalf("pending should clear, got %+v", view.PendingPayment)
+	}
+}
+
+func TestRedeemBlockedDuringPending(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Deeds = []gamerepo.Deed{
+		{BoardIndex: 1, OwnerUserID: "a", Mortgaged: true},
+		{BoardIndex: 3, OwnerUserID: "a"},
+	}
+	g.PendingPayment = &gamerepo.PendingPayment{Kind: "rent", Amount: 10, ToUserID: "b"}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	_ = repo.Update(context.Background(), g)
+
+	_, err := svc.Redeem(context.Background(), "g1", "a", 1)
+	if !errors.Is(err, ErrMustSettle) {
+		t.Fatalf("err=%v want ErrMustSettle", err)
+	}
+}
+
+func TestRentZeroWhenMortgaged(t *testing.T) {
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60, Rents: []int{2, 10, 30, 90, 160, 250}, ColorGroup: "brown"},
+		{BoardIndex: 3, Slug: "accra", Name: "Accra", Kind: "property", Price: 60, Rents: []int{4, 20, 60, 180, 320, 450}, ColorGroup: "brown"},
+	}
+	deeds := []gamerepo.Deed{
+		{BoardIndex: 1, OwnerUserID: "b", Mortgaged: true},
+		{BoardIndex: 3, OwnerUserID: "b"},
+	}
+	amount, to, kind, _ := rentDueForLanding(spaces, deeds, 1, "a", 7)
+	if amount != 0 || to != "" || kind != "" {
+		t.Fatalf("mortgaged rent amount=%d to=%s kind=%s want 0", amount, to, kind)
+	}
+}
+
+func TestMortgageRailroad(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 5, Slug: "air", Name: "Air", Kind: "railroad", Price: 200, Rents: []int{25, 50, 100, 200}},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Deeds = []gamerepo.Deed{{BoardIndex: 5, OwnerUserID: "a"}}
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.Mortgage(context.Background(), "g1", "a", 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Players[0].Cash != 2100 {
+		t.Fatalf("cash=%d want 2100", view.Players[0].Cash)
+	}
+}
+
 func TestBuyAlreadyOwned(t *testing.T) {
 	repo := newMemRepo()
 	spaces := memSpaces{

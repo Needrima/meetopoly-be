@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.18.0
+  version: 0.19.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -966,6 +966,134 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /games/{gameId}/mortgage:
+    post:
+      operationId: mortgageDeed
+      summary: Mortgage an owned deed for half list price
+      description: |
+        Phase 11.3 — current player only. Body selects the deed (`boardIndex`).
+        Payout = floor(listPrice / 2). Cities require all buildings on the color group
+        sold first. Allowed during pendingPayment (raise funds; payout applies to debt).
+        Mortgaged deeds collect no rent. Fans out via WebSocket `state`.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MortgageRequest"
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "400":
+          description: Invalid body or boardIndex
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: |
+            Not your turn, cannot mortgage, not owner, already mortgaged,
+            must sell buildings, or inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /games/{gameId}/redeem:
+    post:
+      operationId: redeemDeed
+      summary: Unmortgage a deed (mortgage value + 10%)
+      description: |
+        Phase 11.3 — current player only. Cost = floor(listPrice/2) + 10% of that
+        mortgage value. Blocked while pendingPayment (settle debt first).
+        Fans out via WebSocket `state`.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RedeemRequest"
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "400":
+          description: Invalid body or boardIndex
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: |
+            Not your turn, must settle, not mortgaged, not owner, cannot afford, or inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /games/{gameId}/pin-color:
     post:
       operationId: setPinColor
@@ -1561,6 +1689,28 @@ components:
           description: Board space to sell one house/hotel step from (must be an owned city with buildings)
           minimum: 0
           maximum: 39
+    MortgageRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - boardIndex
+      properties:
+        boardIndex:
+          type: integer
+          description: Owned buyable space to mortgage (half list price)
+          minimum: 0
+          maximum: 39
+    RedeemRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - boardIndex
+      properties:
+        boardIndex:
+          type: integer
+          description: Owned mortgaged space to redeem (mortgage value + 10%)
+          minimum: 0
+          maximum: 39
     EnterHubRequest:
       type: object
       additionalProperties: false
@@ -1766,7 +1916,8 @@ components:
         mortgaged:
           type: boolean
           description: |
-            Whether this deed is mortgaged (Phase 11.0 field; always false until 11.3).
+            Whether this deed is mortgaged (Phase 11.3). Mortgaged deeds collect no rent.
+            Building on a color set is blocked if any deed in the set is mortgaged.
     GameLastPayment:
       type: object
       additionalProperties: false
