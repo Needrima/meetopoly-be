@@ -807,14 +807,82 @@ Roll → move (+pass GO if applicable) → resolve space →
 - `HubLocationCopy` on the **rail** (not inside the walk square): name + code + `about` (fallback aboutShort/description).
 - Height-based `numberOfLines` + tail ellipsis — no ScrollView.
 - `HubScene` = avatars only (`pointerEvents="box-none"`) above copy; rail owns floor color.
+- Walk surface is the **full center rail** (rect) so avatars can cross the heading.
+
+**9.0d notes**
+
+- `HubRoster`: `IN HUB · n/16`; **2 per row** via `space-between` (equal L/R edge padding).
+- Local label: `You · NG`. Remotes: `Name · NG`. X leave in header; joystick BR.
+- Rows from `presence.roster` + local seed; accents via `accentAgainstFloor`.
+
+**9.0e — smoke checklist (hub chrome)**
+
+Manual (landscape device / simulator; BE running; 2 clients preferred):
+
+1. **Shell (9.0b)** — Enter any hub: three equal panes; rails to bottom (no grey gap); middle 2px side borders; floor = tile color (airport blue / city group / etc.).
+2. **Copy (9.0c)** — Short hub (e.g. airport): name + code + short about visible. Long hub (e.g. Benghazi/Tokyo): name + code stay on-screen; about ellipsizes with `…` (no mid-line clip, no ScrollView).
+3. **Walk** — Joystick moves avatar over heading and body text; avatars draw above copy; contrast accents do not blend into floor.
+4. **Roster (9.0d)** — `IN HUB · n/16`; two chips per row, left/right flush to panel padding; local `You · CC`, peer `Name · CC`.
+5. **Country (9.0a)** — Board HUD shows country on You / others; hub roster matches profile ISO.
+6. **Presence** — Second client joins same hub: count bumps, peer appears on floor + roster; leave drops count/avatar.
+7. **Leave / Open board** — X leaves hub (clears hubId); turn/buy sheets still work; Open board keeps hubId; keep-awake on hub (screen stays awake).
+8. **Hub full** — Optional: 17th join gets hub-full error and stops retrying.
+
+**Remaining Phase 9 sub-slices (ship one at a time — ask before starting each)**
+
+| Slice | Done when | Avoid |
+| ----- | --------- | ----- |
+| **9.1** | Shared branded `DeedCard` on **buy** + **tile-info** overlays (group-color strip border, Moti stagger, rent grid); specials keep a lighter branded sheet | Settings, economy toasts, hub buy compact redesign |
+| **9.2** | Home `/(app)/settings`: RN Mute mic Switch (SecureStore); Leave stays board ⋯; report deferred | Board settings sheet; report API; `@expo/ui` Switch on Android; property cards; rent toasts |
+| **9.3** | Board economy **modals** (buy / rent / tax / salary) for involved players; spectators + hub get short toasts; 3s/5s `__DEV__` queue | Cash HUD flash; Chance/Auction/Jail modals; settings redesign |
+| **9.4** | Leftover playtest bugs + smoke: signup → join → play → buy → rent → hub enter/exit → leave | New features |
+
+**9.1 notes**
+
+- Extract `components/board/DeedCard.tsx` — strip color border + header + rent grid; strip world-pack name prefix.
+- `BuyPropertyOverlay` + `TileInfoOverlay` both consume it; Moti sheet entrance + staggered deed header/body.
+- Specials (chance / jail / tax / …): icon + title sheet, not a fake rent deed.
+- Hub compact `HubBuySheet` stays as-is until a later polish ask.
+
+**9.2 notes**
+
+- Home `/(app)/settings` only (not board ⋯). Leave remains board overflow / hub X.
+- Mute: RN `Switch` + SecureStore `muteMic` (`'1'` / `'0'`). No audio until Phase 10.
+- **Report** skipped until player picker + report API exist.
+- Inspect own deed shows **Owned by You** (board `inspectOwner`).
+
+**9.3 notes**
+
+- **Board:** branded economy modals (Meetopoly chrome; layout inspired by `meetopoly-mobile/resources/Screenshot_2026-09-27-*` — not a clone).
+- **Hub:** same events → short toasts only (no modals).
+- **Audience:** buy modal = buyer; rent modal = payer + owner; tax modal = payer; salary modal = GO passer. Everyone else → toast.
+- **Dismiss:** auto **3s** (prod) / **5s** (`__DEV__`); overlapping events **queued** (one after another).
+- **Buy flow:** close buy sheet → then LAND / **AIRPORT** / UTILITY BOUGHT (not “rail”).
+- **No** cash HUD flash in 9.3.
+- Replaces Phase 6.4/6.5 toast-only UX for involved players; keep toasts for spectators + hub + cannot-afford remainder.
+
+**Reference screenshots → later phases (do not build in 9.3)**
+
+| Ref | Action | Phase |
+| --- | ------ | ----- |
+| CHANCE / CHEST card modals | Card draw UI | **12** |
+| JUST VISITING | Jail visit notify | **12** |
+| AUCTION bid/fold/slider | Bank auction | **13** |
+| BUILD / SELL / MORTGAGE / REDEEM / TRADE bar | Buildings / mortgage / trade | **11 / 13 / 14** |
 
 **Exit criteria**
 
 - [ ] New player can finish signup → join table → play M1 → visit a hub without developer intervention
-- [ ] Hub chrome matches locked 3-pane brief (or listed deferrals)
+- [x] Hub chrome matches locked 3-pane brief (Phase 9.0a–d; media cameras → Phase 10)
 - [x] **9.0a:** country on presence roster + game players + board HUD
 - [x] **9.0b:** equal 3-pane shell + per-tile floor + middle borders
-- [x] **9.0c:** center name/code/about with ellipsis; walk square avatars-only
+- [x] **9.0c:** center name/code/about with ellipsis; full-rail walk over copy
+- [x] **9.0d:** hub roster 2/row + X + joystick BR
+- [x] **9.0e:** smoke checklist documented (run before declaring Phase 9 hub chrome done)
+- [x] **9.1:** branded `DeedCard` on buy + tile-info
+- [x] **9.2:** home Settings mute Switch (RN; `@expo/ui` Compose path avoided); report deferred
+- [x] **9.3:** economy modals (board involved) + toasts (spectators / hub)
+- [ ] **9.4:** leftover bugs + full-match smoke
 
 ---
 
@@ -1015,4 +1083,9 @@ Only when the user asks:
 | 2026-09-25 | **9.0a:** presence `country` on welcome/peers/peer-joined; `GamePlayer.country` via user lookup; board HUD country; presence `roster` for hub chrome                                                                                       |
 | 2026-09-25 | **9.0b:** equal 3-pane hub shell; full-height rails; 2px center borders; per-tile `HubScene` floor                                                                                                                                         |
 | 2026-09-25 | **9.0c:** `HubLocationCopy` on rail (about + ellipsis); `HubScene` avatars-only above copy                                                                                                                                                 |
+| 2026-09-25 | **9.0d:** `HubRoster` IN HUB n/16 · 2-col · country · X; right-rail joystick                                                                                                                                                               |
+| 2026-09-25 | **9.0e:** hub chrome smoke checklist (shell/copy/walk/roster/country/presence/leave)                                                                                                                                                      |
+| 2026-09-25 | **9.1:** shared `DeedCard` (strip border + Moti stagger); buy + tile-info overlays; Phase 9.1–9.4 sub-slices locked                                                                                                                       |
+| 2026-09-25 | **9.2:** home Settings `@expo/ui` Mute mic (SecureStore); Leave board-only; report deferred until picker + API                                                                                                                             |
+| 2026-09-27 | **9.3:** board economy modals (buy/rent/tax/salary, 2.5s queue, involved-only); hub/spectators toasts; Chance/Auction/Jail refs → later phases                                                                                              |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
