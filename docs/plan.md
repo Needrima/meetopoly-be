@@ -870,9 +870,40 @@ Manual (landscape device / simulator; BE running; 2 clients preferred):
 | AUCTION bid/fold/slider | Bank auction | **13** |
 | BUILD / SELL / MORTGAGE / REDEEM / TRADE bar | Buildings / mortgage / trade | **11 / 13 / 14** |
 
+**9.4 notes**
+
+- No new features — scan + fix clear regressions from 9.0–9.3; document full-match smoke.
+- Fixes landed: `HubRoster` `ReactNode` import from `react` (tsc); economy queue unique ids so identical toast copy still advances the timer.
+- Buy/bought headers use location strip color (9.3 polish); mute = RN Switch; report deferred.
+
+**9.4 — smoke checklist (Phase 9 close)**
+
+Manual (2 clients preferred; BE running; landscape):
+
+**A. End-to-end (Phase 9 exit bar)**
+
+1. Fresh signup → verify → password → username/country → land on home menu.
+2. Play → create/join table → Ready → game starts (pins, MeetCoin, turn HUD).
+3. Walk board, roll, buy unowned, pay/collect rent, pass GO, pay tax if landed.
+4. Enter a hub (X leave / Open board / roster / country) → leave hub → back on board.
+5. Leave board via ⋯ (resign confirm) → home. No stuck WS / false resign for peer.
+
+**B. Economy feedback (9.3)**
+
+1. Buyer sees LAND/AIRPORT/UTILITY BOUGHT (strip-colored header, full deed, price + avatar); spectator toast.
+2. Rent: payer + owner get PAID RENT (avatars); spectator toast.
+3. Tax: payer PAID TAX (avatar); others toast.
+4. Pass GO: passer SALARY modal; others toast. Queue if salary + rent same turn.
+5. From hub: board actions → toast only (no modal).
+
+**C. Hub chrome + settings (9.0–9.2)**
+
+1. Hub 3 equal panes, strip floor, roster `You · CC` / 2 per row, keep-awake.
+2. Settings → Mute persists across reopen; board ⋯ has Leave/Log out only.
+
 **Exit criteria**
 
-- [ ] New player can finish signup → join table → play M1 → visit a hub without developer intervention
+- [ ] New player can finish signup → join table → play M1 → visit a hub without developer intervention (**run 9.4 smoke A**)
 - [x] Hub chrome matches locked 3-pane brief (Phase 9.0a–d; media cameras → Phase 10)
 - [x] **9.0a:** country on presence roster + game players + board HUD
 - [x] **9.0b:** equal 3-pane shell + per-tile floor + middle borders
@@ -882,7 +913,7 @@ Manual (landscape device / simulator; BE running; 2 clients preferred):
 - [x] **9.1:** branded `DeedCard` on buy + tile-info
 - [x] **9.2:** home Settings mute Switch (RN; `@expo/ui` Compose path avoided); report deferred
 - [x] **9.3:** economy modals (board involved) + toasts (spectators / hub)
-- [ ] **9.4:** leftover bugs + full-match smoke
+- [x] **9.4:** leftover fixes + full-match smoke checklist documented
 
 ---
 
@@ -1088,4 +1119,5 @@ Only when the user asks:
 | 2026-09-25 | **9.1:** shared `DeedCard` (strip border + Moti stagger); buy + tile-info overlays; Phase 9.1–9.4 sub-slices locked                                                                                                                       |
 | 2026-09-25 | **9.2:** home Settings `@expo/ui` Mute mic (SecureStore); Leave board-only; report deferred until picker + API                                                                                                                             |
 | 2026-09-27 | **9.3:** board economy modals (buy/rent/tax/salary, 2.5s queue, involved-only); hub/spectators toasts; Chance/Auction/Jail refs → later phases                                                                                              |
+| 2026-09-27 | **9.4:** HubRoster ReactNode tsc fix; economy queue unique ids; Phase 9 full-match smoke checklist documented                                                                                                                               |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
