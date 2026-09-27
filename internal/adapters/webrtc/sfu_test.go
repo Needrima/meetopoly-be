@@ -134,3 +134,71 @@ func TestICEServersJSON(t *testing.T) {
 		t.Fatalf("stun=%s", servers[0].URLs[0])
 	}
 }
+
+func TestIsHubRoom(t *testing.T) {
+	if !IsHubRoom("hub:africa-1:lagos") {
+		t.Fatal("expected hub")
+	}
+	if IsHubRoom(BoardRoomID("g1")) {
+		t.Fatal("board must not be hub")
+	}
+}
+
+func TestHubRoomGetsAudioPubsMap(t *testing.T) {
+	sfu := NewSFU()
+	hub := HubRoomID("africa-1:cairo")
+	board := BoardRoomID("game-audio")
+	if err := sfu.Attach(hub, "u1", "Ada", "", &memSignal{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := sfu.Attach(board, "u1", "Ada", "", &memSignal{}); err != nil {
+		t.Fatal(err)
+	}
+	sfu.mu.Lock()
+	hr := sfu.rooms[hub]
+	br := sfu.rooms[board]
+	sfu.mu.Unlock()
+	if hr == nil || hr.audioPubs == nil {
+		t.Fatal("hub room must allocate audioPubs")
+	}
+	if br == nil {
+		t.Fatal("missing board room")
+	}
+	if br.audioPubs != nil {
+		t.Fatal("board room must not allocate audioPubs")
+	}
+	if sfu.HubAudioPublisherCount(hub) != 0 {
+		t.Fatal("no pubs yet")
+	}
+	if sfu.HubAudioPublisherCount(board) != 0 {
+		t.Fatal("board count always 0")
+	}
+}
+
+func TestDetachClearsHubAudioPubSlot(t *testing.T) {
+	sfu := NewSFU()
+	hub := HubRoomID("africa-1:accra")
+	sig := &memSignal{}
+	if err := sfu.Attach(hub, "u1", "Ada", "", sig); err != nil {
+		t.Fatal(err)
+	}
+	sfu.mu.Lock()
+	r := sfu.rooms[hub]
+	stop := make(chan struct{})
+	r.audioPubs["u1"] = &hubAudioPub{fromUserID: "u1", stop: stop}
+	sfu.mu.Unlock()
+	if sfu.HubAudioPublisherCount(hub) != 1 {
+		t.Fatal("expected one pub")
+	}
+	if _, ok := sfu.Detach(hub, "u1", sig); !ok {
+		t.Fatal("detach")
+	}
+	if sfu.HubAudioPublisherCount(hub) != 0 {
+		t.Fatal("pub must clear on detach")
+	}
+	select {
+	case <-stop:
+	default:
+		t.Fatal("stop channel should be closed")
+	}
+}

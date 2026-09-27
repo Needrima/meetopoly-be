@@ -349,6 +349,16 @@ func (c *presenceClient) readPump() {
 				slog.Warn("presence offer failed", "userId", c.userID, "err", err)
 				c.sendError("offer failed")
 			}
+		case "answer":
+			// Phase 10.0 — client answer to SFU renegotiation offer (hub audio).
+			if msg.SDP == "" {
+				c.sendError("missing sdp")
+				continue
+			}
+			if err := c.hub.sfu.HandleAnswer(c.roomID, c.userID, msg.SDP); err != nil {
+				slog.Warn("presence answer failed", "userId", c.userID, "err", err)
+				c.sendError("answer failed")
+			}
 		case "ice":
 			if len(msg.Candidate) == 0 || string(msg.Candidate) == "null" {
 				continue

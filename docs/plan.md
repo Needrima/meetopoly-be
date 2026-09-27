@@ -917,15 +917,40 @@ Manual (2 clients preferred; BE running; landscape):
 
 ---
 
-### Phase 10 — Voice (same rooms)
+### Phase 10 — Voice (same rooms) — IN PROGRESS
 
-**Goal:** Mic audio in hub rooms and/or table room.
+**Goal:** Mic audio in **hub** rooms first (same Pion presence SFU); board/table voice later.
 
-**Backend / mobile:** add media tracks to existing Pion rooms; mute/unmute UI; permissions.
+**Locked**
+
+- Hub first; board voice = **10.4** (ask before).
+- Mute: Settings `muteMic` is source of truth.
+- Audio only (ignore video). STUN-only; TURN only if playtest proves need (ask first).
+- Ship **one sub-slice at a time** — ask before each.
+
+**Sub-slices**
+
+| Slice | Done when | Avoid |
+| ----- | --------- | ----- |
+| **10.0** | SFU: on `hub:*` only, `OnTrack` audio → forward to other peers; video ignored; Detach stops forward; board rooms stay pose-only; WS accepts renegotiation `answer` | Mobile mic, mute UI, board voice |
+| **10.1** | Mobile hub: permission + `getUserMedia({audio})` + `pc.addTrack`; apply `muteMic`; teardown on leave | Remote playback polish, board voice |
+| **10.2** | Mobile hub: `pc.ontrack` + handle SFU renegotiation offers; leave stops audio | Fancy speaking indicators |
+| **10.3** | Hub left rail Live + mute wired to `muteMic`; smoke checklist | Cameras, board voice |
+| **10.4** | Board/table voice (ask before) | — |
+
+**10.0 notes**
+
+- [`sfu.go`](../internal/adapters/webrtc/sfu.go): hub rooms keep `audioPubs`; RTP relay via `TrackLocalStaticRTP`; `AddTrack` + SFU-created `offer` for mid-session peers; late joiners get existing pubs before `CreateAnswer`.
+- Presence WS: handle client `answer` for renegotiation (`HandleAnswer`).
+- Board `board:*`: no audio forward even if offer includes audio.
 
 **Exit criteria**
 
-- [ ] Hear others in hub; leave hub stops hub audio
+- [ ] Hear others in hub; leave hub stops hub audio (after 10.0–10.3)
+- [x] **10.0:** hub SFU audio forward + board pose-only
+- [ ] **10.1:** hub mic publish + mute pref
+- [ ] **10.2:** hub remote playback + renegotiation
+- [ ] **10.3:** hub mute UI + smoke
 
 ---
 
@@ -1120,4 +1145,6 @@ Only when the user asks:
 | 2026-09-25 | **9.2:** home Settings `@expo/ui` Mute mic (SecureStore); Leave board-only; report deferred until picker + API                                                                                                                             |
 | 2026-09-27 | **9.3:** board economy modals (buy/rent/tax/salary, 2.5s queue, involved-only); hub/spectators toasts; Chance/Auction/Jail refs → later phases                                                                                              |
 | 2026-09-27 | **9.4:** HubRoster ReactNode tsc fix; economy queue unique ids; Phase 9 full-match smoke checklist documented                                                                                                                               |
+| 2026-09-27 | **Phase 10 split:** 10.0–10.4 hub-first voice; muteMic SoT; audio-only; STUN; board voice = 10.4 ask-before                                                                                                                                |
+| 2026-09-27 | **10.0:** hub `OnTrack` audio → `TrackLocalStaticRTP` forward; SFU renegotiation `offer` + WS `answer`; board rooms stay pose-only; video ignored                                                                                          |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
