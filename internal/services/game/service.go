@@ -78,9 +78,11 @@ type LastRollView struct {
 
 // DeedView is public ownership of a board space.
 type DeedView struct {
-	BoardIndex     int    `json:"boardIndex"`
-	OwnerUserID    string `json:"ownerUserId"`
-	OwnerUsername  string `json:"ownerUsername"`
+	BoardIndex    int    `json:"boardIndex"`
+	OwnerUserID   string `json:"ownerUserId"`
+	OwnerUsername string `json:"ownerUsername"`
+	Houses        int    `json:"houses"`    // 0–5; 5 = hotel (Phase 11.0)
+	Mortgaged     bool   `json:"mortgaged"` // always false until Phase 11.3
 }
 
 // BuyOfferView is shown when the current player may buy the space they occupy.
@@ -699,6 +701,8 @@ func (s *service) Buy(ctx context.Context, gameID, userID string) (*View, error)
 	g.Deeds = append(g.Deeds, gamerepo.Deed{
 		BoardIndex:  sp.BoardIndex,
 		OwnerUserID: userID,
+		Houses:      0,
+		Mortgaged:   false,
 	})
 	g.UpdatedAt = time.Now().UTC()
 	if err := s.repo.Update(ctx, g); err != nil {
@@ -1225,10 +1229,19 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 	}
 	deeds := make([]DeedView, 0, len(g.Deeds))
 	for _, d := range g.Deeds {
+		houses := d.Houses
+		if houses < 0 {
+			houses = 0
+		}
+		if houses > 5 {
+			houses = 5
+		}
 		deeds = append(deeds, DeedView{
 			BoardIndex:    d.BoardIndex,
 			OwnerUserID:   d.OwnerUserID,
 			OwnerUsername: nameByID[d.OwnerUserID],
+			Houses:        houses,
+			Mortgaged:     d.Mortgaged,
 		})
 	}
 	var last *LastRollView

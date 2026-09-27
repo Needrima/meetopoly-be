@@ -42,10 +42,13 @@ type Player struct {
 	TimeRemainingMs int64 `bson:"timeRemainingMs" json:"timeRemainingMs"`
 }
 
-// Deed is ownership of a buyable board space (Phase 6.4).
+// Deed is ownership of a buyable board space (Phase 6.4+).
+// Houses: 0–5 where 5 = hotel (Phase 11.0). Mortgaged stays false until 11.3.
 type Deed struct {
 	BoardIndex  int    `bson:"boardIndex" json:"boardIndex"`
 	OwnerUserID string `bson:"ownerUserId" json:"ownerUserId"`
+	Houses      int    `bson:"houses" json:"houses"`
+	Mortgaged   bool   `bson:"mortgaged" json:"mortgaged"`
 }
 
 // LastPayment is the most recent rent/tax transfer (Phase 6.5) for client toasts.

@@ -405,6 +405,9 @@ func TestBuyUnownedProperty(t *testing.T) {
 	if len(view.Deeds) != 1 || view.Deeds[0].OwnerUserID != "a" || view.Deeds[0].BoardIndex != 1 {
 		t.Fatalf("deeds=%v", view.Deeds)
 	}
+	if view.Deeds[0].Houses != 0 || view.Deeds[0].Mortgaged {
+		t.Fatalf("new deed houses=%d mortgaged=%v want 0/false", view.Deeds[0].Houses, view.Deeds[0].Mortgaged)
+	}
 	if view.CanBuy {
 		t.Fatal("should not canBuy after purchase")
 	}
@@ -451,6 +454,30 @@ func TestRentPaidOnOwnedProperty(t *testing.T) {
 	amount, _, _, _ = rentDueForLanding(spaces, deeds, 1, "a", 7)
 	if amount != 4 {
 		t.Fatalf("monopoly rent=%d want 4", amount)
+	}
+}
+
+func TestRentWithHousesAndHotel(t *testing.T) {
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60, Rents: []int{2, 10, 30, 90, 160, 250}, ColorGroup: "brown"},
+		{BoardIndex: 3, Slug: "accra", Name: "Accra", Kind: "property", Price: 60, Rents: []int{4, 20, 60, 180, 320, 450}, ColorGroup: "brown"},
+	}
+	// Monopoly + 1–4 houses + hotel use Rents[houses].
+	for houses, want := range map[int]int{1: 10, 2: 30, 3: 90, 4: 160, 5: 250} {
+		deeds := []gamerepo.Deed{
+			{BoardIndex: 1, OwnerUserID: "b", Houses: houses},
+			{BoardIndex: 3, OwnerUserID: "b"},
+		}
+		amount, _, _, _ := rentDueForLanding(spaces, deeds, 1, "a", 7)
+		if amount != want {
+			t.Fatalf("houses=%d rent=%d want %d", houses, amount, want)
+		}
+	}
+	// Houses without monopoly → site rent only (defensive; impossible under classic rules).
+	deeds := []gamerepo.Deed{{BoardIndex: 1, OwnerUserID: "b", Houses: 3}}
+	amount, _, _, _ := rentDueForLanding(spaces, deeds, 1, "a", 7)
+	if amount != 2 {
+		t.Fatalf("houses without monopoly rent=%d want 2", amount)
 	}
 }
 

@@ -1016,7 +1016,7 @@ Manual (2 clients preferred; BE running; landscape):
 
 | Slice | Done when | Avoid |
 | ----- | --------- | ----- |
-| **11.0** | `Deed` gains `houses` (0–5; **5 = hotel**) + `mortgaged` (always false until 11.3); rent uses `Rents[houses]` when monopoly (undeveloped monopoly stays **2×** `Rents[0]`); OpenAPI + mobile types | Build/sell HTTP, UI, mortgage actions |
+| **11.0** | ✅ `Deed` gains `houses` (0–5; **5 = hotel**) + `mortgaged` (always false until 11.3); rent uses `Rents[houses]` when monopoly (undeveloped monopoly stays **2×** `Rents[0]`); OpenAPI + mobile types | Build/sell HTTP, UI, mortgage actions |
 | **11.1** | `POST /games/{id}/build` — buy house/hotel; even-build + full color group + cash; WS fan-out | Sell, mortgage UI |
 | **11.2** | `POST /games/{id}/sell-building` — sell house/hotel at half cost; even-sell down | Mortgage UI |
 | **11.3** | `POST` mortgage + redeem (list/half rules); block build if any deed in color set mortgaged | House-shortage auction |
@@ -1028,7 +1028,7 @@ Manual (2 clients preferred; BE running; landscape):
 - [ ] Even-build enforced server-side
 - [ ] UI to buy/sell houses (and hotels)
 - [ ] Light mortgage + redeem; mortgaged set blocks build
-- [ ] **11.0** … **11.5** ticked
+- [x] **11.0** ticked (deed fields + rent tiers + OpenAPI); **11.1** … **11.5** pending
 
 ---
 
@@ -1226,4 +1226,5 @@ Only when the user asks:
 | 2026-09-27 | **Phase 10 DONE:** selective listen deferred → Phase 16 with video; everyone-audio + muteMic for now                                                                                                                                  |
 | 2026-09-27 | **Phase 11 split:** 11.0–11.5 houses/hotels/light mortgage; house-shortage auction stays Phase 13; ask before each slice                                                                                                               |
 | 2026-09-27 | Skill + plan: Phase 10 voice locks; Phase 11.0 `houses` 0–5 (5=hotel); selective listen/video → 16                                                                                                                                        |
+| 2026-09-27 | **11.0:** `Deed.houses` 0–5 + `mortgaged`; monopoly rent 2× site / `Rents[houses]` when built; OpenAPI 0.16 + mobile types; no build/sell UI                                                                                           |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

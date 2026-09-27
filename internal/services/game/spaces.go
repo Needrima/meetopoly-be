@@ -108,6 +108,23 @@ func ownerOf(deeds []gamerepo.Deed, boardIndex int) string {
 	return ""
 }
 
+// housesOnDeed returns clamped house count (0–5; 5 = hotel) for a deed.
+func housesOnDeed(deeds []gamerepo.Deed, boardIndex int) int {
+	for _, d := range deeds {
+		if d.BoardIndex == boardIndex {
+			h := d.Houses
+			if h < 0 {
+				return 0
+			}
+			if h > 5 {
+				return 5
+			}
+			return h
+		}
+	}
+	return 0
+}
+
 func countOwnedKind(spaces []Space, deeds []gamerepo.Deed, ownerUserID, kind string) int {
 	n := 0
 	owned := make(map[int]bool, len(deeds))
@@ -176,17 +193,25 @@ func rentDueForLanding(
 
 	switch sp.Kind {
 	case "property":
-		base := 0
-		if len(sp.Rents) > 0 {
-			base = sp.Rents[0]
-		}
-		if base <= 0 {
+		if len(sp.Rents) == 0 || sp.Rents[0] <= 0 {
 			return 0, ownerID, "rent", spaceName
 		}
-		if ownsFullColorGroup(spaces, deeds, ownerID, sp.ColorGroup) {
-			base *= 2
+		houses := housesOnDeed(deeds, boardIndex)
+		monopoly := ownsFullColorGroup(spaces, deeds, ownerID, sp.ColorGroup)
+		// No monopoly → site rent only (ignore houses; impossible under classic rules).
+		if !monopoly {
+			return sp.Rents[0], ownerID, "rent", spaceName
 		}
-		return base, ownerID, "rent", spaceName
+		// Undeveloped monopoly → 2× site.
+		if houses == 0 {
+			return sp.Rents[0] * 2, ownerID, "rent", spaceName
+		}
+		// Monopoly + houses ≥ 1 → Rents[houses] (5 = hotel).
+		idx := houses
+		if idx >= len(sp.Rents) {
+			idx = len(sp.Rents) - 1
+		}
+		return sp.Rents[idx], ownerID, "rent", spaceName
 	case "railroad":
 		n := countOwnedKind(spaces, deeds, ownerID, "railroad")
 		table := sp.Rents

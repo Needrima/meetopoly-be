@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.15.0
+  version: 0.16.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -1594,6 +1594,8 @@ components:
         - boardIndex
         - ownerUserId
         - ownerUsername
+        - houses
+        - mortgaged
       properties:
         boardIndex:
           type: integer
@@ -1601,6 +1603,17 @@ components:
           type: string
         ownerUsername:
           type: string
+        houses:
+          type: integer
+          minimum: 0
+          maximum: 5
+          description: |
+            Building count on this deed (Phase 11.0).
+            0 = undeveloped; 1–4 = houses; 5 = hotel. Always 0 until build (11.1).
+        mortgaged:
+          type: boolean
+          description: |
+            Whether this deed is mortgaged (Phase 11.0 field; always false until 11.3).
     GameLastPayment:
       type: object
       additionalProperties: false
