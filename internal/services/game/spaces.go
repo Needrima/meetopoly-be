@@ -204,6 +204,37 @@ func minHousesInColorGroup(spaces []Space, deeds []gamerepo.Deed, ownerUserID, c
 	return minH
 }
 
+// maxHousesInColorGroup is the highest house count among deeds the owner holds in the set.
+func maxHousesInColorGroup(spaces []Space, deeds []gamerepo.Deed, ownerUserID, colorGroup string) int {
+	byIndex := make(map[int]gamerepo.Deed, len(deeds))
+	for _, d := range deeds {
+		if d.OwnerUserID == ownerUserID {
+			byIndex[d.BoardIndex] = d
+		}
+	}
+	maxH := 0
+	for _, sp := range spaces {
+		if sp.Kind != "property" || sp.ColorGroup != colorGroup {
+			continue
+		}
+		d, ok := byIndex[sp.BoardIndex]
+		if !ok {
+			continue
+		}
+		h := d.Houses
+		if h < 0 {
+			h = 0
+		}
+		if h > 5 {
+			h = 5
+		}
+		if h > maxH {
+			maxH = h
+		}
+	}
+	return maxH
+}
+
 // colorGroupHasMortgage is true when any deed in the color group is mortgaged.
 func colorGroupHasMortgage(spaces []Space, deeds []gamerepo.Deed, colorGroup string) bool {
 	inGroup := make(map[int]bool)

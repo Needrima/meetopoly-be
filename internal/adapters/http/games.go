@@ -115,6 +115,28 @@ func handleBuild(games gamesvc.Service) http.HandlerFunc {
 	}
 }
 
+func handleSellBuilding(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		var req buildRequest
+		if err := decodeJSON(r, &req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_body", "Invalid request body")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		view, err := games.SellBuilding(r.Context(), gameID, userID, req.BoardIndex)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
 type setPinColorRequest struct {
 	PinColor string `json:"pinColor"`
 }
@@ -223,6 +245,10 @@ func mapGameError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "no_monopoly", "Own the full color group before building")
 	case errors.Is(err, gamesvc.ErrUnevenBuild):
 		writeError(w, http.StatusConflict, "uneven_build", "Build evenly across the color group")
+	case errors.Is(err, gamesvc.ErrUnevenSell):
+		writeError(w, http.StatusConflict, "uneven_sell", "Sell evenly across the color group")
+	case errors.Is(err, gamesvc.ErrNothingToSell):
+		writeError(w, http.StatusConflict, "nothing_to_sell", "No building to sell on this deed")
 	case errors.Is(err, gamesvc.ErrMaxBuilt):
 		writeError(w, http.StatusConflict, "max_built", "Hotel already built on this deed")
 	case errors.Is(err, gamesvc.ErrMortgagedSet):

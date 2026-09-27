@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.17.0
+  version: 0.18.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -900,6 +900,72 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /games/{gameId}/sell-building:
+    post:
+      operationId: sellBuilding
+      summary: Sell one house or hotel step back to the bank
+      description: |
+        Phase 11.2 — current player only. Body selects the deed (`boardIndex`).
+        Refund = floor(houseCost / 2). Requires houses ≥ 1, full color group, and
+        even-sell (sell from the tallest deed first). **Allowed during pendingPayment**
+        so the player can raise funds; refund is applied toward the outstanding debt.
+        One step per call. Fans out via WebSocket `state`.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SellBuildingRequest"
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "400":
+          description: Invalid body or boardIndex
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: |
+            Not your turn, not buildable, not owner, no monopoly, uneven sell,
+            nothing to sell, or inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /games/{gameId}/pin-color:
     post:
       operationId: setPinColor
@@ -1482,6 +1548,17 @@ components:
         boardIndex:
           type: integer
           description: Board space to build one house/hotel step on (must be an owned city)
+          minimum: 0
+          maximum: 39
+    SellBuildingRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - boardIndex
+      properties:
+        boardIndex:
+          type: integer
+          description: Board space to sell one house/hotel step from (must be an owned city with buildings)
           minimum: 0
           maximum: 39
     EnterHubRequest:

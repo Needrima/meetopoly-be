@@ -38,6 +38,8 @@ var (
 	ErrMaxBuilt          = errors.New("hotel already built")
 	ErrMortgagedSet      = errors.New("cannot build while a deed in the set is mortgaged")
 	ErrInvalidBoardIndex = errors.New("invalid board index")
+	ErrUnevenSell        = errors.New("must sell evenly across the color group")
+	ErrNothingToSell     = errors.New("no building to sell on this deed")
 )
 
 // SeatInput is a seated lobby player used to bootstrap a game.
@@ -175,6 +177,8 @@ type Service interface {
 	Buy(ctx context.Context, gameID, userID string) (*View, error)
 	// Build buys one house/hotel step on an owned city (Phase 11.1).
 	Build(ctx context.Context, gameID, userID string, boardIndex int) (*View, error)
+	// SellBuilding sells one house/hotel step at half houseCost (Phase 11.2).
+	SellBuilding(ctx context.Context, gameID, userID string, boardIndex int) (*View, error)
 	SetPinColor(ctx context.Context, gameID, userID, pinColor string) (*View, error)
 	// EnterHub marks the seated player as inside hubId (Phase 8.2); fans out via game WS.
 	// clientRevision: when non-nil, ignore the enter if it is older than the player's HubRevision (8.4).
@@ -795,6 +799,83 @@ func (s *service) Build(ctx context.Context, gameID, userID string, boardIndex i
 
 	g.Players[playerIdx].Cash -= sp.HouseCost
 	g.Deeds[deedIdx].Houses = curH + 1
+	g.UpdatedAt = time.Now().UTC()
+	if err := s.repo.Update(ctx, g); err != nil {
+		return nil, err
+	}
+	view := s.viewOf(ctx, g)
+	s.broadcast(gameID, Event{Type: "state", Game: view})
+	return view, nil
+}
+
+// SellBuilding sells one house/hotel step back to the bank at half houseCost (Phase 11.2).
+// Allowed during pendingPayment so the player can raise funds; refund applies toward the debt.
+func (s *service) SellBuilding(ctx context.Context, gameID, userID string, boardIndex int) (*View, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	g, err := s.repo.FindByID(ctx, gameID)
+	if err != nil {
+		if errors.Is(err, gamerepo.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return nil, ErrInactive
+	}
+	normalizeTurnPhase(g)
+	if _, err := s.syncTimeBankLocked(ctx, g); err != nil {
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return s.viewOf(ctx, g), nil
+	}
+
+	playerIdx, err := requireCurrentPlayer(g, userID)
+	if err != nil {
+		return nil, err
+	}
+	// Intentionally NOT blocked by pendingPayment — sell raises funds (option A).
+
+	spaces := s.loadSpaces(ctx, g.WorldID)
+	sp := spaceAt(spaces, boardIndex)
+	if sp == nil {
+		return nil, ErrInvalidBoardIndex
+	}
+	if sp.Kind != "property" || sp.ColorGroup == "" || sp.HouseCost <= 0 {
+		return nil, ErrNotBuildable
+	}
+
+	deedIdx := -1
+	for i, d := range g.Deeds {
+		if d.BoardIndex == boardIndex {
+			deedIdx = i
+			break
+		}
+	}
+	if deedIdx < 0 || g.Deeds[deedIdx].OwnerUserID != userID {
+		return nil, ErrNotOwner
+	}
+	curH := g.Deeds[deedIdx].Houses
+	if curH < 0 {
+		curH = 0
+	}
+	if curH <= 0 {
+		return nil, ErrNothingToSell
+	}
+	if !ownsFullColorGroup(spaces, g.Deeds, userID, sp.ColorGroup) {
+		return nil, ErrNoMonopoly
+	}
+	maxH := maxHousesInColorGroup(spaces, g.Deeds, userID, sp.ColorGroup)
+	if curH != maxH {
+		return nil, ErrUnevenSell
+	}
+
+	refund := sp.HouseCost / 2
+	g.Players[playerIdx].Cash += refund
+	g.Deeds[deedIdx].Houses = curH - 1
+	trySettlePendingLocked(g, playerIdx)
 	g.UpdatedAt = time.Now().UTC()
 	if err := s.repo.Update(ctx, g); err != nil {
 		return nil, err
@@ -1443,6 +1524,52 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 
 func hasPendingPayment(g *gamerepo.Game) bool {
 	return g.PendingPayment != nil && g.PendingPayment.Amount > 0
+}
+
+// trySettlePendingLocked applies available cash toward an outstanding rent/tax remainder.
+func trySettlePendingLocked(g *gamerepo.Game, payerIdx int) {
+	if !hasPendingPayment(g) || payerIdx < 0 || payerIdx >= len(g.Players) {
+		return
+	}
+	remaining := g.PendingPayment.Amount
+	pay := remaining
+	if g.Players[payerIdx].Cash < remaining {
+		pay = g.Players[payerIdx].Cash
+	}
+	if pay <= 0 {
+		return
+	}
+
+	g.Players[payerIdx].Cash -= pay
+	toUserID := g.PendingPayment.ToUserID
+	toUsername := "Bank"
+	if toUserID != "" {
+		for i := range g.Players {
+			if g.Players[i].UserID == toUserID {
+				g.Players[i].Cash += pay
+				toUsername = g.Players[i].Username
+				break
+			}
+		}
+	}
+
+	paidInFull := pay >= remaining
+	g.LastPayment = &gamerepo.LastPayment{
+		Kind:         g.PendingPayment.Kind,
+		FromUserID:   g.Players[payerIdx].UserID,
+		FromUsername: g.Players[payerIdx].Username,
+		ToUserID:     toUserID,
+		ToUsername:   toUsername,
+		Amount:       pay,
+		BoardIndex:   g.PendingPayment.BoardIndex,
+		SpaceName:    g.PendingPayment.SpaceName,
+		PaidInFull:   paidInFull,
+	}
+	if paidInFull {
+		g.PendingPayment = nil
+	} else {
+		g.PendingPayment.Amount = remaining - pay
+	}
 }
 
 // resolveLandingLocked auto-collects rent/tax after a move (Phase 6.5).

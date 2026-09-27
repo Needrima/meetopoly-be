@@ -633,6 +633,125 @@ func TestBuildMortgagedSetBlocked(t *testing.T) {
 	}
 }
 
+func TestSellBuildingRefundAndEvenSell(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 2, 1)
+
+	// Must sell from the taller deed first (board 1 has 2).
+	_, err := svc.SellBuilding(context.Background(), "g1", "a", 3)
+	if !errors.Is(err, ErrUnevenSell) {
+		t.Fatalf("err=%v want ErrUnevenSell", err)
+	}
+
+	view, err := svc.SellBuilding(context.Background(), "g1", "a", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// houseCost 50 → refund 25; start cash 2000.
+	if view.Players[0].Cash != 2025 {
+		t.Fatalf("cash=%d want 2025", view.Players[0].Cash)
+	}
+	for _, d := range view.Deeds {
+		if d.BoardIndex == 1 && d.Houses != 1 {
+			t.Fatalf("board1 houses=%d want 1", d.Houses)
+		}
+	}
+}
+
+func TestSellBuildingNothingToSell(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 0, 0)
+
+	_, err := svc.SellBuilding(context.Background(), "g1", "a", 1)
+	if !errors.Is(err, ErrNothingToSell) {
+		t.Fatalf("err=%v want ErrNothingToSell", err)
+	}
+}
+
+func TestSellBuildingHotelStep(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 5, 5)
+
+	view, err := svc.SellBuilding(context.Background(), "g1", "a", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, d := range view.Deeds {
+		if d.BoardIndex == 1 && d.Houses != 4 {
+			t.Fatalf("after hotel sell houses=%d want 4", d.Houses)
+		}
+	}
+	if view.Players[0].Cash != 2025 {
+		t.Fatalf("cash=%d want 2025", view.Players[0].Cash)
+	}
+}
+
+func TestSellBuildingDuringPendingAppliesRefund(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 1, 1)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].Cash = 10
+	g.PendingPayment = &gamerepo.PendingPayment{
+		Kind: "rent", Amount: 30, ToUserID: "b", BoardIndex: 5, SpaceName: "Debt",
+	}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.SellBuilding(context.Background(), "g1", "a", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// +25 refund → 35, then pay 30 pending → cash 5; B gains 30.
+	if view.Players[0].Cash != 5 {
+		t.Fatalf("payer cash=%d want 5", view.Players[0].Cash)
+	}
+	if view.Players[1].Cash != 2030 {
+		t.Fatalf("owner cash=%d want 2030", view.Players[1].Cash)
+	}
+	if view.PendingPayment != nil {
+		t.Fatalf("pending should be cleared, got %+v", view.PendingPayment)
+	}
+	if view.LastPayment == nil || !view.LastPayment.PaidInFull || view.LastPayment.Amount != 30 {
+		t.Fatalf("lastPayment=%+v", view.LastPayment)
+	}
+}
+
+func TestSellBuildingPartialPending(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 1, 1)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].Cash = 0
+	g.PendingPayment = &gamerepo.PendingPayment{
+		Kind: "rent", Amount: 40, ToUserID: "b", BoardIndex: 5, SpaceName: "Debt",
+	}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.SellBuilding(context.Background(), "g1", "a", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// +25 → pay 25 of 40 → cash 0, pending 15.
+	if view.Players[0].Cash != 0 {
+		t.Fatalf("cash=%d want 0", view.Players[0].Cash)
+	}
+	if view.PendingPayment == nil || view.PendingPayment.Amount != 15 {
+		t.Fatalf("pending=%+v want amount 15", view.PendingPayment)
+	}
+}
+
 func TestBuyAlreadyOwned(t *testing.T) {
 	repo := newMemRepo()
 	spaces := memSpaces{
