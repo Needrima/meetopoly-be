@@ -1189,6 +1189,7 @@ Amounts = MeetCoin 1:1 with classic dollars. UI may show the world tile **name**
 
 - **Chance/Chest:** **drawer** sees the card modal; **others** → toast (`{name} took a Chance` / `opened a Chest` + card text + MeetCoin delta when cash). Hub → toast only. Auto-dismiss `ECONOMY_MODAL_MS` (3s / `__DEV__` 5s), queued with other economy events.
 - **Card move timing:** pin walks to Chance/Chest → **pause** for reveal modal → then animate to the card destination (jump for jail / go-back; walk onward for advance).
+- **Pass-GO + card:** salary waits until card reveal (and any resume walk) finish — **card → pin action → salary** (Advance to GO). Board uses `salaryWaitIdle`; hub presents card before salary in effect order.
 - **Just Visiting:** modal for the visitor; others → toast. Pins on Jail tile: **inJail → center**; **Just Visiting → outer L edges** (bottom/left).
 - **Jail options timing (done):** only on **your next turn** while in Jail (`awaiting_roll`). After Go-to-Jail this turn: End first (no options). Exit (pay / card / doubles success) + **failed doubles roll** → **toast for the table**.
 - Jail modal **layout / dock gating** → **12.4b** (v1 sheet was incomplete — Pay/Use only; no Roll-a-Double CTA; Use card could look forced when GOOJF = 0).
@@ -1431,4 +1432,5 @@ Only when the user asks:
 | 2026-09-28 | **12.4b:** jail modal avatar + Pay / Roll a Double / Use card; dock Roll off while modal open; Use card disabled at 0 GOOJF; smoke → 12.5                                                              |
 | 2026-09-28 | **12.4c:** `lastCard.cashDelta` (signed MeetCoin) for cash / pay-each / birthday / repairs; card modal + toast show +/- amount; OpenAPI 0.24 |
 | 2026-09-28 | **12.4d:** Chance/Chest — drawer modal only; others toast (name + card text + cashDelta); jail failed-doubles toast after roll |
+| 2026-09-28 | **12.4e:** Pass-GO salary deferred until after Chance/Chest reveal + pin resume (card → move → salary); OpenAPI unchanged |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
