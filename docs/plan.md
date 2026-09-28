@@ -1014,7 +1014,7 @@ Manual (2 clients preferred; BE running; landscape):
 - **Build API (11.1):** `POST /games/{id}/build` body `{ boardIndex }` — **one step** per call; current player only (no off-turn); allowed in `awaiting_roll` **or** `awaiting_end`; blocked by `pendingPayment`; full color group + even-build + cash ≥ `houseCost`; WS `state` fan-out.
 - **Sell API (11.2):** `POST /games/{id}/sell-building` body `{ boardIndex }` — one step down; refund `floor(houseCost/2)`; even-sell (sell from max houses first); current player only; **allowed during `pendingPayment`** (raise funds — refund applies toward debt); WS `state` fan-out.
 - **Mortgage / redeem (11.3):** `POST /games/{id}/mortgage` + `POST /games/{id}/redeem` body `{ boardIndex }`; mortgage payout `floor(price/2)`; redeem = mortgage + 10%; cities must have **0 houses on the whole color group** before mortgage; mortgaged → **0 rent**; build blocked if any deed in set mortgaged; mortgage allowed during pendingPayment; redeem blocked while pending; current player only.
-- **Board dock + economy UI (→ 11.4x):** **11.4a:** dock wire-up. **11.4b:** CTA bar above dock icons; mode + how-to sheet (brand green header/Close; Close **exits mode**); eligible highlight + tap → API; TRADE stub. **11.4c:** house/hotel/M markers.
+- **Board dock + economy UI (→ 11.4x):** **11.4a:** dock wire-up. **11.4b:** CTA bar + how-to sheet (Close exits mode) + highlight/tap. **11.4c:** house (1–4 green homes) / hotel (red) / **M** on color-band edge from `game.deeds`.
 
 **Sub-slices**
 
@@ -1026,15 +1026,15 @@ Manual (2 clients preferred; BE running; landscape):
 | **11.3**  | ✅ `POST` mortgage + redeem (list/half + 10%); mortgaged = 0 rent; block build if set mortgaged                                                                                                       | House-shortage auction                |
 | **11.4a** | ✅ Dock icons wired (dice/end/hub); opacity disabled; text Roll/End/Enter removed                                                                                                                     | Economy CTA bar, markers              |
 | **11.4b** | ✅ Economy CTA bar + mode → how-to sheet → highlight → tap → API; TRADE stub                                                                                                                          | House/hotel/M markers                 |
-| **11.4c** | House / hotel / M markers on tiles                                                                                                                                                                    | Hub rebuild UI                        |
+| **11.4c** | ✅ House / hotel / M markers on tiles                                                                                                                                                                 | Hub rebuild UI                        |
 | **11.5**  | Smoke checklist for M2 path                                                                                                                                                                           | Jail/cards (12), auction (13)         |
 
 **Exit criteria**
 
 - [x] Even-build enforced server-side (11.1); even-sell (11.2)
-- [x] UI to buy/sell houses (and hotels) — mode + tap (11.4b); markers → 11.4c
+- [x] UI to buy/sell houses (and hotels) — mode + tap (11.4b); markers (11.4c)
 - [x] Light mortgage + redeem; mortgaged set blocks build
-- [x] **11.0** … **11.3** + **11.4a** + **11.4b** ticked; **11.4c** … **11.5** pending
+- [x] **11.0** … **11.4c** ticked; **11.5** pending
 
 ---
 
@@ -1240,4 +1240,5 @@ Only when the user asks:
 | 2026-09-28 | **11.4a:** dock dice/end/hub wired (opacity 0.35 disabled); HUD Roll/End/Enter text removed; economy bar → 11.4b                                                                                                                          |
 | 2026-09-28 | **Must-buy interim:** `canEndTurn` false + `ErrMustBuy` while `buyOffer` open; board buy modal non-dismissible; drop “Or End turn to skip” (auction → 13)                                                                                   |
 | 2026-09-28 | **11.4b:** economy CTA bar above dock; mode + how-to sheet; eligible highlight + tap → build/sell/mortgage/redeem; TRADE stub; markers → 11.4c                                                                                            |
+| 2026-09-28 | **11.4c:** house (1–4) / hotel (5) / M markers on color-band edge from `game.deeds`                                                                                                                     |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
