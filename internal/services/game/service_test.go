@@ -476,6 +476,74 @@ func TestDrawGetOutOfJailFreeHoldsCard(t *testing.T) {
 	}
 }
 
+func TestCardBuildingLoanSetsCashDelta(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 7, Slug: "chance", Name: "Chance", Kind: "special", SpecialType: "chance"},
+	}
+	svc := New(repo, spaces, Config{}).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 7
+	g.Players[0].Cash = 2000
+	g.ChanceDeck = []string{CardChanceBuildingLoan}
+	g.LastRoll = &gamerepo.LastRoll{UserID: "a", FromIndex: 2, ToIndex: 7, Total: 5}
+	svc.resolveLandingLocked(context.Background(), g, 0, 5)
+
+	if g.Players[0].Cash != 2150 {
+		t.Fatalf("cash=%d want 2150", g.Players[0].Cash)
+	}
+	if g.LastCard == nil || g.LastCard.CashDelta != 150 {
+		t.Fatalf("lastCard=%v want cashDelta 150", g.LastCard)
+	}
+	view := svc.viewOf(context.Background(), g)
+	if view.LastCard == nil || view.LastCard.CashDelta != 150 {
+		t.Fatalf("view.lastCard=%v", view.LastCard)
+	}
+}
+
+func TestCardChairmanCashDeltaIsPayEachTimesOthers(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 7, Slug: "chance", Name: "Chance", Kind: "special", SpecialType: "chance"},
+	}
+	svc := New(repo, spaces, Config{}).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 7
+	g.Players[0].Cash = 2000
+	g.Players[1].Cash = 2000
+	g.ChanceDeck = []string{CardChanceChairman}
+	g.LastRoll = &gamerepo.LastRoll{UserID: "a", ToIndex: 7, Total: 5}
+	svc.resolveLandingLocked(context.Background(), g, 0, 5)
+
+	if g.LastCard == nil || g.LastCard.CashDelta != -50 {
+		t.Fatalf("lastCard cashDelta=%v want -50 (1 other × 50)", g.LastCard)
+	}
+}
+
+func TestCardSpeedingFineCashDeltaNegative(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 7, Slug: "chance", Name: "Chance", Kind: "special", SpecialType: "chance"},
+	}
+	svc := New(repo, spaces, Config{}).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 7
+	g.Players[0].Cash = 2000
+	g.ChanceDeck = []string{CardChanceSpeedingFine}
+	g.LastRoll = &gamerepo.LastRoll{UserID: "a", ToIndex: 7, Total: 5}
+	svc.resolveLandingLocked(context.Background(), g, 0, 5)
+
+	if g.LastCard == nil || g.LastCard.CashDelta != -15 {
+		t.Fatalf("lastCard=%v want cashDelta -15", g.LastCard)
+	}
+}
+
 func TestCardAdvanceTitleUsesWorldLocationName(t *testing.T) {
 	repo := newMemRepo()
 	spaces := memSpaces{
@@ -670,17 +738,31 @@ func TestCardRepairsAndBirthday(t *testing.T) {
 		{BoardIndex: 1, OwnerUserID: "a", Houses: 2},
 		{BoardIndex: 3, OwnerUserID: "a", Houses: 5},
 	}
+	g.LastCard = &gamerepo.LastCard{
+		Deck: DeckChance, CardID: CardChanceGeneralRepairs, Title: "Make general repairs",
+		UserID: "a", Username: "A",
+	}
 	// Chance general repairs: 2*25 + 100 = 150
 	svc.applyCardEffectLocked(context.Background(), g, 0, CardChanceGeneralRepairs)
 	if g.Players[0].Cash != 1850 {
 		t.Fatalf("after repairs cash=%d", g.Players[0].Cash)
 	}
+	if g.LastCard.CashDelta != -150 {
+		t.Fatalf("repairs cashDelta=%d want -150", g.LastCard.CashDelta)
+	}
 
 	g.Players[0].Cash = 2000
 	g.Players[1].Cash = 2000
+	g.LastCard = &gamerepo.LastCard{
+		Deck: DeckChest, CardID: CardChestBirthday, Title: "It's your birthday",
+		UserID: "a", Username: "A",
+	}
 	svc.applyCardEffectLocked(context.Background(), g, 0, CardChestBirthday)
 	if g.Players[0].Cash != 2010 || g.Players[1].Cash != 1990 {
 		t.Fatalf("birthday a=%d b=%d", g.Players[0].Cash, g.Players[1].Cash)
+	}
+	if g.LastCard.CashDelta != 10 {
+		t.Fatalf("birthday cashDelta=%d want 10", g.LastCard.CashDelta)
 	}
 }
 

@@ -143,11 +143,12 @@ type PendingPaymentView struct {
 
 // LastCardView is the public last Chance/Chest draw (Phase 12.2).
 type LastCardView struct {
-	Deck     string `json:"deck"`
-	CardID   string `json:"cardId"`
-	Title    string `json:"title"`
-	UserID   string `json:"userId"`
-	Username string `json:"username"`
+	Deck      string `json:"deck"`
+	CardID    string `json:"cardId"`
+	Title     string `json:"title"`
+	UserID    string `json:"userId"`
+	Username  string `json:"username"`
+	CashDelta int    `json:"cashDelta,omitempty"`
 }
 
 // View is the public game snapshot.
@@ -1949,11 +1950,12 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 	var lastCard *LastCardView
 	if g.LastCard != nil {
 		lastCard = &LastCardView{
-			Deck:     g.LastCard.Deck,
-			CardID:   g.LastCard.CardID,
-			Title:    g.LastCard.Title,
-			UserID:   g.LastCard.UserID,
-			Username: g.LastCard.Username,
+			Deck:      g.LastCard.Deck,
+			CardID:    g.LastCard.CardID,
+			Title:     g.LastCard.Title,
+			UserID:    g.LastCard.UserID,
+			Username:  g.LastCard.Username,
+			CashDelta: g.LastCard.CashDelta,
 		}
 	}
 

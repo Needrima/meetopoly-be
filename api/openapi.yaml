@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.23.0
+  version: 0.24.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -2126,6 +2126,13 @@ components:
           type: string
         username:
           type: string
+        cashDelta:
+          type: integer
+          description: >
+            Signed MeetCoin face amount for this card (credits positive, debits
+            negative). Full obligation for pay-each / birthday / repairs even if
+            cash was short. Omitted or 0 when the card has no cash effect
+            (move, jail, GOOJF, go back).
     GameBuyOffer:
       type: object
       additionalProperties: false

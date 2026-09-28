@@ -1429,4 +1429,5 @@ Only when the user asks:
 | 2026-09-28 | **12.4:** board card modal (all seated) + Just Visiting modal; jail sheet (pay/card) + exit toasts; hub toasts; jail pin center vs visiting edges; smoke → 12.5                              |
 | 2026-09-28 | **Jail UX plan lock:** **12.4b** = avatar + Pay / Roll a Double / Use card + dock Roll gating; negative cash after 3 fails + bankruptcy gate → **Phase 14**; keep 12.1 soft-lock until then |
 | 2026-09-28 | **12.4b:** jail modal avatar + Pay / Roll a Double / Use card; dock Roll off while modal open; Use card disabled at 0 GOOJF; smoke → 12.5                                                              |
+| 2026-09-28 | **12.4c:** `lastCard.cashDelta` (signed MeetCoin) for cash / pay-each / birthday / repairs; card modal + toast show +/- amount; OpenAPI 0.24 |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

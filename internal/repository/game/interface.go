@@ -110,6 +110,8 @@ type LastCard struct {
 	Title    string `bson:"title" json:"title"`
 	UserID   string `bson:"userId" json:"userId"`
 	Username string `bson:"username" json:"username"`
+	// CashDelta — signed MeetCoin for the drawer's net from this card (0 = none).
+	CashDelta int `bson:"cashDelta,omitempty" json:"cashDelta,omitempty"`
 }
 
 // Game is the authoritative M1 session (Phase 6+).

@@ -60,42 +60,84 @@ func (s *service) applyCardEffectLocked(ctx context.Context, g *gamerepo.Game, p
 
 	case CardChanceDividend:
 		creditFromBank(g, playerIdx, 50, "card")
+		setLastCardCashDelta(g, 50)
 	case CardChanceSpeedingFine:
 		debitToBank(g, playerIdx, 15, "card", cardTitle(cardID))
+		setLastCardCashDelta(g, -15)
 	case CardChanceBuildingLoan:
 		creditFromBank(g, playerIdx, 150, "card")
+		setLastCardCashDelta(g, 150)
 	case CardChanceChairman:
+		others := countOtherActivePlayers(g, playerIdx)
 		payEachOtherPlayer(g, playerIdx, 50)
+		setLastCardCashDelta(g, -(others * 50))
 	case CardChanceGeneralRepairs:
-		debitToBank(g, playerIdx, repairsDue(g, playerIdx, 25, 100), "card", cardTitle(cardID))
+		due := repairsDue(g, playerIdx, 25, 100)
+		debitToBank(g, playerIdx, due, "card", cardTitle(cardID))
+		setLastCardCashDelta(g, -due)
 
 	case CardChestBankError:
 		creditFromBank(g, playerIdx, 200, "card")
+		setLastCardCashDelta(g, 200)
 	case CardChestDoctorsFee:
 		debitToBank(g, playerIdx, 50, "card", cardTitle(cardID))
+		setLastCardCashDelta(g, -50)
 	case CardChestSaleOfStock:
 		creditFromBank(g, playerIdx, 50, "card")
+		setLastCardCashDelta(g, 50)
 	case CardChestHolidayFund:
 		creditFromBank(g, playerIdx, 100, "card")
+		setLastCardCashDelta(g, 100)
 	case CardChestIncomeTaxRefund:
 		creditFromBank(g, playerIdx, 20, "card")
+		setLastCardCashDelta(g, 20)
 	case CardChestBirthday:
+		others := countOtherActivePlayers(g, playerIdx)
 		collectFromEachOtherPlayer(g, playerIdx, 10)
+		setLastCardCashDelta(g, others*10)
 	case CardChestLifeInsurance:
 		creditFromBank(g, playerIdx, 100, "card")
+		setLastCardCashDelta(g, 100)
 	case CardChestHospitalFees:
 		debitToBank(g, playerIdx, 100, "card", cardTitle(cardID))
+		setLastCardCashDelta(g, -100)
 	case CardChestSchoolFees:
 		debitToBank(g, playerIdx, 50, "card", cardTitle(cardID))
+		setLastCardCashDelta(g, -50)
 	case CardChestConsultancyFee:
 		creditFromBank(g, playerIdx, 25, "card")
+		setLastCardCashDelta(g, 25)
 	case CardChestStreetRepairs:
-		debitToBank(g, playerIdx, repairsDue(g, playerIdx, 40, 115), "card", cardTitle(cardID))
+		due := repairsDue(g, playerIdx, 40, 115)
+		debitToBank(g, playerIdx, due, "card", cardTitle(cardID))
+		setLastCardCashDelta(g, -due)
 	case CardChestBeautyContest:
 		creditFromBank(g, playerIdx, 10, "card")
+		setLastCardCashDelta(g, 10)
 	case CardChestInheritance:
 		creditFromBank(g, playerIdx, 100, "card")
+		setLastCardCashDelta(g, 100)
 	}
+}
+
+func setLastCardCashDelta(g *gamerepo.Game, delta int) {
+	if g == nil || g.LastCard == nil || delta == 0 {
+		return
+	}
+	g.LastCard.CashDelta = delta
+}
+
+func countOtherActivePlayers(g *gamerepo.Game, playerIdx int) int {
+	if g == nil {
+		return 0
+	}
+	n := 0
+	for i := range g.Players {
+		if i != playerIdx && !g.Players[i].Resigned {
+			n++
+		}
+	}
+	return n
 }
 
 // nextIndexForward finds the next board index in targets strictly ahead (wrapping past GO).
