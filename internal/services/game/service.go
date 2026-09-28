@@ -2059,7 +2059,7 @@ func (s *service) resolveLandingWithOpts(
 		return
 	}
 	if sp != nil && (sp.SpecialType == DeckChance || sp.SpecialType == DeckChest) {
-		id := drawCardLocked(g, payerIdx, sp.SpecialType)
+		id := drawCardLocked(g, payerIdx, sp.SpecialType, spaces)
 		s.applyCardEffectLocked(ctx, g, payerIdx, id)
 		return
 	}

@@ -178,12 +178,47 @@ func cardTitle(id string) string {
 	return id
 }
 
+// cardTitleForSpaces localizes named-destination Chance titles to the world's
+// location names (St. Charles → "Advance to Cape Town", etc.). Cash/jail copy
+// stays catalog-generic.
+func cardTitleForSpaces(id string, spaces []Space) string {
+	nameAt := func(idx int) string {
+		if sp := spaceAt(spaces, idx); sp != nil && sp.Name != "" {
+			return sp.Name
+		}
+		return ""
+	}
+	switch id {
+	case CardChanceAdvanceBoardwalk:
+		if n := nameAt(39); n != "" {
+			return "Advance to " + n
+		}
+	case CardChanceAdvanceIllinois:
+		if n := nameAt(24); n != "" {
+			return "Advance to " + n
+		}
+	case CardChanceAdvanceStCharles:
+		if n := nameAt(11); n != "" {
+			return "Advance to " + n
+		}
+	case CardChanceReadingRailroad:
+		if n := nameAt(5); n != "" {
+			return "Take a trip to " + n
+		}
+	case CardChanceAdvanceGO, CardChestAdvanceGO:
+		if n := nameAt(0); n != "" {
+			return "Advance to " + n
+		}
+	}
+	return cardTitle(id)
+}
+
 func isGetOutOfJailCard(id string) bool {
 	return id == CardChanceGetOutOfJail || id == CardChestGetOutOfJail
 }
 
 // drawCardLocked pops the top card from the named deck, sets LastCard, handles GOOJF vs recycle.
-func drawCardLocked(g *gamerepo.Game, playerIdx int, deck string) string {
+func drawCardLocked(g *gamerepo.Game, playerIdx int, deck string, spaces []Space) string {
 	ensureDecks(g)
 	var pile *[]string
 	switch deck {
@@ -213,7 +248,7 @@ func drawCardLocked(g *gamerepo.Game, playerIdx int, deck string) string {
 		*pile = append(*pile, id)
 	}
 
-	title := cardTitle(id)
+	title := cardTitleForSpaces(id, spaces)
 	userID := ""
 	username := ""
 	if playerIdx >= 0 && playerIdx < len(g.Players) {

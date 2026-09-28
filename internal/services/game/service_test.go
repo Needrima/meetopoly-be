@@ -476,6 +476,29 @@ func TestDrawGetOutOfJailFreeHoldsCard(t *testing.T) {
 	}
 }
 
+func TestCardAdvanceTitleUsesWorldLocationName(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 7, Slug: "chance", Name: "Chance", Kind: "special", SpecialType: "chance"},
+		{BoardIndex: 11, Slug: "tallinn", Name: "Tallinn", Kind: "property"},
+	}
+	svc := New(repo, spaces, Config{}).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 7
+	g.ChanceDeck = []string{CardChanceAdvanceStCharles}
+	g.LastRoll = &gamerepo.LastRoll{UserID: "a", FromIndex: 2, ToIndex: 7, Total: 5}
+	svc.resolveLandingLocked(context.Background(), g, 0, 5)
+
+	if g.Players[0].BoardIndex != 11 {
+		t.Fatalf("board=%d want 11", g.Players[0].BoardIndex)
+	}
+	if g.LastCard == nil || g.LastCard.Title != "Advance to Tallinn" {
+		t.Fatalf("lastCard.title=%v want Advance to Tallinn", g.LastCard)
+	}
+}
+
 func TestCardAdvanceToGO(t *testing.T) {
 	repo := newMemRepo()
 	spaces := memSpaces{

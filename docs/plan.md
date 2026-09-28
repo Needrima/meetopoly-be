@@ -1107,7 +1107,8 @@ Manual (2 clients preferred; BE running; landscape). Backend gate: `cd meetopoly
 | **12.1** | ✅ Jail exit: pay **100** MeetCoin (`POST .../pay-jail-fine`), GOOJF (`POST .../use-jail-card`), roll doubles (free + move, no re-roll), or fail 3 then forced pay+move (if broke stay until pay); OpenAPI 0.21 | Card decks, fancy UI |
 | **12.2** | ✅ Chance + Chest catalog; shuffle at start; draw on land; persist decks; `lastCard`; GOOJF held; other effects stubbed → 12.3; OpenAPI 0.22 | Full effect resolve, UI |
 | **12.3** | ✅ Card effects (tables below): cash, move by index, Jail, repairs, nearest RR/utility; apply on draw (lock **A**); OpenAPI 0.23 | Trade of GOOJF (→ 13); card modal UI |
-| **12.4** | Board UI: jail action sheet + card reveal modal (hub = toast / notify like other economy)                                                                        | Auction/trade            |
+| **12.4** | ✅ Card reveal (all seated) + move pause; Just Visiting modal; hub toasts; jail pin layout; jail options **v1** (next-turn only) | Jail modal UX polish → **12.4b** |
+| **12.4b** | ✅ Jail options modal: avatar + **Pay** / **Roll a Double** / **Use card**; dock Roll gating while modal open | Negative cash / bankruptcy → **14** |
 | **12.5** | Smoke checklist                                                                                                                                                  | —                        |
 
 **Chance deck (16 cards — locked; destinations = `boardIndex`)**
@@ -1165,8 +1166,8 @@ Amounts = MeetCoin 1:1 with classic dollars. UI may show the world tile **name**
 - Doubles from Jail → leave + move that total, **no** extra re-roll (`awaiting_end`).
 - Failures 1–2 → `jailTurns++`, stay in Jail, End turn.
 - Fail 3 with cash ≥ 100 → auto fine + leave + move.
-- Fail 3 with cash < 100 → `jailTurns=3`, stay in Jail until pay/card (then Roll next).
-- Board jail sheet UI → **12.4**.
+- Fail 3 with cash < 100 → `jailTurns=3`, stay in Jail until pay/card (then Roll next) — **interim**; forced negative cash + bankruptcy gate → **Phase 14**.
+- Board jail sheet UI → **12.4** / polish → **12.4b**.
 
 **12.2 notes**
 
@@ -1183,6 +1184,38 @@ Amounts = MeetCoin 1:1 with classic dollars. UI may show the world tile **name**
 - Go back 3 → resolve landing on the new tile (tax/rent/another card OK).
 - Card payments use `lastPayment.kind = card`; shortfall → `pendingPayment` (raise funds).
 - Card reveal + jail action sheet UI → **12.4**.
+
+**12.4 notes**
+
+- **Chance/Chest:** board modal shows card face to **every seated player**; hub → toast only. Auto-dismiss `ECONOMY_MODAL_MS` (3s / `__DEV__` 5s), queued with other economy events.
+- **Card move timing:** pin walks to Chance/Chest → **pause** for reveal modal → then animate to the card destination (jump for jail / go-back; walk onward for advance).
+- **Just Visiting:** modal for the visitor; others → toast. Pins on Jail tile: **inJail → center**; **Just Visiting → outer L edges** (bottom/left).
+- **Jail options timing (done):** only on **your next turn** while in Jail (`awaiting_roll`). After Go-to-Jail this turn: End first (no options). Exit decisions → **toast for the table**.
+- Jail modal **layout / dock gating** → **12.4b** (v1 sheet was incomplete — Pay/Use only; no Roll-a-Double CTA; Use card could look forced when GOOJF = 0).
+
+**12.4b notes — jail options UX (✅ done)**
+
+Layout (centered economy chrome, same family as buy/rent/card):
+
+- **Left:** jailed player avatar (pod + pin color).
+- **Right:** three **vertical** buttons — **Pay** (100 MeetCoin) · **Roll a Double** · **Use card**.
+
+Enable / disable:
+
+- **Use card** — disabled unless `getOutOfJailFree ≥ 1`.
+- **Pay** — disabled if cash &lt; 100 (`canPayJailFine`).
+- Cash &lt; 100 **and** no GOOJF → only **Roll a Double** enabled.
+- Hint copy matches real options.
+
+Dock Roll gating:
+
+- While the jail options modal is open → dock **Roll disabled**.
+- **Roll a Double** → close modal → enable dock Roll for the jail attempt.
+- **Pay** / **Use card** → leave Jail, close modal → dock Roll enabled to move.
+
+Out of scope (→ **Phase 14**): negative MeetCoin after 3 fails when broke; bankruptcy gate.
+
+Smoke → **12.5**.
 
 ---
 
@@ -1212,7 +1245,13 @@ Document the exact pause list in this phase’s implementation notes; do not inv
 
 **Official alignment:** Raise funds (sell buildings, mortgage, trade) before elimination; debt to player → assets transfer; debt to Bank → deeds return to Bank (auction where applicable); bankrupt token leaves the game.
 
-**Exit criteria:** Debt resolution; player elimination; assets transfer correctly.
+**Also from jail (locked with 12.4b deferral):**
+
+- After **3** failed doubles from Jail while cash &lt; 100 (and no GOOJF path): force leave with MeetCoin driven **negative** by the unpaid 100 fine (or equivalent `pendingPayment` debt) — do **not** soft-lock forever as in **12.1** interim.
+- On the next turn: must **settle that debt** (raise funds / pay) **or declare bankruptcy** before Roll.
+- Coordinate with existing `pendingPayment` / resign flows from Phase 6.5.
+
+**Exit criteria:** Debt resolution; player elimination; assets transfer correctly; jail forced-debt path covered.
 
 ---
 
@@ -1387,4 +1426,7 @@ Only when the user asks:
 | 2026-09-28 | **12.1:** pay-jail-fine (100) + use-jail-card; roll-from-jail doubles / 3-fail forced pay; `canPayJailFine` / `canUseJailCard`; OpenAPI 0.21; UI → 12.4                                              |
 | 2026-09-28 | **12.2:** Chance/Chest catalog by boardIndex; shuffle + draw on land; persist decks; `lastCard`; GOOJF held; effects → 12.3; OpenAPI 0.22                                                         |
 | 2026-09-28 | **12.3:** apply card effects on draw (lock A); move/cash/jail/repairs/nearest RR×2 / util 10×; `lastPayment.kind=card`; OpenAPI 0.23; modal → 12.4                                              |
+| 2026-09-28 | **12.4:** board card modal (all seated) + Just Visiting modal; jail sheet (pay/card) + exit toasts; hub toasts; jail pin center vs visiting edges; smoke → 12.5                              |
+| 2026-09-28 | **Jail UX plan lock:** **12.4b** = avatar + Pay / Roll a Double / Use card + dock Roll gating; negative cash after 3 fails + bankruptcy gate → **Phase 14**; keep 12.1 soft-lock until then |
+| 2026-09-28 | **12.4b:** jail modal avatar + Pay / Roll a Double / Use card; dock Roll off while modal open; Use card disabled at 0 GOOJF; smoke → 12.5                                                              |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
