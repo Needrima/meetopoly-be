@@ -45,6 +45,7 @@ var (
 	ErrNotMortgaged      = errors.New("deed is not mortgaged")
 	ErrMustSellBuildings = errors.New("sell all buildings on the color group before mortgaging")
 	ErrCannotMortgage    = errors.New("space cannot be mortgaged")
+	ErrInJail            = errors.New("player is in jail")
 )
 
 // SeatInput is a seated lobby player used to bootstrap a game.
@@ -72,6 +73,12 @@ type PlayerView struct {
 	HubID string `json:"hubId,omitempty"`
 	// HubRevision — bumps on leave/resign; clients send it on enter-hub to ignore stale enters (8.4).
 	HubRevision int64 `json:"hubRevision"`
+	// InJail — sent to Jail (Phase 12.0); false when Just Visiting on the Jail tile.
+	InJail bool `json:"inJail"`
+	// JailTurns — failed exit attempts (Phase 12.1); 0 on entry.
+	JailTurns int `json:"jailTurns"`
+	// GetOutOfJailFree — GOOJF cards held (Phase 12.2+).
+	GetOutOfJailFree int `json:"getOutOfJailFree"`
 }
 
 // LastRollView is the public last-dice snapshot.
@@ -404,6 +411,9 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 	if hasPendingPayment(g) {
 		return nil, ErrMustSettle
 	}
+	if g.Players[playerIdx].InJail {
+		return nil, ErrInJail
+	}
 
 	die1 := rollDie()
 	die2 := rollDie()
@@ -421,11 +431,12 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 	} else {
 		g.DoublesStreak = 0
 	}
+	streakForRoll := g.DoublesStreak
 
 	if isDoubles && g.DoublesStreak >= 3 {
 		thirdDoubles = true
-		to = from
-		g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+		spaces := s.loadSpaces(ctx, g.WorldID)
+		to = sendPlayerToJail(g, playerIdx, spaces)
 	} else {
 		to = (from + total) % gamerepo.BoardSpaceCount
 		passedGo = from+total >= gamerepo.BoardSpaceCount
@@ -455,7 +466,7 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 		PassedGo:      passedGo,
 		PassGoAmount:  passAmt,
 		IsDoubles:     isDoubles,
-		DoublesStreak: g.DoublesStreak,
+		DoublesStreak: streakForRoll,
 		ThirdDoubles:  thirdDoubles,
 	}
 
@@ -1580,17 +1591,20 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 	for i, p := range g.Players {
 		nameByID[p.UserID] = p.Username
 		players[i] = PlayerView{
-			UserID:          p.UserID,
-			Username:        p.Username,
-			SeatIndex:       p.SeatIndex,
-			TurnOrder:       p.TurnOrder,
-			Cash:            p.Cash,
-			BoardIndex:      p.BoardIndex,
-			PinColor:        p.PinColor,
-			Resigned:        p.Resigned,
-			TimeRemainingMs: liveRemainingMs(g, p, now),
-			HubID:           p.HubID,
-			HubRevision:     p.HubRevision,
+			UserID:           p.UserID,
+			Username:         p.Username,
+			SeatIndex:        p.SeatIndex,
+			TurnOrder:        p.TurnOrder,
+			Cash:             p.Cash,
+			BoardIndex:       p.BoardIndex,
+			PinColor:         p.PinColor,
+			Resigned:         p.Resigned,
+			TimeRemainingMs:  liveRemainingMs(g, p, now),
+			HubID:            p.HubID,
+			HubRevision:      p.HubRevision,
+			InJail:           p.InJail,
+			JailTurns:        p.JailTurns,
+			GetOutOfJailFree: p.GetOutOfJailFree,
 		}
 		if !p.Resigned && p.TurnOrder == g.CurrentTurn {
 			currentUserID = p.UserID
@@ -1646,6 +1660,11 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 		canBuy = buyOffer != nil
 	}
 
+	currentInJail := false
+	if idx := currentPlayerIndex(g); idx >= 0 {
+		currentInJail = g.Players[idx].InJail
+	}
+
 	var lastPay *LastPaymentView
 	if g.LastPayment != nil {
 		lastPay = &LastPaymentView{
@@ -1688,7 +1707,7 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 		Currency:        "MeetCoin",
 		TurnPhase:       phase,
 		DoublesStreak:   g.DoublesStreak,
-		CanRoll:         active && phase == gamerepo.TurnPhaseAwaitingRoll && !pending,
+		CanRoll:         active && phase == gamerepo.TurnPhaseAwaitingRoll && !pending && !currentInJail,
 		CanEndTurn:      active && phase == gamerepo.TurnPhaseAwaitingEnd && !pending && buyOffer == nil,
 		CanBuy:          canBuy,
 		BuyOffer:        buyOffer,
@@ -1753,10 +1772,20 @@ func trySettlePendingLocked(g *gamerepo.Game, payerIdx int) {
 }
 
 // resolveLandingLocked auto-collects rent/tax after a move (Phase 6.5).
+// Phase 12.0: land on go_to_jail → Jail (no GO for the teleport); land on jail = Just Visiting.
 func (s *service) resolveLandingLocked(ctx context.Context, g *gamerepo.Game, payerIdx, diceTotal int) {
 	g.PendingPayment = nil
 	spaces := s.loadSpaces(ctx, g.WorldID)
 	boardIndex := g.Players[payerIdx].BoardIndex
+	sp := spaceAt(spaces, boardIndex)
+	if sp != nil && sp.SpecialType == "go_to_jail" {
+		jail := sendPlayerToJail(g, payerIdx, spaces)
+		if g.LastRoll != nil {
+			g.LastRoll.ToIndex = jail
+		}
+		return
+	}
+
 	payerID := g.Players[payerIdx].UserID
 	amount, toUserID, kind, spaceName := rentDueForLanding(
 		spaces, g.Deeds, boardIndex, payerID, diceTotal,
@@ -1807,4 +1836,30 @@ func (s *service) resolveLandingLocked(ctx context.Context, g *gamerepo.Game, pa
 		// Can't continue turn (incl. doubles re-roll) until settled / resign.
 		g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
 	}
+}
+
+// jailBoardIndex returns the Jail / Just Visiting space, defaulting to classic index 10.
+func jailBoardIndex(spaces []Space) int {
+	for _, sp := range spaces {
+		if sp.SpecialType == "jail" {
+			return sp.BoardIndex
+		}
+	}
+	return gamerepo.JailBoardIndex
+}
+
+// sendPlayerToJail moves the player to Jail, flags inJail, ends the turn, clears doubles streak.
+// Does not award Pass GO for the teleport (Phase 12.0).
+func sendPlayerToJail(g *gamerepo.Game, playerIdx int, spaces []Space) int {
+	jail := jailBoardIndex(spaces)
+	if playerIdx < 0 || playerIdx >= len(g.Players) {
+		return jail
+	}
+	g.Players[playerIdx].BoardIndex = jail
+	g.Players[playerIdx].InJail = true
+	g.Players[playerIdx].JailTurns = 0
+	g.DoublesStreak = 0
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	g.PendingPayment = nil
+	return jail
 }

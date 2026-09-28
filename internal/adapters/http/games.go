@@ -279,6 +279,8 @@ func mapGameError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "must_settle", "Settle rent or tax before continuing (resign if you cannot pay)")
 	case errors.Is(err, gamesvc.ErrMustBuy):
 		writeError(w, http.StatusConflict, "must_buy", "Buy this property before ending your turn (auction comes later)")
+	case errors.Is(err, gamesvc.ErrInJail):
+		writeError(w, http.StatusConflict, "in_jail", "You are in Jail — exit options come in a later update")
 	case errors.Is(err, gamesvc.ErrInvalidPinColor):
 		writeError(w, http.StatusBadRequest, "invalid_pin_color", "pinColor must be #RRGGBB")
 	case errors.Is(err, gamesvc.ErrInvalidHubID):

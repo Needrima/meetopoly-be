@@ -999,7 +999,7 @@ Manual (2 clients preferred; BE running; landscape):
 
 ---
 
-### Phase 11 — Rules M2 (houses / hotels / light mortgage) — NEXT
+### Phase 11 — Rules M2 (houses / hotels / light mortgage) — DONE
 
 **Official alignment:** even-build across a color group; max 4 houses then hotel; sell buildings back at half price; cannot build if any deed in the set is mortgaged; house shortage → auction for last houses (**→ Phase 13**, not here).
 
@@ -1027,22 +1027,129 @@ Manual (2 clients preferred; BE running; landscape):
 | **11.4a** | ✅ Dock icons wired (dice/end/hub); opacity disabled; text Roll/End/Enter removed                                                                                                                     | Economy CTA bar, markers              |
 | **11.4b** | ✅ Economy CTA bar + mode → how-to sheet → highlight → tap → API; TRADE stub                                                                                                                          | House/hotel/M markers                 |
 | **11.4c** | ✅ House / hotel / M markers on tiles                                                                                                                                                                 | Hub rebuild UI                        |
-| **11.5**  | Smoke checklist for M2 path                                                                                                                                                                           | Jail/cards (12), auction (13)         |
+| **11.5**  | ✅ Smoke checklist for M2 path documented (+ `go test ./internal/services/game/` green)                                                                                | Jail/cards (12), auction (13)         |
+
+**11.5 — smoke checklist (Phase 11 / M2 close)**
+
+Manual (2 clients preferred; BE running; landscape). Backend gate: `cd meetopoly-be && go test ./internal/services/game/ -count=1`.
+
+**A. Data + rent (11.0)**
+
+1. Owned undeveloped monopoly → rent is **2×** site (`Rents[0]`).
+2. Build 1+ houses with monopoly → rent uses `Rents[houses]` (hotel = tier 5).
+3. Mortgaged deed → **0** rent when landed on.
+
+**B. APIs (11.1–11.3)** — covered by unit tests; spot-check in play:
+
+1. Build only on your turn; even-build; full color group; cash ≥ `houseCost`; blocked if set mortgaged or `pendingPayment`.
+2. Sell one step; refund `floor(houseCost/2)`; even-sell; allowed during `pendingPayment`.
+3. Mortgage `floor(price/2)` only with **0** houses on the color group; redeem = mortgage + 10%; redeem blocked while pending; mortgage OK while pending.
+
+**C. Dock + must-buy (11.4a + interim)**
+
+1. Dice / End / Hub ~48px green boxes; full opacity when usable / ~0.35 when not; no Roll/End/Enter text buttons.
+2. Land unowned buyable → buy modal non-dismissible; End dimmed; no “skip” hint; Buy then End works.
+3. Hub nearby → Hub icon active; tap enters hub.
+
+**D. Economy UI (11.4b)**
+
+1. Your turn: Build / Sell / Mortgage / Redeem / Trade above dock; Trade always dim.
+2. Off-turn: CTAs visible but dim.
+3. Tap Build → how-to sheet (brand green header + Close, sized to board free center − 12px); eligible tiles glow + amount; others dim.
+4. **Close exits mode** (sheet + dim/highlight clear). Toggle same CTA also exits.
+5. Tap eligible tile → one API step; markers/cash update via WS for both clients.
+6. Sell / Mortgage / Redeem modes same pattern.
+
+**E. Markers (11.4c)**
+
+1. Houses 1–4 → green home icons on color-band edge.
+2. Hotel (5) → single red hotel icon.
+3. Mortgaged → black **M** badge (no houses).
+4. Peer sees your markers update without reload.
+
+**F. Raise funds (optional)**
+
+1. Insufficient rent → `pendingPayment`; cannot Roll/End/Build/Redeem; Sell + Mortgage still work; after cash covers debt, turn continues.
 
 **Exit criteria**
 
 - [x] Even-build enforced server-side (11.1); even-sell (11.2)
 - [x] UI to buy/sell houses (and hotels) — mode + tap (11.4b); markers (11.4c)
 - [x] Light mortgage + redeem; mortgaged set blocks build
-- [x] **11.0** … **11.4c** ticked; **11.5** pending
+- [x] **11.0** … **11.5** ticked — Phase 11 M2 closed (house-shortage auction → **13**)
 
 ---
 
 ### Phase 12 — Rules M3 (jail + cards)
 
-**Official alignment:** Go to Jail (land / card / three doubles); Just Visiting vs in Jail; exit via $50, Get Out of Jail Free, or doubles within 3 turns; Chance / Community Chest decks; Free Parking stays a noop.
+**Official alignment:** Go to Jail (land / card / three doubles); Just Visiting vs in Jail; exit via **100 MeetCoin**, Get Out of Jail Free, or doubles within 3 turns; Chance / Community Chest decks; Free Parking stays a noop.
 
 **Exit criteria:** Jail entry/exit paths; Chance/Community Chest deck from config or seed.
+
+**Locked**
+
+- Ship **one sub-slice at a time** — ask before each.
+- Jail fine = **100 MeetCoin** (not classic 50) — **12.1**.
+- Cards = **Chance** + **Community Chest** only (classic US effect set below; Meetopoly-flavored copy OK later).
+- Free Parking stays **noop**.
+- `GamePlayer`: `inJail`, `jailTurns`, `getOutOfJailFree` (schema in **12.0**; exit / draw later).
+- Jail board index = seed `specialType: jail` (classic **10**); Go to Jail = `go_to_jail` (classic **30**).
+- Teleport to Jail does **not** collect Pass GO; turn ends (`awaiting_end`); doubles streak cleared.
+- While `inJail`, `canRoll` false / `ErrInJail` until exit (**12.1**) — softlock on next turn until 12.1 ships.
+
+**Sub-slices**
+
+| Slice    | Done when                                                                                                                                                         | Avoid                    |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| **12.0** | ✅ Player jail fields; land **Go to Jail** + **third doubles** → Jail; land Jail = Just Visiting; OpenAPI 0.20 + mobile types                                    | Exit APIs, card decks, UI |
+| **12.1** | Jail exit: pay **100** MeetCoin, roll doubles (free), or fail 3 attempts then must pay; WS fan-out                                                              | Cards, fancy UI          |
+| **12.2** | Chance + Community Chest decks from seed/config; shuffle + draw on land; persist remaining decks on game                                                         | Full effect matrix       |
+| **12.3** | Card effects (table below): cash, move/GO, Jail, GOOJF, repairs, nearest RR/utility                                                                              | Trade of GOOJF (→ 13)    |
+| **12.4** | Board UI: jail action sheet + card reveal modal (hub = toast / notify like other economy)                                                                        | Auction/trade            |
+| **12.5** | Smoke checklist                                                                                                                                                  | —                        |
+
+**Chance / Community Chest deck (locked for 12.2–12.3)**
+
+| Deck | Card | What happens |
+| --- | --- | --- |
+| Chance | Advance to GO | Collect $200 |
+| Chance | Advance to Illinois Avenue | Move to Illinois Avenue; collect $200 if passing GO |
+| Chance | Advance to St. Charles Place | Move there; collect $200 if passing GO |
+| Chance | Advance to nearest Railroad | Move to nearest railroad; pay double rent if owned |
+| Chance | Advance to nearest Utility | Move to nearest utility; rent is 10× the dice roll if owned |
+| Chance | Bank pays you dividend | Collect $50 |
+| Chance | Get Out of Jail Free | Keep until needed or trade/sell |
+| Chance | Go Back 3 Spaces | Move back 3 spaces |
+| Chance | Go directly to Jail | Go to Jail; do not collect $200 |
+| Chance | Repairs assessment | Pay $25 per house and $100 per hotel |
+| Chance | Speeding fine | Pay $15 |
+| Chance | Building loan matures | Collect $150 |
+| Chance | Elected chairman | Pay each player $50 |
+| Chance | Crossword competition | Collect $100 |
+| Community Chest | Advance to GO | Collect $200 |
+| Community Chest | Bank error in your favor | Collect $200 |
+| Community Chest | Doctor's fees | Pay $50 |
+| Community Chest | Sale of stock | Collect $50 |
+| Community Chest | Get Out of Jail Free | Keep until needed or trade/sell |
+| Community Chest | Go directly to Jail | Go to Jail; do not collect $200 |
+| Community Chest | Holiday fund matures | Collect $100 |
+| Community Chest | Income tax refund | Collect $20 |
+| Community Chest | Birthday | Collect $10 from every player |
+| Community Chest | Life insurance matures | Collect $100 |
+| Community Chest | Hospital fees | Pay $100 |
+| Community Chest | School fees | Pay $50 |
+| Community Chest | Consultancy fee | Collect $25 |
+| Community Chest | Street repairs | Pay $40 per house and $115 per hotel |
+| Community Chest | Beauty contest | Collect $10 |
+| Community Chest | Inheritance | Collect $100 |
+
+Amounts above are MeetCoin 1:1 with classic dollars. Named properties map to world board indices (ask at 12.3 if a world lacks Illinois / St. Charles equivalents).
+
+**12.0 notes**
+
+- Third doubles no longer “skip move only” — pin → Jail + `inJail`.
+- Land `go_to_jail` after normal move (Pass GO on the walk still applies) then teleport to Jail.
+- Exit pay / doubles / GOOJF → **12.1**; card draw → **12.2+**; UI → **12.4**.
 
 ---
 
@@ -1241,4 +1348,7 @@ Only when the user asks:
 | 2026-09-28 | **Must-buy interim:** `canEndTurn` false + `ErrMustBuy` while `buyOffer` open; board buy modal non-dismissible; drop “Or End turn to skip” (auction → 13)                                                                                   |
 | 2026-09-28 | **11.4b:** economy CTA bar above dock; mode + how-to sheet; eligible highlight + tap → build/sell/mortgage/redeem; TRADE stub; markers → 11.4c                                                                                            |
 | 2026-09-28 | **11.4c:** house (1–4) / hotel (5) / M markers on color-band edge from `game.deeds`                                                                                                                     |
+| 2026-09-28 | **11.5:** M2 smoke checklist (dock/must-buy/economy/markers/raise-funds); `go test ./internal/services/game/` green; Phase 11 DONE (auction shortage → 13)                                              |
+| 2026-09-28 | **Phase 12 split:** 12.0–12.5 jail + Chance/Chest; jail fine **100** MeetCoin; classic card table locked for 12.2–12.3; ask before each slice                                                         |
+| 2026-09-28 | **12.0:** `inJail` / `jailTurns` / `getOutOfJailFree`; Go to Jail + third doubles → Jail; Just Visiting; OpenAPI 0.20; exit → 12.1                                                                  |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

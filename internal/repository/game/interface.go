@@ -12,6 +12,7 @@ const (
 	StartingCash    = 2000
 	PassGoBonus     = 200
 	GoBoardIndex    = 0
+	JailBoardIndex  = 10 // classic Jail / Just Visiting; worlds seed specialType "jail"
 	BoardSpaceCount = 40
 
 	// TimeBankDuration — Phase 6.3b per-player bank (drains on their turn only).
@@ -40,6 +41,12 @@ type Player struct {
 	Resigned bool `bson:"resigned,omitempty" json:"resigned,omitempty"`
 	// TimeRemainingMs — personal time left when their clock was last paused (Phase 6.3b).
 	TimeRemainingMs int64 `bson:"timeRemainingMs" json:"timeRemainingMs"`
+	// InJail — true when sent to Jail (Go to Jail / third doubles / card). Land on Jail without this = Just Visiting (Phase 12.0).
+	InJail bool `bson:"inJail,omitempty" json:"inJail,omitempty"`
+	// JailTurns — failed exit attempts while in Jail (Phase 12.1); 0 on entry.
+	JailTurns int `bson:"jailTurns,omitempty" json:"jailTurns,omitempty"`
+	// GetOutOfJailFree — Chance/Chest GOOJF cards held (Phase 12.2+); 0 until cards.
+	GetOutOfJailFree int `bson:"getOutOfJailFree,omitempty" json:"getOutOfJailFree,omitempty"`
 }
 
 // Deed is ownership of a buyable board space (Phase 6.4+).
@@ -86,7 +93,7 @@ type LastRoll struct {
 	PassGoAmount  int    `bson:"passGoAmount,omitempty" json:"passGoAmount,omitempty"`
 	IsDoubles     bool   `bson:"isDoubles" json:"isDoubles"`
 	DoublesStreak int    `bson:"doublesStreak" json:"doublesStreak"`
-	// ThirdDoubles — rolled doubles three times; movement skipped (Jail in Phase 12 / M3).
+	// ThirdDoubles — rolled doubles three times; sent to Jail (Phase 12.0).
 	ThirdDoubles bool `bson:"thirdDoubles,omitempty" json:"thirdDoubles,omitempty"`
 }
 

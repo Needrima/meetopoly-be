@@ -166,6 +166,7 @@ func TestThirdDoublesSkipsMoveAndRequiresEnd(t *testing.T) {
 		}
 		cur.DoublesStreak = 2
 		cur.Players[0].BoardIndex = 10
+		cur.Players[0].InJail = false
 		cur.CurrentTurn = 0
 		_ = repo.Update(context.Background(), cur)
 
@@ -184,11 +185,124 @@ func TestThirdDoublesSkipsMoveAndRequiresEnd(t *testing.T) {
 	if !view.LastRoll.ThirdDoubles {
 		t.Fatal("expected thirdDoubles")
 	}
-	if view.Players[0].BoardIndex != 10 {
-		t.Fatalf("should not move on third doubles, got %d", view.Players[0].BoardIndex)
+	if view.Players[0].BoardIndex != gamerepo.JailBoardIndex {
+		t.Fatalf("should be on Jail after third doubles, got %d", view.Players[0].BoardIndex)
+	}
+	if !view.Players[0].InJail {
+		t.Fatal("expected inJail after third doubles")
+	}
+	if view.Players[0].JailTurns != 0 {
+		t.Fatalf("jailTurns=%d want 0", view.Players[0].JailTurns)
+	}
+	if view.LastRoll.ToIndex != gamerepo.JailBoardIndex {
+		t.Fatalf("lastRoll.toIndex=%d want jail", view.LastRoll.ToIndex)
+	}
+	if view.LastRoll.DoublesStreak != 3 {
+		t.Fatalf("doublesStreak on lastRoll=%d want 3", view.LastRoll.DoublesStreak)
+	}
+	if view.DoublesStreak != 0 {
+		t.Fatalf("game doublesStreak=%d want 0 after jail", view.DoublesStreak)
 	}
 	if !view.CanEndTurn {
 		t.Fatal("must end after third doubles")
+	}
+	if view.CanRoll {
+		t.Fatal("cannot roll after third doubles")
+	}
+}
+
+func TestGoToJailLandingSendsToJail(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 10, Slug: "jail", Name: "Jail", Kind: "special", SpecialType: "jail"},
+		{BoardIndex: 30, Slug: "go-to-jail", Name: "Go to Jail", Kind: "special", SpecialType: "go_to_jail"},
+	}
+	svc := New(repo, spaces, Config{}).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 30
+	g.Players[0].Cash = 2000
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+	g.DoublesStreak = 1
+	g.LastRoll = &gamerepo.LastRoll{
+		UserID: "a", Username: "A", Die1: 1, Die2: 2, Total: 3,
+		FromIndex: 27, ToIndex: 30, DoublesStreak: 1,
+	}
+	_ = repo.Update(context.Background(), g)
+
+	g, _ = repo.FindByID(context.Background(), "g1")
+	svc.resolveLandingLocked(context.Background(), g, 0, 3)
+	_ = repo.Update(context.Background(), g)
+
+	view := svc.viewOf(context.Background(), g)
+	if view.Players[0].BoardIndex != 10 {
+		t.Fatalf("boardIndex=%d want 10", view.Players[0].BoardIndex)
+	}
+	if !view.Players[0].InJail {
+		t.Fatal("expected inJail")
+	}
+	if view.TurnPhase != gamerepo.TurnPhaseAwaitingEnd {
+		t.Fatalf("phase=%s", view.TurnPhase)
+	}
+	if view.DoublesStreak != 0 {
+		t.Fatalf("doublesStreak=%d want 0", view.DoublesStreak)
+	}
+	if view.LastRoll == nil || view.LastRoll.ToIndex != 10 {
+		t.Fatalf("lastRoll.toIndex=%v", view.LastRoll)
+	}
+	if view.Players[0].Cash != 2000 {
+		t.Fatalf("cash=%d — teleport must not award GO", view.Players[0].Cash)
+	}
+}
+
+func TestJailJustVisitingDoesNotJail(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 10, Slug: "jail", Name: "Jail", Kind: "special", SpecialType: "jail"},
+	}
+	svc := New(repo, spaces, Config{}).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 10
+	g.Players[0].InJail = false
+	g.LastRoll = &gamerepo.LastRoll{
+		UserID: "a", Username: "A", Die1: 2, Die2: 3, Total: 5,
+		FromIndex: 5, ToIndex: 10,
+	}
+	svc.resolveLandingLocked(context.Background(), g, 0, 5)
+
+	if g.Players[0].InJail {
+		t.Fatal("Just Visiting must not set inJail")
+	}
+	if g.Players[0].BoardIndex != 10 {
+		t.Fatalf("boardIndex=%d", g.Players[0].BoardIndex)
+	}
+}
+
+func TestRollBlockedWhileInJail(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, nil, Config{})
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = gamerepo.JailBoardIndex
+	g.Players[0].InJail = true
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.Get(context.Background(), "g1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.CanRoll {
+		t.Fatal("CanRoll should be false while inJail")
+	}
+
+	_, err = svc.Roll(context.Background(), "g1", "a")
+	if !errors.Is(err, ErrInJail) {
+		t.Fatalf("err=%v want ErrInJail", err)
 	}
 }
 
