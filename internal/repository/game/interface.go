@@ -14,6 +14,10 @@ const (
 	GoBoardIndex    = 0
 	JailBoardIndex  = 10 // classic Jail / Just Visiting; worlds seed specialType "jail"
 	BoardSpaceCount = 40
+	// JailFine — MeetCoin to leave Jail by paying (Phase 12.1).
+	JailFine = 100
+	// MaxJailAttempts — failed doubles tries before fine is required (Phase 12.1).
+	MaxJailAttempts = 3
 
 	// TimeBankDuration — Phase 6.3b per-player bank (drains on their turn only).
 	TimeBankDuration = 45 * time.Minute

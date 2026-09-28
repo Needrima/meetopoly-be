@@ -1095,14 +1095,15 @@ Manual (2 clients preferred; BE running; landscape). Backend gate: `cd meetopoly
 - `GamePlayer`: `inJail`, `jailTurns`, `getOutOfJailFree` (schema in **12.0**; exit / draw later).
 - Jail board index = seed `specialType: jail` (classic **10**); Go to Jail = `go_to_jail` (classic **30**).
 - Teleport to Jail does **not** collect Pass GO; turn ends (`awaiting_end`); doubles streak cleared.
-- While `inJail`, `canRoll` false / `ErrInJail` until exit (**12.1**) — softlock on next turn until 12.1 ships.
+- While `inJail`, Roll tries doubles exit (**12.1**); after 3 failed attempts without cash for the fine, `canRoll` false until pay/card.
+- Jail fine = **100** MeetCoin via `POST /games/{id}/pay-jail-fine`; GOOJF via `POST /games/{id}/use-jail-card` (cards drawn in 12.2+).
 
 **Sub-slices**
 
 | Slice    | Done when                                                                                                                                                         | Avoid                    |
 | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
 | **12.0** | ✅ Player jail fields; land **Go to Jail** + **third doubles** → Jail; land Jail = Just Visiting; OpenAPI 0.20 + mobile types                                    | Exit APIs, card decks, UI |
-| **12.1** | Jail exit: pay **100** MeetCoin, roll doubles (free), or fail 3 attempts then must pay; WS fan-out                                                              | Cards, fancy UI          |
+| **12.1** | ✅ Jail exit: pay **100** MeetCoin (`POST .../pay-jail-fine`), GOOJF (`POST .../use-jail-card`), roll doubles (free + move, no re-roll), or fail 3 then forced pay+move (if broke stay until pay); OpenAPI 0.21 | Card decks, fancy UI |
 | **12.2** | Chance + Community Chest decks from seed/config; shuffle + draw on land; persist remaining decks on game                                                         | Full effect matrix       |
 | **12.3** | Card effects (table below): cash, move/GO, Jail, GOOJF, repairs, nearest RR/utility                                                                              | Trade of GOOJF (→ 13)    |
 | **12.4** | Board UI: jail action sheet + card reveal modal (hub = toast / notify like other economy)                                                                        | Auction/trade            |
@@ -1149,7 +1150,15 @@ Amounts above are MeetCoin 1:1 with classic dollars. Named properties map to wor
 
 - Third doubles no longer “skip move only” — pin → Jail + `inJail`.
 - Land `go_to_jail` after normal move (Pass GO on the walk still applies) then teleport to Jail.
-- Exit pay / doubles / GOOJF → **12.1**; card draw → **12.2+**; UI → **12.4**.
+
+**12.1 notes**
+
+- Pay / use card → leave Jail, `awaiting_roll`, then normal Roll to move (pin stays on Jail until then).
+- Doubles from Jail → leave + move that total, **no** extra re-roll (`awaiting_end`).
+- Failures 1–2 → `jailTurns++`, stay in Jail, End turn.
+- Fail 3 with cash ≥ 100 → auto fine + leave + move.
+- Fail 3 with cash < 100 → `jailTurns=3`, stay in Jail until pay/card (then Roll next).
+- Board jail sheet UI → **12.4**.
 
 ---
 
@@ -1351,4 +1360,5 @@ Only when the user asks:
 | 2026-09-28 | **11.5:** M2 smoke checklist (dock/must-buy/economy/markers/raise-funds); `go test ./internal/services/game/` green; Phase 11 DONE (auction shortage → 13)                                              |
 | 2026-09-28 | **Phase 12 split:** 12.0–12.5 jail + Chance/Chest; jail fine **100** MeetCoin; classic card table locked for 12.2–12.3; ask before each slice                                                         |
 | 2026-09-28 | **12.0:** `inJail` / `jailTurns` / `getOutOfJailFree`; Go to Jail + third doubles → Jail; Just Visiting; OpenAPI 0.20; exit → 12.1                                                                  |
+| 2026-09-28 | **12.1:** pay-jail-fine (100) + use-jail-card; roll-from-jail doubles / 3-fail forced pay; `canPayJailFine` / `canUseJailCard`; OpenAPI 0.21; UI → 12.4                                              |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

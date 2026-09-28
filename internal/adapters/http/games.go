@@ -181,6 +181,40 @@ func handleRedeem(games gamesvc.Service) http.HandlerFunc {
 	}
 }
 
+func handlePayJailFine(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		view, err := games.PayJailFine(r.Context(), gameID, userID)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
+func handleUseJailCard(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		view, err := games.UseJailCard(r.Context(), gameID, userID)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
 type setPinColorRequest struct {
 	PinColor string `json:"pinColor"`
 }
@@ -280,7 +314,13 @@ func mapGameError(w http.ResponseWriter, err error) {
 	case errors.Is(err, gamesvc.ErrMustBuy):
 		writeError(w, http.StatusConflict, "must_buy", "Buy this property before ending your turn (auction comes later)")
 	case errors.Is(err, gamesvc.ErrInJail):
-		writeError(w, http.StatusConflict, "in_jail", "You are in Jail — exit options come in a later update")
+		writeError(w, http.StatusConflict, "in_jail", "You are in Jail")
+	case errors.Is(err, gamesvc.ErrMustLeaveJail):
+		writeError(w, http.StatusConflict, "must_leave_jail", "Pay the jail fine or use a Get Out of Jail Free card")
+	case errors.Is(err, gamesvc.ErrNotInJail):
+		writeError(w, http.StatusConflict, "not_in_jail", "You are not in Jail")
+	case errors.Is(err, gamesvc.ErrNoJailCard):
+		writeError(w, http.StatusConflict, "no_jail_card", "You have no Get Out of Jail Free card")
 	case errors.Is(err, gamesvc.ErrInvalidPinColor):
 		writeError(w, http.StatusBadRequest, "invalid_pin_color", "pinColor must be #RRGGBB")
 	case errors.Is(err, gamesvc.ErrInvalidHubID):

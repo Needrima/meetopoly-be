@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.20.0
+  version: 0.21.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -1094,6 +1094,110 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /games/{gameId}/pay-jail-fine:
+    post:
+      operationId: payJailFine
+      summary: Pay 100 MeetCoin to leave Jail
+      description: |
+        Phase 12.1 — current player only, while `inJail`. Deducts **100** MeetCoin,
+        clears `inJail` / `jailTurns`, sets `turnPhase` to `awaiting_roll` so they
+        can Roll and move. Does not move the pin by itself.
+        Fans out via WebSocket `state`.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: |
+            Not your turn, not in jail, must settle, cannot afford, or inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /games/{gameId}/use-jail-card:
+    post:
+      operationId: useJailCard
+      summary: Use a Get Out of Jail Free card
+      description: |
+        Phase 12.1 — current player only, while `inJail` and `getOutOfJailFree` ≥ 1.
+        Decrements the card count, leaves Jail, sets `awaiting_roll` (then Roll to move).
+        Cards are drawn in Phase 12.2+; this endpoint is ready when a card is held.
+        Fans out via WebSocket `state`.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: |
+            Not your turn, not in jail, no card, must settle, or inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /games/{gameId}/pin-color:
     post:
       operationId: setPinColor
@@ -1955,7 +2059,7 @@ components:
       properties:
         kind:
           type: string
-          enum: [rent, tax]
+          enum: [rent, tax, jail_fine]
         fromUserId:
           type: string
         fromUsername:
@@ -2040,6 +2144,8 @@ components:
         - canRoll
         - canEndTurn
         - canBuy
+        - canPayJailFine
+        - canUseJailCard
         - deeds
       properties:
         id:
@@ -2075,11 +2181,22 @@ components:
           type: integer
         canRoll:
           type: boolean
+          description: |
+            Phase 12.1 — while in Jail, true only if jailTurns < 3 (try doubles).
+            After 3 failed attempts, false until pay/card.
         canEndTurn:
           type: boolean
         canBuy:
           type: boolean
           description: Current player may buy the space they just landed on (Phase 6.4)
+        canPayJailFine:
+          type: boolean
+          description: |
+            Phase 12.1 — current player is in Jail, can afford 100 MeetCoin, and may pay to leave.
+        canUseJailCard:
+          type: boolean
+          description: |
+            Phase 12.1 — current player is in Jail and holds at least one Get Out of Jail Free card.
         buyOffer:
           nullable: true
           allOf:

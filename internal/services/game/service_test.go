@@ -289,6 +289,7 @@ func TestRollBlockedWhileInJail(t *testing.T) {
 	g, _ := repo.FindByID(context.Background(), "g1")
 	g.Players[0].BoardIndex = gamerepo.JailBoardIndex
 	g.Players[0].InJail = true
+	g.Players[0].JailTurns = 0
 	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
 	_ = repo.Update(context.Background(), g)
 
@@ -296,13 +297,239 @@ func TestRollBlockedWhileInJail(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if view.CanRoll {
-		t.Fatal("CanRoll should be false while inJail")
+	if !view.CanRoll {
+		t.Fatal("CanRoll should be true while inJail with jailTurns < 3")
+	}
+	if !view.CanPayJailFine {
+		t.Fatal("CanPayJailFine expected with cash >= 100")
+	}
+}
+
+func TestPayJailFineLeavesJail(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, nil, Config{})
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = gamerepo.JailBoardIndex
+	g.Players[0].InJail = true
+	g.Players[0].JailTurns = 2
+	g.Players[0].Cash = 2000
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.PayJailFine(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Players[0].InJail {
+		t.Fatal("expected out of jail")
+	}
+	if view.Players[0].Cash != 1900 {
+		t.Fatalf("cash=%d want 1900", view.Players[0].Cash)
+	}
+	if view.Players[0].BoardIndex != gamerepo.JailBoardIndex {
+		t.Fatalf("pin should stay on jail until roll, got %d", view.Players[0].BoardIndex)
+	}
+	if view.TurnPhase != gamerepo.TurnPhaseAwaitingRoll {
+		t.Fatalf("phase=%s", view.TurnPhase)
+	}
+	if !view.CanRoll || view.CanPayJailFine {
+		t.Fatalf("canRoll=%v canPay=%v", view.CanRoll, view.CanPayJailFine)
+	}
+	if view.LastPayment == nil || view.LastPayment.Kind != "jail_fine" || view.LastPayment.Amount != 100 {
+		t.Fatalf("lastPayment=%v", view.LastPayment)
+	}
+}
+
+func TestUseJailCardLeavesJail(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, nil, Config{})
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].InJail = true
+	g.Players[0].GetOutOfJailFree = 1
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.UseJailCard(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Players[0].InJail || view.Players[0].GetOutOfJailFree != 0 {
+		t.Fatalf("inJail=%v cards=%d", view.Players[0].InJail, view.Players[0].GetOutOfJailFree)
+	}
+	if view.TurnPhase != gamerepo.TurnPhaseAwaitingRoll {
+		t.Fatalf("phase=%s", view.TurnPhase)
+	}
+}
+
+func TestJailDoublesExitMoves(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, nil, Config{})
+	seedTwoPlayer(t, repo)
+
+	found := false
+	for i := 0; i < 80; i++ {
+		g, _ := repo.FindByID(context.Background(), "g1")
+		g.Players[0].BoardIndex = gamerepo.JailBoardIndex
+		g.Players[0].InJail = true
+		g.Players[0].JailTurns = 0
+		g.Players[0].Cash = 2000
+		g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+		g.CurrentTurn = 0
+		g.DoublesStreak = 0
+		_ = repo.Update(context.Background(), g)
+
+		view, err := svc.Roll(context.Background(), "g1", "a")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !view.LastRoll.IsDoubles {
+			continue
+		}
+		found = true
+		if view.Players[0].InJail {
+			t.Fatal("doubles should leave jail")
+		}
+		want := (gamerepo.JailBoardIndex + view.LastRoll.Total) % 40
+		if view.Players[0].BoardIndex != want {
+			t.Fatalf("board=%d want %d", view.Players[0].BoardIndex, want)
+		}
+		if view.TurnPhase != gamerepo.TurnPhaseAwaitingEnd {
+			t.Fatalf("no re-roll after jail doubles, phase=%s", view.TurnPhase)
+		}
+		break
+	}
+	if !found {
+		t.Fatal("no doubles from jail")
+	}
+}
+
+func TestJailFailedAttemptsThenForcedPay(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, nil, Config{})
+	seedTwoPlayer(t, repo)
+
+	// Two failed non-doubles attempts
+	for attempt := 1; attempt <= 2; attempt++ {
+		got := false
+		for i := 0; i < 80; i++ {
+			g, _ := repo.FindByID(context.Background(), "g1")
+			g.Players[0].BoardIndex = gamerepo.JailBoardIndex
+			g.Players[0].InJail = true
+			g.Players[0].JailTurns = attempt - 1
+			g.Players[0].Cash = 2000
+			g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+			g.CurrentTurn = 0
+			_ = repo.Update(context.Background(), g)
+
+			view, err := svc.Roll(context.Background(), "g1", "a")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if view.LastRoll.IsDoubles {
+				continue
+			}
+			got = true
+			if !view.Players[0].InJail {
+				t.Fatal("should stay in jail")
+			}
+			if view.Players[0].JailTurns != attempt {
+				t.Fatalf("jailTurns=%d want %d", view.Players[0].JailTurns, attempt)
+			}
+			if view.TurnPhase != gamerepo.TurnPhaseAwaitingEnd {
+				t.Fatalf("phase=%s", view.TurnPhase)
+			}
+			break
+		}
+		if !got {
+			t.Fatalf("no non-doubles for attempt %d", attempt)
+		}
 	}
 
-	_, err = svc.Roll(context.Background(), "g1", "a")
-	if !errors.Is(err, ErrInJail) {
-		t.Fatalf("err=%v want ErrInJail", err)
+	// Third fail with cash → pay + move
+	got := false
+	for i := 0; i < 80; i++ {
+		g, _ := repo.FindByID(context.Background(), "g1")
+		g.Players[0].BoardIndex = gamerepo.JailBoardIndex
+		g.Players[0].InJail = true
+		g.Players[0].JailTurns = 2
+		g.Players[0].Cash = 2000
+		g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+		g.CurrentTurn = 0
+		_ = repo.Update(context.Background(), g)
+
+		view, err := svc.Roll(context.Background(), "g1", "a")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if view.LastRoll.IsDoubles {
+			continue
+		}
+		got = true
+		if view.Players[0].InJail {
+			t.Fatal("third fail with cash should leave jail")
+		}
+		if view.Players[0].Cash != 1900 {
+			t.Fatalf("cash=%d want 1900", view.Players[0].Cash)
+		}
+		want := (gamerepo.JailBoardIndex + view.LastRoll.Total) % 40
+		if view.Players[0].BoardIndex != want {
+			t.Fatalf("board=%d want %d", view.Players[0].BoardIndex, want)
+		}
+		break
+	}
+	if !got {
+		t.Fatal("no non-doubles on third attempt")
+	}
+}
+
+func TestJailThirdFailBrokeRequiresPay(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, nil, Config{})
+	seedTwoPlayer(t, repo)
+
+	got := false
+	for i := 0; i < 80; i++ {
+		g, _ := repo.FindByID(context.Background(), "g1")
+		g.Players[0].BoardIndex = gamerepo.JailBoardIndex
+		g.Players[0].InJail = true
+		g.Players[0].JailTurns = 2
+		g.Players[0].Cash = 50
+		g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+		g.CurrentTurn = 0
+		_ = repo.Update(context.Background(), g)
+
+		view, err := svc.Roll(context.Background(), "g1", "a")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if view.LastRoll.IsDoubles {
+			continue
+		}
+		got = true
+		if !view.Players[0].InJail || view.Players[0].JailTurns != 3 {
+			t.Fatalf("inJail=%v turns=%d", view.Players[0].InJail, view.Players[0].JailTurns)
+		}
+		if view.Players[0].Cash != 50 {
+			t.Fatalf("cash should be unchanged, got %d", view.Players[0].Cash)
+		}
+		if view.CanRoll {
+			t.Fatal("CanRoll false until pay after 3 fails")
+		}
+		_, err = svc.Roll(context.Background(), "g1", "a")
+		if !errors.Is(err, ErrMustLeaveJail) && !errors.Is(err, ErrMustEndTurn) {
+			// awaiting_end so must end first
+			if view.TurnPhase == gamerepo.TurnPhaseAwaitingEnd && !errors.Is(err, ErrMustEndTurn) {
+				t.Fatalf("err=%v", err)
+			}
+		}
+		break
+	}
+	if !got {
+		t.Fatal("no non-doubles")
 	}
 }
 

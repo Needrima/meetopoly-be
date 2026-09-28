@@ -46,6 +46,9 @@ var (
 	ErrMustSellBuildings = errors.New("sell all buildings on the color group before mortgaging")
 	ErrCannotMortgage    = errors.New("space cannot be mortgaged")
 	ErrInJail            = errors.New("player is in jail")
+	ErrNotInJail         = errors.New("player is not in jail")
+	ErrNoJailCard        = errors.New("no get out of jail free card")
+	ErrMustLeaveJail     = errors.New("must pay jail fine or use get out of jail free card")
 )
 
 // SeatInput is a seated lobby player used to bootstrap a game.
@@ -140,28 +143,32 @@ type PendingPaymentView struct {
 
 // View is the public game snapshot.
 type View struct {
-	ID              string              `json:"id"`
-	TableID         string              `json:"tableId"`
-	WorldID         string              `json:"worldId"`
-	Status          string              `json:"status"`
-	Players         []PlayerView        `json:"players"`
-	CurrentTurn     int                 `json:"currentTurn"`
-	CurrentUserID   string              `json:"currentUserId"`
-	CurrentUsername string              `json:"currentUsername"`
-	PassGoBonus     int                 `json:"passGoBonus"`
-	Currency        string              `json:"currency"`
-	TurnPhase       string              `json:"turnPhase"`
-	DoublesStreak   int                 `json:"doublesStreak"`
-	CanRoll         bool                `json:"canRoll"`
-	CanEndTurn      bool                `json:"canEndTurn"`
-	CanBuy          bool                `json:"canBuy"`
-	BuyOffer        *BuyOfferView       `json:"buyOffer"`
-	Deeds           []DeedView          `json:"deeds"`
-	LastRoll        *LastRollView       `json:"lastRoll"`
-	LastPayment     *LastPaymentView    `json:"lastPayment,omitempty"`
-	PendingPayment  *PendingPaymentView `json:"pendingPayment,omitempty"`
-	WinnerUserID    string              `json:"winnerUserId,omitempty"`
-	WinnerUsername  string              `json:"winnerUsername,omitempty"`
+	ID              string       `json:"id"`
+	TableID         string       `json:"tableId"`
+	WorldID         string       `json:"worldId"`
+	Status          string       `json:"status"`
+	Players         []PlayerView `json:"players"`
+	CurrentTurn     int          `json:"currentTurn"`
+	CurrentUserID   string       `json:"currentUserId"`
+	CurrentUsername string       `json:"currentUsername"`
+	PassGoBonus     int          `json:"passGoBonus"`
+	Currency        string       `json:"currency"`
+	TurnPhase       string       `json:"turnPhase"`
+	DoublesStreak   int          `json:"doublesStreak"`
+	CanRoll         bool         `json:"canRoll"`
+	CanEndTurn      bool         `json:"canEndTurn"`
+	CanBuy          bool         `json:"canBuy"`
+	// CanPayJailFine — current player may pay 100 MeetCoin to leave Jail (Phase 12.1).
+	CanPayJailFine bool `json:"canPayJailFine"`
+	// CanUseJailCard — current player holds a GOOJF card and may use it (Phase 12.1).
+	CanUseJailCard bool                `json:"canUseJailCard"`
+	BuyOffer       *BuyOfferView       `json:"buyOffer"`
+	Deeds          []DeedView          `json:"deeds"`
+	LastRoll       *LastRollView       `json:"lastRoll"`
+	LastPayment    *LastPaymentView    `json:"lastPayment,omitempty"`
+	PendingPayment *PendingPaymentView `json:"pendingPayment,omitempty"`
+	WinnerUserID   string              `json:"winnerUserId,omitempty"`
+	WinnerUsername string              `json:"winnerUsername,omitempty"`
 	// TurnStartedAt — RFC3339 UTC; current player's bank drains from this instant.
 	TurnStartedAt string `json:"turnStartedAt,omitempty"`
 }
@@ -195,6 +202,10 @@ type Service interface {
 	Mortgage(ctx context.Context, gameID, userID string, boardIndex int) (*View, error)
 	// Redeem unmortgages a deed for mortgage value + 10% (Phase 11.3).
 	Redeem(ctx context.Context, gameID, userID string, boardIndex int) (*View, error)
+	// PayJailFine pays JailFine MeetCoin to leave Jail (Phase 12.1); then Roll to move.
+	PayJailFine(ctx context.Context, gameID, userID string) (*View, error)
+	// UseJailCard spends one Get Out of Jail Free card (Phase 12.1); then Roll to move.
+	UseJailCard(ctx context.Context, gameID, userID string) (*View, error)
 	SetPinColor(ctx context.Context, gameID, userID, pinColor string) (*View, error)
 	// EnterHub marks the seated player as inside hubId (Phase 8.2); fans out via game WS.
 	// clientRevision: when non-nil, ignore the enter if it is older than the player's HubRevision (8.4).
@@ -412,7 +423,7 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 		return nil, ErrMustSettle
 	}
 	if g.Players[playerIdx].InJail {
-		return nil, ErrInJail
+		return s.rollFromJailLocked(ctx, g, gameID, userID, playerIdx)
 	}
 
 	die1 := rollDie()
@@ -474,6 +485,212 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 		s.resolveLandingLocked(ctx, g, playerIdx, total)
 	}
 
+	g.UpdatedAt = time.Now().UTC()
+
+	if err := s.repo.Update(ctx, g); err != nil {
+		return nil, err
+	}
+	view := s.viewOf(ctx, g)
+	s.broadcast(gameID, Event{Type: "state", Game: view})
+	return view, nil
+}
+
+// rollFromJailLocked — doubles get out free and move; else jailTurns++; on 3rd fail pay fine + move when affordable.
+func (s *service) rollFromJailLocked(
+	ctx context.Context, g *gamerepo.Game, gameID, userID string, playerIdx int,
+) (*View, error) {
+	if g.Players[playerIdx].JailTurns >= gamerepo.MaxJailAttempts {
+		return nil, ErrMustLeaveJail
+	}
+
+	die1 := rollDie()
+	die2 := rollDie()
+	total := die1 + die2
+	isDoubles := die1 == die2
+	from := g.Players[playerIdx].BoardIndex
+	g.DoublesStreak = 0
+
+	if isDoubles {
+		leaveJail(&g.Players[playerIdx])
+		to, passedGo, passAmt := applyBoardMove(g, playerIdx, from, total)
+		g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+		g.LastRoll = &gamerepo.LastRoll{
+			UserID:        userID,
+			Username:      g.Players[playerIdx].Username,
+			Die1:          die1,
+			Die2:          die2,
+			Total:         total,
+			FromIndex:     from,
+			ToIndex:       to,
+			PassedGo:      passedGo,
+			PassGoAmount:  passAmt,
+			IsDoubles:     true,
+			DoublesStreak: 0,
+			ThirdDoubles:  false,
+		}
+		s.resolveLandingLocked(ctx, g, playerIdx, total)
+	} else {
+		g.Players[playerIdx].JailTurns++
+		attempt := g.Players[playerIdx].JailTurns
+		if attempt >= gamerepo.MaxJailAttempts {
+			if g.Players[playerIdx].Cash < gamerepo.JailFine {
+				// Stay in jail until PayJailFine / UseJailCard; dice shown, no move.
+				g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+				g.LastRoll = &gamerepo.LastRoll{
+					UserID:        userID,
+					Username:      g.Players[playerIdx].Username,
+					Die1:          die1,
+					Die2:          die2,
+					Total:         total,
+					FromIndex:     from,
+					ToIndex:       from,
+					PassedGo:      false,
+					PassGoAmount:  0,
+					IsDoubles:     false,
+					DoublesStreak: 0,
+					ThirdDoubles:  false,
+				}
+			} else {
+				if err := payJailFineFull(g, playerIdx); err != nil {
+					return nil, err
+				}
+				leaveJail(&g.Players[playerIdx])
+				to, passedGo, passAmt := applyBoardMove(g, playerIdx, from, total)
+				g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+				g.LastRoll = &gamerepo.LastRoll{
+					UserID:        userID,
+					Username:      g.Players[playerIdx].Username,
+					Die1:          die1,
+					Die2:          die2,
+					Total:         total,
+					FromIndex:     from,
+					ToIndex:       to,
+					PassedGo:      passedGo,
+					PassGoAmount:  passAmt,
+					IsDoubles:     false,
+					DoublesStreak: 0,
+					ThirdDoubles:  false,
+				}
+				s.resolveLandingLocked(ctx, g, playerIdx, total)
+			}
+		} else {
+			g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+			g.LastRoll = &gamerepo.LastRoll{
+				UserID:        userID,
+				Username:      g.Players[playerIdx].Username,
+				Die1:          die1,
+				Die2:          die2,
+				Total:         total,
+				FromIndex:     from,
+				ToIndex:       from,
+				PassedGo:      false,
+				PassGoAmount:  0,
+				IsDoubles:     false,
+				DoublesStreak: 0,
+				ThirdDoubles:  false,
+			}
+		}
+	}
+
+	g.UpdatedAt = time.Now().UTC()
+	if err := s.repo.Update(ctx, g); err != nil {
+		return nil, err
+	}
+	view := s.viewOf(ctx, g)
+	s.broadcast(gameID, Event{Type: "state", Game: view})
+	return view, nil
+}
+
+// PayJailFine leaves Jail for JailFine MeetCoin (Phase 12.1). Caller then Rolls to move.
+func (s *service) PayJailFine(ctx context.Context, gameID, userID string) (*View, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	g, err := s.repo.FindByID(ctx, gameID)
+	if err != nil {
+		if errors.Is(err, gamerepo.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return nil, ErrInactive
+	}
+	normalizeTurnPhase(g)
+	if _, err := s.syncTimeBankLocked(ctx, g); err != nil {
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return s.viewOf(ctx, g), nil
+	}
+
+	playerIdx, err := requireCurrentPlayer(g, userID)
+	if err != nil {
+		return nil, err
+	}
+	if !g.Players[playerIdx].InJail {
+		return nil, ErrNotInJail
+	}
+	if hasPendingPayment(g) {
+		return nil, ErrMustSettle
+	}
+	if g.TurnPhase != gamerepo.TurnPhaseAwaitingRoll && g.TurnPhase != gamerepo.TurnPhaseAwaitingEnd {
+		return nil, ErrNotInJail
+	}
+	if err := payJailFineFull(g, playerIdx); err != nil {
+		return nil, err
+	}
+	leaveJail(&g.Players[playerIdx])
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+	g.UpdatedAt = time.Now().UTC()
+
+	if err := s.repo.Update(ctx, g); err != nil {
+		return nil, err
+	}
+	view := s.viewOf(ctx, g)
+	s.broadcast(gameID, Event{Type: "state", Game: view})
+	return view, nil
+}
+
+// UseJailCard spends one GOOJF to leave Jail (Phase 12.1). Caller then Rolls to move.
+func (s *service) UseJailCard(ctx context.Context, gameID, userID string) (*View, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	g, err := s.repo.FindByID(ctx, gameID)
+	if err != nil {
+		if errors.Is(err, gamerepo.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return nil, ErrInactive
+	}
+	normalizeTurnPhase(g)
+	if _, err := s.syncTimeBankLocked(ctx, g); err != nil {
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return s.viewOf(ctx, g), nil
+	}
+
+	playerIdx, err := requireCurrentPlayer(g, userID)
+	if err != nil {
+		return nil, err
+	}
+	if !g.Players[playerIdx].InJail {
+		return nil, ErrNotInJail
+	}
+	if hasPendingPayment(g) {
+		return nil, ErrMustSettle
+	}
+	if g.Players[playerIdx].GetOutOfJailFree <= 0 {
+		return nil, ErrNoJailCard
+	}
+	g.Players[playerIdx].GetOutOfJailFree--
+	leaveJail(&g.Players[playerIdx])
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
 	g.UpdatedAt = time.Now().UTC()
 
 	if err := s.repo.Update(ctx, g); err != nil {
@@ -1661,9 +1878,25 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 	}
 
 	currentInJail := false
+	currentJailTurns := 0
+	currentCash := 0
+	currentCards := 0
 	if idx := currentPlayerIndex(g); idx >= 0 {
 		currentInJail = g.Players[idx].InJail
+		currentJailTurns = g.Players[idx].JailTurns
+		currentCash = g.Players[idx].Cash
+		currentCards = g.Players[idx].GetOutOfJailFree
 	}
+
+	canRoll := active && phase == gamerepo.TurnPhaseAwaitingRoll && !pending
+	if canRoll && currentInJail && currentJailTurns >= gamerepo.MaxJailAttempts {
+		// Must pay fine or use card after 3 failed doubles attempts.
+		canRoll = false
+	}
+	canPayJail := active && currentInJail && !pending && currentCash >= gamerepo.JailFine &&
+		(phase == gamerepo.TurnPhaseAwaitingRoll || phase == gamerepo.TurnPhaseAwaitingEnd)
+	canUseCard := active && currentInJail && !pending && currentCards > 0 &&
+		(phase == gamerepo.TurnPhaseAwaitingRoll || phase == gamerepo.TurnPhaseAwaitingEnd)
 
 	var lastPay *LastPaymentView
 	if g.LastPayment != nil {
@@ -1707,9 +1940,11 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 		Currency:        "MeetCoin",
 		TurnPhase:       phase,
 		DoublesStreak:   g.DoublesStreak,
-		CanRoll:         active && phase == gamerepo.TurnPhaseAwaitingRoll && !pending && !currentInJail,
+		CanRoll:         canRoll,
 		CanEndTurn:      active && phase == gamerepo.TurnPhaseAwaitingEnd && !pending && buyOffer == nil,
 		CanBuy:          canBuy,
+		CanPayJailFine:  canPayJail,
+		CanUseJailCard:  canUseCard,
 		BuyOffer:        buyOffer,
 		Deeds:           deeds,
 		LastRoll:        last,
@@ -1862,4 +2097,49 @@ func sendPlayerToJail(g *gamerepo.Game, playerIdx int, spaces []Space) int {
 	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
 	g.PendingPayment = nil
 	return jail
+}
+
+func leaveJail(p *gamerepo.Player) {
+	if p == nil {
+		return
+	}
+	p.InJail = false
+	p.JailTurns = 0
+}
+
+func payJailFineFull(g *gamerepo.Game, playerIdx int) error {
+	if playerIdx < 0 || playerIdx >= len(g.Players) {
+		return ErrNotPlayer
+	}
+	if g.Players[playerIdx].Cash < gamerepo.JailFine {
+		return ErrCannotAfford
+	}
+	g.Players[playerIdx].Cash -= gamerepo.JailFine
+	g.LastPayment = &gamerepo.LastPayment{
+		Kind:         "jail_fine",
+		FromUserID:   g.Players[playerIdx].UserID,
+		FromUsername: g.Players[playerIdx].Username,
+		ToUserID:     "",
+		ToUsername:   "Bank",
+		Amount:       gamerepo.JailFine,
+		BoardIndex:   g.Players[playerIdx].BoardIndex,
+		SpaceName:    "Jail",
+		PaidInFull:   true,
+	}
+	return nil
+}
+
+// applyBoardMove walks total spaces from fromIndex; awards Pass GO. Returns to, passedGo, passAmt.
+func applyBoardMove(g *gamerepo.Game, playerIdx, fromIndex, total int) (to int, passedGo bool, passAmt int) {
+	to = (fromIndex + total) % gamerepo.BoardSpaceCount
+	passedGo = fromIndex+total >= gamerepo.BoardSpaceCount
+	if passedGo {
+		passAmt = g.PassGoBonus
+		if passAmt <= 0 {
+			passAmt = gamerepo.PassGoBonus
+		}
+		g.Players[playerIdx].Cash += passAmt
+	}
+	g.Players[playerIdx].BoardIndex = to
+	return to, passedGo, passAmt
 }
