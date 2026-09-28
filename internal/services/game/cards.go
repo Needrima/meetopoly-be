@@ -202,7 +202,7 @@ func cardTitleForSpaces(id string, spaces []Space) string {
 			return "Advance to " + n
 		}
 	case CardChanceReadingRailroad:
-		if n := nameAt(5); n != "" {
+		if n := nameAt(15); n != "" {
 			return "Take a trip to " + n
 		}
 	case CardChanceAdvanceGO, CardChestAdvanceGO:

@@ -39,7 +39,7 @@ func (s *service) applyCardEffectLocked(ctx context.Context, g *gamerepo.Game, p
 	case CardChanceAdvanceStCharles:
 		s.cardAdvanceToLocked(ctx, g, playerIdx, spaces, 11, landingOpts{})
 	case CardChanceReadingRailroad:
-		s.cardAdvanceToLocked(ctx, g, playerIdx, spaces, 5, landingOpts{})
+		s.cardAdvanceToLocked(ctx, g, playerIdx, spaces, 15, landingOpts{})
 	case CardChanceNearestRailroad:
 		dest, _ := nextIndexForward(g.Players[playerIdx].BoardIndex, railroadIndices)
 		s.cardAdvanceToLocked(ctx, g, playerIdx, spaces, dest, landingOpts{rentMultiplier: 2})

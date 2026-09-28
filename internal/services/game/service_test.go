@@ -549,6 +549,65 @@ func TestCardGoToJail(t *testing.T) {
 	}
 }
 
+func TestCardTripAirportGoesToIndex15NoPassGoFromChance7(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 0, Slug: "go", Name: "GO", Kind: "special", SpecialType: "go"},
+		{BoardIndex: 7, Slug: "chance", Name: "Chance", Kind: "special", SpecialType: "chance"},
+		{BoardIndex: 15, Slug: "cdg", Name: "Charles de Gaulle Airport", Kind: "railroad", Price: 200, Rents: []int{25}},
+	}
+	svc := New(repo, spaces, Config{}).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 7
+	g.Players[0].Cash = 2000
+	g.ChanceDeck = []string{CardChanceReadingRailroad}
+	g.LastRoll = &gamerepo.LastRoll{
+		UserID: "a", FromIndex: 2, ToIndex: 7, Total: 5,
+	}
+	svc.resolveLandingLocked(context.Background(), g, 0, 5)
+
+	if g.Players[0].BoardIndex != 15 {
+		t.Fatalf("board=%d want 15", g.Players[0].BoardIndex)
+	}
+	// 7 → 15 is forward on the same side — no Pass GO.
+	if g.Players[0].Cash != 2000 {
+		t.Fatalf("cash=%d want 2000 (no wrap)", g.Players[0].Cash)
+	}
+	if g.LastCard == nil || g.LastCard.Title != "Take a trip to Charles de Gaulle Airport" {
+		t.Fatalf("lastCard=%v", g.LastCard)
+	}
+}
+
+func TestCardTripAirportWrapsPastGOFromLateChance(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 0, Slug: "go", Name: "GO", Kind: "special", SpecialType: "go"},
+		{BoardIndex: 36, Slug: "chance", Name: "Chance", Kind: "special", SpecialType: "chance"},
+		{BoardIndex: 15, Slug: "air", Name: "Left Airport", Kind: "railroad"},
+	}
+	svc := New(repo, spaces, Config{}).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 36
+	g.Players[0].Cash = 2000
+	g.ChanceDeck = []string{CardChanceReadingRailroad}
+	g.LastRoll = &gamerepo.LastRoll{UserID: "a", FromIndex: 30, ToIndex: 36, Total: 6}
+	svc.resolveLandingLocked(context.Background(), g, 0, 6)
+
+	if g.Players[0].BoardIndex != 15 {
+		t.Fatalf("board=%d want 15", g.Players[0].BoardIndex)
+	}
+	if g.Players[0].Cash != 2200 {
+		t.Fatalf("cash=%d want 2200 (pass GO)", g.Players[0].Cash)
+	}
+	if g.LastRoll == nil || !g.LastRoll.PassedGo || g.LastRoll.PassGoAmount < 200 {
+		t.Fatalf("lastRoll passGO=%v amt=%v", g.LastRoll.PassedGo, g.LastRoll.PassGoAmount)
+	}
+}
+
 func TestCardNearestRailroadDoubleRent(t *testing.T) {
 	repo := newMemRepo()
 	spaces := memSpaces{

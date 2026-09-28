@@ -1128,7 +1128,7 @@ Manual (2 clients preferred; BE running; landscape). Backend gate: `cd meetopoly
 | 11 | Go to Jail | Move to **10**; do not pass GO |
 | 12 | Make general repairs | Pay $25/house, $100/hotel |
 | 13 | Speeding fine | −$15 |
-| 14 | Take a trip to Reading Railroad | Move to **5**; collect $200 if passing GO |
+| 14 | Take a trip to Reading Railroad | Move to **15** (left-side airport); collect $200 if passing GO |
 | 15 | Elected Chairman of the Board | Pay each other player $50 |
 | 16 | Building loan matures | +$150 |
 
@@ -1179,7 +1179,7 @@ Amounts = MeetCoin 1:1 with classic dollars. UI may show the world tile **name**
 **12.3 notes**
 
 - **Lock A:** server applies card effects in the same state update as the draw; client shows reveal modal 3s / `__DEV__` 5s in **12.4**, then animates the already-applied cash/move.
-- Destinations by `boardIndex` (39 / 0 / 24 / 11 / 5 / nearest RR 5·15·25·35 / nearest util 12·28 / jail 10).
+- Destinations by `boardIndex` (39 / 0 / 24 / 11 / **15** trip-RR / nearest RR 5·15·25·35 / nearest util 12·28 / jail 10).
 - Nearest railroad → **2×** rent if owned; nearest utility → **10×** new dice roll if owned.
 - Go back 3 → resolve landing on the new tile (tax/rent/another card OK).
 - Card payments use `lastPayment.kind = card`; shortfall → `pendingPayment` (raise funds).
