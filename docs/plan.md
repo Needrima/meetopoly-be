@@ -522,7 +522,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 
 - After landing on unowned `property` / `railroad` / `utility` with `price > 0`: `canBuy` + `buyOffer`.
 - `POST /games/{id}/buy` deducts list price, appends deed (`boardIndex` + owner).
-- Skip: End turn without buying — space stays unowned until Phase 13 auction.
+- **Interim (until Phase 13 auction):** End turn blocked while `buyOffer` open (`canEndTurn` false; `ErrMustBuy`). Board buy modal non-dismissible; no skip hint.
 - Classic US rent/price ladder by `boardIndex` in seeds (colors stay Meetopoly); buy modal lists Rent + 1–4 houses + Hotel.
 - **Ownership chip:** outer-corner dot in owner `pinColor` on deed tiles (client from `deeds` + `players`).
 - **Tap tile:** info overlay (buyable = deed + Available/Owned by; Chance/Chest = icon + name; tax = icon + name + amount). Disabled only while **local** buy modal is open.
@@ -863,12 +863,12 @@ Manual (landscape device / simulator; BE running; 2 clients preferred):
 
 **Reference screenshots → later phases (do not build in 9.3)**
 
-| Ref                                          | Action                       | Phase            |
-| -------------------------------------------- | ---------------------------- | ---------------- |
-| CHANCE / CHEST card modals                   | Card draw UI                 | **12**           |
-| JUST VISITING                                | Jail visit notify            | **12**           |
-| AUCTION bid/fold/slider                      | Bank auction                 | **13**           |
-| BUILD / SELL / MORTGAGE / REDEEM / TRADE bar | Economy CTAs in board panel (wrap ok); Roll/End → icon boxes by joystick | **11.4** (+ trade **13**) |
+| Ref                                          | Action                                                                   | Phase                     |
+| -------------------------------------------- | ------------------------------------------------------------------------ | ------------------------- |
+| CHANCE / CHEST card modals                   | Card draw UI                                                             | **12**                    |
+| JUST VISITING                                | Jail visit notify                                                        | **12**                    |
+| AUCTION bid/fold/slider                      | Bank auction                                                             | **13**                    |
+| BUILD / SELL / MORTGAGE / REDEEM / TRADE bar | Economy CTAs in board panel; Roll/End/Hub dock icons                     | **11.4a** dock; **11.4b+** bar (+ trade **13**) |
 
 **9.4 notes**
 
@@ -1014,25 +1014,26 @@ Manual (2 clients preferred; BE running; landscape):
 - **Build API (11.1):** `POST /games/{id}/build` body `{ boardIndex }` — **one step** per call; current player only (no off-turn); allowed in `awaiting_roll` **or** `awaiting_end`; blocked by `pendingPayment`; full color group + even-build + cash ≥ `houseCost`; WS `state` fan-out.
 - **Sell API (11.2):** `POST /games/{id}/sell-building` body `{ boardIndex }` — one step down; refund `floor(houseCost/2)`; even-sell (sell from max houses first); current player only; **allowed during `pendingPayment`** (raise funds — refund applies toward debt); WS `state` fan-out.
 - **Mortgage / redeem (11.3):** `POST /games/{id}/mortgage` + `POST /games/{id}/redeem` body `{ boardIndex }`; mortgage payout `floor(price/2)`; redeem = mortgage + 10%; cities must have **0 houses on the whole color group** before mortgage; mortgaged → **0 rent**; build blocked if any deed in set mortgaged; mortgage allowed during pendingPayment; redeem blocked while pending; current player only.
-- **Board economy bar (UI → 11.4):** reference CTA row **BUILD · SELL · MORTGAGE · REDEEM · TRADE** in the board controls (left/panel); wrap to a 2nd row if needed. **Roll** / **End turn** move beside the joystick as **icon boxes** (FontAwesome5 dice + left arrow) — not text buttons in that economy row. Build/Sell/Mortgage/Redeem CTAs enabled only on your turn (time bank still drains).
+- **Board dock + economy UI (→ 11.4x):** **11.4a:** keep panel dock visual (`[Dice][End][Hub]` left · Joystick right); wire dice→roll, arrow→end turn, hub→enter; green boxes stay; **opacity ~0.35** when disabled; remove HUD Roll/End/Enter text buttons. **11.4b+:** BUILD · SELL · MORTGAGE · REDEEM · TRADE bar + mode/highlight/tap + house markers (ask before each).
 
 **Sub-slices**
 
-| Slice | Done when | Avoid |
-| ----- | --------- | ----- |
-| **11.0** | ✅ `Deed` gains `houses` (0–5; **5 = hotel**) + `mortgaged` (always false until 11.3); rent uses `Rents[houses]` when monopoly (undeveloped monopoly stays **2×** `Rents[0]`); OpenAPI + mobile types | Build/sell HTTP, UI, mortgage actions |
-| **11.1** | ✅ `POST /games/{id}/build` — buy house/hotel; even-build + full color group + cash; WS fan-out | Sell, mortgage UI |
-| **11.2** | ✅ `POST /games/{id}/sell-building` — sell house/hotel at half cost; even-sell down; allowed during pendingPayment | Mortgage UI |
-| **11.3** | ✅ `POST` mortgage + redeem (list/half + 10%); mortgaged = 0 rent; block build if set mortgaged | House-shortage auction |
-| **11.4** | Board UI: economy CTA bar + house/hotel markers; Roll/End icon boxes by joystick | Hub rebuild UI |
-| **11.5** | Smoke checklist for M2 path | Jail/cards (12), auction (13) |
+| Slice     | Done when                                                                                                                                                                                             | Avoid                                 |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| **11.0**  | ✅ `Deed` gains `houses` (0–5; **5 = hotel**) + `mortgaged` (always false until 11.3); rent uses `Rents[houses]` when monopoly (undeveloped monopoly stays **2×** `Rents[0]`); OpenAPI + mobile types | Build/sell HTTP, UI, mortgage actions |
+| **11.1**  | ✅ `POST /games/{id}/build` — buy house/hotel; even-build + full color group + cash; WS fan-out                                                                                                       | Sell, mortgage UI                     |
+| **11.2**  | ✅ `POST /games/{id}/sell-building` — sell house/hotel at half cost; even-sell down; allowed during pendingPayment                                                                                    | Mortgage UI                           |
+| **11.3**  | ✅ `POST` mortgage + redeem (list/half + 10%); mortgaged = 0 rent; block build if set mortgaged                                                                                                       | House-shortage auction                |
+| **11.4a** | ✅ Dock icons wired (dice/end/hub); opacity disabled; text Roll/End/Enter removed                                                                                                                     | Economy CTA bar, markers              |
+| **11.4b** | Economy CTA bar + mode → highlight → tap; house/hotel/M markers                                                                                                                                       | Hub rebuild UI                        |
+| **11.5**  | Smoke checklist for M2 path                                                                                                                                                                           | Jail/cards (12), auction (13)         |
 
 **Exit criteria**
 
 - [x] Even-build enforced server-side (11.1); even-sell (11.2)
-- [ ] UI to buy/sell houses (and hotels)
+- [ ] UI to buy/sell houses (and hotels) — 11.4b+
 - [x] Light mortgage + redeem; mortgaged set blocks build
-- [x] **11.0** … **11.3** ticked; **11.4** … **11.5** pending
+- [x] **11.0** … **11.3** + **11.4a** ticked; **11.4b** … **11.5** pending
 
 ---
 
@@ -1224,15 +1225,17 @@ Only when the user asks:
 | 2026-09-27 | **10.0:** hub `OnTrack` audio → `TrackLocalStaticRTP` forward; SFU renegotiation `offer` + WS `answer`; board rooms stay pose-only; video ignored                                                                                         |
 | 2026-09-27 | **10.1:** hub `getUserMedia` + `addTrack`; `muteMic` → `track.enabled`; teardown stops mic; board pose-only; remote playback → 10.2                                                                                                       |
 | 2026-09-27 | **10.2:** hub `ontrack` remote audio; answer SFU renegotiation `offer`; leave stops remote playout                                                                                                                                        |
-| 2026-09-27 | **10.2b:** hub loudspeaker via `react-native-incall-manager` (`startHubSpeaker` / `stopHubSpeaker`); needs rebuilt dev client                                                                                                  |
-| 2026-09-27 | **10.3:** hub left-rail `HubMediaRail` Live + mute CTA (`muteMic`); Settings hint; smoke checklist; Phase 10 hub voice exit                                                                                                            |
-| 2026-09-27 | **10.4:** board SFU voice (`IsVoiceRoom`); `useBoardPresence` mic + playback; shared `MuteMicButton` on board panel; Phase 10 complete                                                                                             |
-| 2026-09-27 | **Phase 10 DONE:** selective listen deferred → Phase 16 with video; everyone-audio + muteMic for now                                                                                                                                  |
-| 2026-09-27 | **Phase 11 split:** 11.0–11.5 houses/hotels/light mortgage; house-shortage auction stays Phase 13; ask before each slice                                                                                                               |
+| 2026-09-27 | **10.2b:** hub loudspeaker via `react-native-incall-manager` (`startHubSpeaker` / `stopHubSpeaker`); needs rebuilt dev client                                                                                                             |
+| 2026-09-27 | **10.3:** hub left-rail `HubMediaRail` Live + mute CTA (`muteMic`); Settings hint; smoke checklist; Phase 10 hub voice exit                                                                                                               |
+| 2026-09-27 | **10.4:** board SFU voice (`IsVoiceRoom`); `useBoardPresence` mic + playback; shared `MuteMicButton` on board panel; Phase 10 complete                                                                                                    |
+| 2026-09-27 | **Phase 10 DONE:** selective listen deferred → Phase 16 with video; everyone-audio + muteMic for now                                                                                                                                      |
+| 2026-09-27 | **Phase 11 split:** 11.0–11.5 houses/hotels/light mortgage; house-shortage auction stays Phase 13; ask before each slice                                                                                                                  |
 | 2026-09-27 | Skill + plan: Phase 10 voice locks; Phase 11.0 `houses` 0–5 (5=hotel); selective listen/video → 16                                                                                                                                        |
-| 2026-09-27 | **11.0:** `Deed.houses` 0–5 + `mortgaged`; monopoly rent 2× site / `Rents[houses]` when built; OpenAPI 0.16 + mobile types; no build/sell UI                                                                                           |
-| 2026-09-27 | **11.1 locks:** build body `{boardIndex}` one step; current-player only; economy CTA bar + Roll/End icon boxes → 11.4 UI                                                                                                              |
-| 2026-09-27 | **11.1:** `POST /games/{id}/build`; even-build + monopoly + `houseCost`; OpenAPI 0.17; no board UI yet                                                                                                                                 |
-| 2026-09-27 | **11.2:** `POST /games/{id}/sell-building`; half `houseCost`; even-sell; allowed + auto-apply during pendingPayment; OpenAPI 0.18                                                                                                      |
-| 2026-09-27 | **11.3:** `POST` mortgage + redeem (½ price / +10%); 0 rent when mortgaged; sell buildings first; OpenAPI 0.19                                                                                                                         |
+| 2026-09-27 | **11.0:** `Deed.houses` 0–5 + `mortgaged`; monopoly rent 2× site / `Rents[houses]` when built; OpenAPI 0.16 + mobile types; no build/sell UI                                                                                              |
+| 2026-09-27 | **11.1 locks:** build body `{boardIndex}` one step; current-player only; economy CTA bar + Roll/End icon boxes → 11.4 UI                                                                                                                  |
+| 2026-09-27 | **11.1:** `POST /games/{id}/build`; even-build + monopoly + `houseCost`; OpenAPI 0.17; no board UI yet                                                                                                                                    |
+| 2026-09-27 | **11.2:** `POST /games/{id}/sell-building`; half `houseCost`; even-sell; allowed + auto-apply during pendingPayment; OpenAPI 0.18                                                                                                         |
+| 2026-09-27 | **11.3:** `POST` mortgage + redeem (½ price / +10%); 0 rent when mortgaged; sell buildings first; OpenAPI 0.19                                                                                                                            |
+| 2026-09-28 | **11.4a:** dock dice/end/hub wired (opacity 0.35 disabled); HUD Roll/End/Enter text removed; economy bar → 11.4b                                                                                                                          |
+| 2026-09-28 | **Must-buy interim:** `canEndTurn` false + `ErrMustBuy` while `buyOffer` open; board buy modal non-dismissible; drop “Or End turn to skip” (auction → 13)                                                                                   |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

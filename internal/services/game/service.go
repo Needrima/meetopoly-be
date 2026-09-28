@@ -29,6 +29,7 @@ var (
 	ErrCannotAfford      = errors.New("insufficient MeetCoin")
 	ErrAlreadyOwned      = errors.New("space already owned")
 	ErrMustSettle        = errors.New("must settle rent or tax before continuing")
+	ErrMustBuy           = errors.New("must buy unowned property before ending turn")
 	ErrInvalidPinColor   = errors.New("invalid pin color")
 	ErrInvalidHubID      = errors.New("invalid hub id")
 	ErrNotBuildable      = errors.New("space is not buildable")
@@ -502,6 +503,9 @@ func (s *service) EndTurn(ctx context.Context, gameID, userID string) (*View, er
 	}
 	if hasPendingPayment(g) {
 		return nil, ErrMustSettle
+	}
+	if offer := openBuyOffer(g, s.loadSpaces(ctx, g.WorldID)); offer != nil {
+		return nil, ErrMustBuy
 	}
 
 	s.pauseCurrentBankLocked(g)
@@ -1536,6 +1540,36 @@ func (s *service) enrichCountries(ctx context.Context, v *View) {
 	}
 }
 
+// openBuyOffer is set when the current player just landed on unowned buyable land.
+// Until Phase 13 auction, EndTurn is blocked while this is non-nil.
+func openBuyOffer(g *gamerepo.Game, spaces []Space) *BuyOfferView {
+	if g == nil || g.Status != gamerepo.StatusActive {
+		return nil
+	}
+	idx := currentPlayerIndex(g)
+	if idx < 0 || g.Players[idx].Resigned {
+		return nil
+	}
+	p := g.Players[idx]
+	sp := spaceAt(spaces, p.BoardIndex)
+	if sp == nil || !isBuyableKind(sp.Kind) || sp.Price <= 0 || ownerOf(g.Deeds, sp.BoardIndex) != "" {
+		return nil
+	}
+	if g.LastRoll == nil ||
+		g.LastRoll.UserID != p.UserID ||
+		g.LastRoll.ToIndex != sp.BoardIndex ||
+		g.LastRoll.ThirdDoubles {
+		return nil
+	}
+	return &BuyOfferView{
+		BoardIndex: sp.BoardIndex,
+		Slug:       sp.Slug,
+		Name:       sp.Name,
+		Kind:       sp.Kind,
+		Price:      sp.Price,
+	}
+}
+
 func toView(g *gamerepo.Game, spaces []Space) *View {
 	normalizeTurnPhase(g)
 	now := time.Now().UTC()
@@ -1607,27 +1641,9 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 	var buyOffer *BuyOfferView
 	canBuy := false
 	pending := hasPendingPayment(g)
-	if active && currentUserID != "" && !pending {
-		idx := currentPlayerIndex(g)
-		if idx >= 0 && !g.Players[idx].Resigned {
-			sp := spaceAt(spaces, g.Players[idx].BoardIndex)
-			if sp != nil && isBuyableKind(sp.Kind) && sp.Price > 0 && ownerOf(g.Deeds, sp.BoardIndex) == "" {
-				landedThisTurn := g.LastRoll != nil &&
-					g.LastRoll.UserID == currentUserID &&
-					g.LastRoll.ToIndex == sp.BoardIndex &&
-					!g.LastRoll.ThirdDoubles
-				if landedThisTurn {
-					buyOffer = &BuyOfferView{
-						BoardIndex: sp.BoardIndex,
-						Slug:       sp.Slug,
-						Name:       sp.Name,
-						Kind:       sp.Kind,
-						Price:      sp.Price,
-					}
-					canBuy = true
-				}
-			}
-		}
+	if active && !pending {
+		buyOffer = openBuyOffer(g, spaces)
+		canBuy = buyOffer != nil
 	}
 
 	var lastPay *LastPaymentView
@@ -1673,7 +1689,7 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 		TurnPhase:       phase,
 		DoublesStreak:   g.DoublesStreak,
 		CanRoll:         active && phase == gamerepo.TurnPhaseAwaitingRoll && !pending,
-		CanEndTurn:      active && phase == gamerepo.TurnPhaseAwaitingEnd && !pending,
+		CanEndTurn:      active && phase == gamerepo.TurnPhaseAwaitingEnd && !pending && buyOffer == nil,
 		CanBuy:          canBuy,
 		BuyOffer:        buyOffer,
 		Deeds:           deeds,

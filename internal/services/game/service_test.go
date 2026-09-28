@@ -413,6 +413,57 @@ func TestBuyUnownedProperty(t *testing.T) {
 	}
 }
 
+func TestEndTurnBlockedWhileBuyOffer(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 1
+	g.Players[0].Cash = 2000
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	g.LastRoll = &gamerepo.LastRoll{
+		UserID: "a", Username: "A", Die1: 1, Die2: 0, Total: 1,
+		FromIndex: 0, ToIndex: 1,
+	}
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.Get(context.Background(), "g1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !view.CanBuy || view.BuyOffer == nil {
+		t.Fatalf("expected buy offer, canBuy=%v offer=%v", view.CanBuy, view.BuyOffer)
+	}
+	if view.CanEndTurn {
+		t.Fatal("canEndTurn must be false while buyOffer is open")
+	}
+
+	_, err = svc.EndTurn(context.Background(), "g1", "a")
+	if !errors.Is(err, ErrMustBuy) {
+		t.Fatalf("err=%v want ErrMustBuy", err)
+	}
+
+	view, err = svc.Buy(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.BuyOffer != nil || !view.CanEndTurn {
+		t.Fatalf("after buy: offer=%v canEnd=%v", view.BuyOffer, view.CanEndTurn)
+	}
+
+	view, err = svc.EndTurn(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.CurrentUserID != "b" {
+		t.Fatalf("current=%s want b", view.CurrentUserID)
+	}
+}
+
 func TestBuyCannotAfford(t *testing.T) {
 	repo := newMemRepo()
 	spaces := memSpaces{
