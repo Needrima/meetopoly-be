@@ -1090,13 +1090,14 @@ Manual (2 clients preferred; BE running; landscape). Backend gate: `cd meetopoly
 
 - Ship **one sub-slice at a time** — ask before each.
 - Jail fine = **100 MeetCoin** (not classic 50) — **12.1**.
-- Cards = **Chance** + **Community Chest** only (classic US effect set below; Meetopoly-flavored copy OK later).
+- Cards = **Chance** + **Community Chest** only; destinations by **`boardIndex`** (world names differ; GO = 0).
 - Free Parking stays **noop**.
 - `GamePlayer`: `inJail`, `jailTurns`, `getOutOfJailFree` (schema in **12.0**; exit / draw later).
 - Jail board index = seed `specialType: jail` (classic **10**); Go to Jail = `go_to_jail` (classic **30**).
 - Teleport to Jail does **not** collect Pass GO; turn ends (`awaiting_end`); doubles streak cleared.
 - While `inJail`, Roll tries doubles exit (**12.1**); after 3 failed attempts without cash for the fine, `canRoll` false until pay/card.
 - Jail fine = **100** MeetCoin via `POST /games/{id}/pay-jail-fine`; GOOJF via `POST /games/{id}/use-jail-card` (cards drawn in 12.2+).
+- Decks: shuffled at game start; persist remaining order on game doc; land Chance/Chest → draw; non-GOOJF returned to bottom; GOOJF held by player until used (then returned to its deck).
 
 **Sub-slices**
 
@@ -1104,47 +1105,54 @@ Manual (2 clients preferred; BE running; landscape). Backend gate: `cd meetopoly
 | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
 | **12.0** | ✅ Player jail fields; land **Go to Jail** + **third doubles** → Jail; land Jail = Just Visiting; OpenAPI 0.20 + mobile types                                    | Exit APIs, card decks, UI |
 | **12.1** | ✅ Jail exit: pay **100** MeetCoin (`POST .../pay-jail-fine`), GOOJF (`POST .../use-jail-card`), roll doubles (free + move, no re-roll), or fail 3 then forced pay+move (if broke stay until pay); OpenAPI 0.21 | Card decks, fancy UI |
-| **12.2** | Chance + Community Chest decks from seed/config; shuffle + draw on land; persist remaining decks on game                                                         | Full effect matrix       |
-| **12.3** | Card effects (table below): cash, move/GO, Jail, GOOJF, repairs, nearest RR/utility                                                                              | Trade of GOOJF (→ 13)    |
+| **12.2** | ✅ Chance + Chest catalog; shuffle at start; draw on land; persist decks; `lastCard`; GOOJF held; other effects stubbed → 12.3; OpenAPI 0.22 | Full effect resolve, UI |
+| **12.3** | Card effects (tables below): cash, move by index, Jail, repairs, nearest RR/utility                                                                              | Trade of GOOJF (→ 13)    |
 | **12.4** | Board UI: jail action sheet + card reveal modal (hub = toast / notify like other economy)                                                                        | Auction/trade            |
 | **12.5** | Smoke checklist                                                                                                                                                  | —                        |
 
-**Chance / Community Chest deck (locked for 12.2–12.3)**
+**Chance deck (16 cards — locked; destinations = `boardIndex`)**
 
-| Deck | Card | What happens |
-| --- | --- | --- |
-| Chance | Advance to GO | Collect $200 |
-| Chance | Advance to Illinois Avenue | Move to Illinois Avenue; collect $200 if passing GO |
-| Chance | Advance to St. Charles Place | Move there; collect $200 if passing GO |
-| Chance | Advance to nearest Railroad | Move to nearest railroad; pay double rent if owned |
-| Chance | Advance to nearest Utility | Move to nearest utility; rent is 10× the dice roll if owned |
-| Chance | Bank pays you dividend | Collect $50 |
-| Chance | Get Out of Jail Free | Keep until needed or trade/sell |
-| Chance | Go Back 3 Spaces | Move back 3 spaces |
-| Chance | Go directly to Jail | Go to Jail; do not collect $200 |
-| Chance | Repairs assessment | Pay $25 per house and $100 per hotel |
-| Chance | Speeding fine | Pay $15 |
-| Chance | Building loan matures | Collect $150 |
-| Chance | Elected chairman | Pay each player $50 |
-| Chance | Crossword competition | Collect $100 |
-| Community Chest | Advance to GO | Collect $200 |
-| Community Chest | Bank error in your favor | Collect $200 |
-| Community Chest | Doctor's fees | Pay $50 |
-| Community Chest | Sale of stock | Collect $50 |
-| Community Chest | Get Out of Jail Free | Keep until needed or trade/sell |
-| Community Chest | Go directly to Jail | Go to Jail; do not collect $200 |
-| Community Chest | Holiday fund matures | Collect $100 |
-| Community Chest | Income tax refund | Collect $20 |
-| Community Chest | Birthday | Collect $10 from every player |
-| Community Chest | Life insurance matures | Collect $100 |
-| Community Chest | Hospital fees | Pay $100 |
-| Community Chest | School fees | Pay $50 |
-| Community Chest | Consultancy fee | Collect $25 |
-| Community Chest | Street repairs | Pay $40 per house and $115 per hotel |
-| Community Chest | Beauty contest | Collect $10 |
-| Community Chest | Inheritance | Collect $100 |
+| # | Card id / title | Logic |
+|---:|---|---|
+| 1 | Advance to Boardwalk | Move to **39** |
+| 2 | Advance to GO | Move to **0**, collect $200 |
+| 3 | Advance to Illinois Avenue | Move to **24**; collect $200 if passing GO |
+| 4 | Advance to St. Charles Place | Move to **11**; collect $200 if passing GO |
+| 5 | Advance to nearest Railroad | Next of **5 / 15 / 25 / 35**; double rent if owned |
+| 6 | Advance to nearest Railroad | Same — **2 copies** |
+| 7 | Advance to nearest Utility | Next of **12 / 28**; rent **10×** dice if owned |
+| 8 | Bank pays you dividend | +$50 |
+| 9 | Get Out of Jail Free | Retain card |
+| 10 | Go Back 3 Spaces | Position − 3 |
+| 11 | Go to Jail | Move to **10**; do not pass GO |
+| 12 | Make general repairs | Pay $25/house, $100/hotel |
+| 13 | Speeding fine | −$15 |
+| 14 | Take a trip to Reading Railroad | Move to **5**; collect $200 if passing GO |
+| 15 | Elected Chairman of the Board | Pay each other player $50 |
+| 16 | Building loan matures | +$150 |
 
-Amounts above are MeetCoin 1:1 with classic dollars. Named properties map to world board indices (ask at 12.3 if a world lacks Illinois / St. Charles equivalents).
+**Community Chest deck (16 cards — locked)**
+
+| # | Card id / title | Logic |
+|---:|---|---|
+| 1 | Advance to GO | Move to **0**, collect $200 |
+| 2 | Bank error in your favor | +$200 |
+| 3 | Doctor's fee | −$50 |
+| 4 | From sale of stock | +$50 |
+| 5 | Get Out of Jail Free | Retain card |
+| 6 | Go to Jail | Move to **10**; do not pass GO |
+| 7 | Holiday fund matures | +$100 |
+| 8 | Income tax refund | +$20 |
+| 9 | It's your birthday | Collect $10 from each other player |
+| 10 | Life insurance matures | +$100 |
+| 11 | Hospital fees | −$100 |
+| 12 | School fees | −$50 |
+| 13 | Consultancy fee | +$25 |
+| 14 | Street repairs | Pay $40/house, $115/hotel |
+| 15 | Second prize in beauty contest | +$10 |
+| 16 | Inheritance | +$100 |
+
+Amounts = MeetCoin 1:1 with classic dollars. UI may show the world tile **name** for an index; rules always use the index.
 
 **12.0 notes**
 
@@ -1159,6 +1167,13 @@ Amounts above are MeetCoin 1:1 with classic dollars. Named properties map to wor
 - Fail 3 with cash ≥ 100 → auto fine + leave + move.
 - Fail 3 with cash < 100 → `jailTurns=3`, stay in Jail until pay/card (then Roll next).
 - Board jail sheet UI → **12.4**.
+
+**12.2 notes**
+
+- Catalog in Go (`cards.go`); shuffled into `chanceDeck` / `chestDeck` on `CreateFromSeats`.
+- Land `specialType` `chance` / `community_chest` → draw top; set `lastCard` on game view; non-GOOJF → bottom of same deck.
+- GOOJF → remove from deck, append to player's held cards (`getOutOfJailFree` = count); use returns card to its deck bottom.
+- Cash / move / repair effects → **12.3** (draw still happens so decks progress).
 
 ---
 
@@ -1361,4 +1376,5 @@ Only when the user asks:
 | 2026-09-28 | **Phase 12 split:** 12.0–12.5 jail + Chance/Chest; jail fine **100** MeetCoin; classic card table locked for 12.2–12.3; ask before each slice                                                         |
 | 2026-09-28 | **12.0:** `inJail` / `jailTurns` / `getOutOfJailFree`; Go to Jail + third doubles → Jail; Just Visiting; OpenAPI 0.20; exit → 12.1                                                                  |
 | 2026-09-28 | **12.1:** pay-jail-fine (100) + use-jail-card; roll-from-jail doubles / 3-fail forced pay; `canPayJailFine` / `canUseJailCard`; OpenAPI 0.21; UI → 12.4                                              |
+| 2026-09-28 | **12.2:** Chance/Chest catalog by boardIndex; shuffle + draw on land; persist decks; `lastCard`; GOOJF held; effects → 12.3; OpenAPI 0.22                                                         |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

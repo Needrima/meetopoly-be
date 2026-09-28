@@ -49,8 +49,10 @@ type Player struct {
 	InJail bool `bson:"inJail,omitempty" json:"inJail,omitempty"`
 	// JailTurns — failed exit attempts while in Jail (Phase 12.1); 0 on entry.
 	JailTurns int `bson:"jailTurns,omitempty" json:"jailTurns,omitempty"`
-	// GetOutOfJailFree — Chance/Chest GOOJF cards held (Phase 12.2+); 0 until cards.
+	// GetOutOfJailFree — Chance/Chest GOOJF cards held (Phase 12.2+); count of GetOutOfJailFreeCards.
 	GetOutOfJailFree int `bson:"getOutOfJailFree,omitempty" json:"getOutOfJailFree,omitempty"`
+	// GetOutOfJailFreeCards — card ids held (chance_get_out_of_jail / chest_get_out_of_jail).
+	GetOutOfJailFreeCards []string `bson:"getOutOfJailFreeCards,omitempty" json:"getOutOfJailFreeCards,omitempty"`
 }
 
 // Deed is ownership of a buyable board space (Phase 6.4+).
@@ -101,6 +103,15 @@ type LastRoll struct {
 	ThirdDoubles bool `bson:"thirdDoubles,omitempty" json:"thirdDoubles,omitempty"`
 }
 
+// LastCard is the most recently drawn Chance / Community Chest card (Phase 12.2).
+type LastCard struct {
+	Deck     string `bson:"deck" json:"deck"` // chance | community_chest
+	CardID   string `bson:"cardId" json:"cardId"`
+	Title    string `bson:"title" json:"title"`
+	UserID   string `bson:"userId" json:"userId"`
+	Username string `bson:"username" json:"username"`
+}
+
 // Game is the authoritative M1 session (Phase 6+).
 type Game struct {
 	ID          string   `bson:"_id" json:"id"`
@@ -121,6 +132,12 @@ type Game struct {
 	// DoublesStreak — consecutive doubles this turn (0–3).
 	DoublesStreak int       `bson:"doublesStreak" json:"doublesStreak"`
 	LastRoll      *LastRoll `bson:"lastRoll,omitempty" json:"lastRoll,omitempty"`
+	// ChanceDeck — remaining Chance cards top-first (Phase 12.2). Not exposed on public View.
+	ChanceDeck []string `bson:"chanceDeck,omitempty" json:"chanceDeck,omitempty"`
+	// ChestDeck — remaining Community Chest cards top-first (Phase 12.2).
+	ChestDeck []string `bson:"chestDeck,omitempty" json:"chestDeck,omitempty"`
+	// LastCard — most recent Chance/Chest draw (Phase 12.2); effects in 12.3.
+	LastCard *LastCard `bson:"lastCard,omitempty" json:"lastCard,omitempty"`
 	// WinnerUserID — set when StatusFinished (last player standing).
 	WinnerUserID   string `bson:"winnerUserId,omitempty" json:"winnerUserId,omitempty"`
 	WinnerUsername string `bson:"winnerUsername,omitempty" json:"winnerUsername,omitempty"`

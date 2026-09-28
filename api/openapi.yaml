@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.21.0
+  version: 0.22.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -2103,6 +2103,29 @@ components:
           type: integer
         spaceName:
           type: string
+    GameLastCard:
+      type: object
+      additionalProperties: false
+      required:
+        - deck
+        - cardId
+        - title
+        - userId
+        - username
+      properties:
+        deck:
+          type: string
+          enum: [chance, community_chest]
+        cardId:
+          type: string
+          description: Stable catalog id (e.g. chance_advance_go)
+        title:
+          type: string
+          description: Display title for the card reveal UI
+        userId:
+          type: string
+        username:
+          type: string
     GameBuyOffer:
       type: object
       additionalProperties: false
@@ -2219,6 +2242,13 @@ components:
           description: Unpaid remainder; canRoll/canEndTurn false until resign or Phase 14
           allOf:
             - $ref: "#/components/schemas/GamePendingPayment"
+        lastCard:
+          nullable: true
+          description: |
+            Phase 12.2 — most recent Chance / Community Chest draw.
+            Cash/move/jail effects apply in 12.3; GOOJF is already held on the player.
+          allOf:
+            - $ref: "#/components/schemas/GameLastCard"
         winnerUserId:
           type: string
           description: Set when status is finished (last active player)

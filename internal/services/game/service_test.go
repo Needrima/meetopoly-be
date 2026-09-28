@@ -57,7 +57,12 @@ func (m *memRepo) FindByTableID(_ context.Context, tableID string) (*gamerepo.Ga
 func cloneGame(g *gamerepo.Game) *gamerepo.Game {
 	cp := *g
 	cp.Players = append([]gamerepo.Player(nil), g.Players...)
+	for i := range cp.Players {
+		cp.Players[i].GetOutOfJailFreeCards = append([]string(nil), g.Players[i].GetOutOfJailFreeCards...)
+	}
 	cp.Deeds = append([]gamerepo.Deed(nil), g.Deeds...)
+	cp.ChanceDeck = append([]string(nil), g.ChanceDeck...)
+	cp.ChestDeck = append([]string(nil), g.ChestDeck...)
 	if g.LastRoll != nil {
 		lr := *g.LastRoll
 		cp.LastRoll = &lr
@@ -69,6 +74,10 @@ func cloneGame(g *gamerepo.Game) *gamerepo.Game {
 	if g.PendingPayment != nil {
 		pp := *g.PendingPayment
 		cp.PendingPayment = &pp
+	}
+	if g.LastCard != nil {
+		lc := *g.LastCard
+		cp.LastCard = &lc
 	}
 	return &cp
 }
@@ -349,7 +358,9 @@ func TestUseJailCardLeavesJail(t *testing.T) {
 
 	g, _ := repo.FindByID(context.Background(), "g1")
 	g.Players[0].InJail = true
+	g.Players[0].GetOutOfJailFreeCards = []string{CardChanceGetOutOfJail}
 	g.Players[0].GetOutOfJailFree = 1
+	g.ChanceDeck = []string{CardChanceDividend}
 	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
 	_ = repo.Update(context.Background(), g)
 
@@ -360,8 +371,108 @@ func TestUseJailCardLeavesJail(t *testing.T) {
 	if view.Players[0].InJail || view.Players[0].GetOutOfJailFree != 0 {
 		t.Fatalf("inJail=%v cards=%d", view.Players[0].InJail, view.Players[0].GetOutOfJailFree)
 	}
+	g2, _ := repo.FindByID(context.Background(), "g1")
+	if len(g2.ChanceDeck) != 2 || g2.ChanceDeck[len(g2.ChanceDeck)-1] != CardChanceGetOutOfJail {
+		t.Fatalf("chanceDeck=%v — GOOJF should return to bottom", g2.ChanceDeck)
+	}
 	if view.TurnPhase != gamerepo.TurnPhaseAwaitingRoll {
 		t.Fatalf("phase=%s", view.TurnPhase)
+	}
+}
+
+func TestChanceChestCatalogSizes(t *testing.T) {
+	if len(chanceDeckTemplate()) != 16 {
+		t.Fatalf("chance=%d", len(chanceDeckTemplate()))
+	}
+	if len(chestDeckTemplate()) != 16 {
+		t.Fatalf("chest=%d", len(chestDeckTemplate()))
+	}
+	rr := 0
+	for _, id := range chanceDeckTemplate() {
+		if id == CardChanceNearestRailroad {
+			rr++
+		}
+	}
+	if rr != 2 {
+		t.Fatalf("nearest railroad copies=%d want 2", rr)
+	}
+}
+
+func TestCreateFromSeatsShufflesDecks(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, nil, Config{})
+	view, err := svc.CreateFromSeats(context.Background(), "t1", "africa-1", []SeatInput{
+		{UserID: "a", Username: "A", SeatIndex: 0},
+		{UserID: "b", Username: "B", SeatIndex: 1},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	g, _ := repo.FindByID(context.Background(), view.ID)
+	if len(g.ChanceDeck) != 16 || len(g.ChestDeck) != 16 {
+		t.Fatalf("chance=%d chest=%d", len(g.ChanceDeck), len(g.ChestDeck))
+	}
+}
+
+func TestDrawChanceCardOnLand(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 7, Slug: "chance", Name: "Chance", Kind: "special", SpecialType: "chance"},
+	}
+	svc := New(repo, spaces, Config{}).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 7
+	g.ChanceDeck = []string{CardChanceDividend, CardChanceSpeedingFine}
+	g.ChestDeck = newShuffledChestDeck()
+	_ = repo.Update(context.Background(), g)
+
+	g, _ = repo.FindByID(context.Background(), "g1")
+	svc.resolveLandingLocked(context.Background(), g, 0, 5)
+	_ = repo.Update(context.Background(), g)
+
+	view := svc.viewOf(context.Background(), g)
+	if view.LastCard == nil || view.LastCard.CardID != CardChanceDividend {
+		t.Fatalf("lastCard=%v", view.LastCard)
+	}
+	if view.LastCard.Deck != DeckChance || view.LastCard.Title == "" {
+		t.Fatalf("lastCard=%+v", view.LastCard)
+	}
+	// Non-GOOJF recycled to bottom: was [dividend, speeding] → draw dividend → [speeding, dividend]
+	if len(g.ChanceDeck) != 2 || g.ChanceDeck[0] != CardChanceSpeedingFine || g.ChanceDeck[1] != CardChanceDividend {
+		t.Fatalf("chanceDeck=%v", g.ChanceDeck)
+	}
+}
+
+func TestDrawGetOutOfJailFreeHoldsCard(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 2, Slug: "chest", Name: "Chest", Kind: "special", SpecialType: "community_chest"},
+	}
+	svc := New(repo, spaces, Config{}).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 2
+	g.ChestDeck = []string{CardChestGetOutOfJail, CardChestBankError}
+	g.ChanceDeck = newShuffledChanceDeck()
+	_ = repo.Update(context.Background(), g)
+
+	g, _ = repo.FindByID(context.Background(), "g1")
+	svc.resolveLandingLocked(context.Background(), g, 0, 2)
+
+	if g.Players[0].GetOutOfJailFree != 1 {
+		t.Fatalf("goojf=%d", g.Players[0].GetOutOfJailFree)
+	}
+	if len(g.Players[0].GetOutOfJailFreeCards) != 1 || g.Players[0].GetOutOfJailFreeCards[0] != CardChestGetOutOfJail {
+		t.Fatalf("cards=%v", g.Players[0].GetOutOfJailFreeCards)
+	}
+	if len(g.ChestDeck) != 1 || g.ChestDeck[0] != CardChestBankError {
+		t.Fatalf("chestDeck=%v — GOOJF must not recycle", g.ChestDeck)
+	}
+	if g.LastCard == nil || g.LastCard.CardID != CardChestGetOutOfJail {
+		t.Fatalf("lastCard=%v", g.LastCard)
 	}
 }
 

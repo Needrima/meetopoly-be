@@ -141,6 +141,15 @@ type PendingPaymentView struct {
 	SpaceName  string `json:"spaceName"`
 }
 
+// LastCardView is the public last Chance/Chest draw (Phase 12.2).
+type LastCardView struct {
+	Deck     string `json:"deck"`
+	CardID   string `json:"cardId"`
+	Title    string `json:"title"`
+	UserID   string `json:"userId"`
+	Username string `json:"username"`
+}
+
 // View is the public game snapshot.
 type View struct {
 	ID              string       `json:"id"`
@@ -167,6 +176,7 @@ type View struct {
 	LastRoll       *LastRollView       `json:"lastRoll"`
 	LastPayment    *LastPaymentView    `json:"lastPayment,omitempty"`
 	PendingPayment *PendingPaymentView `json:"pendingPayment,omitempty"`
+	LastCard       *LastCardView       `json:"lastCard,omitempty"`
 	WinnerUserID   string              `json:"winnerUserId,omitempty"`
 	WinnerUsername string              `json:"winnerUsername,omitempty"`
 	// TurnStartedAt — RFC3339 UTC; current player's bank drains from this instant.
@@ -333,6 +343,8 @@ func (s *service) CreateFromSeats(ctx context.Context, tableID, worldID string, 
 		PassGoBonus:   gamerepo.PassGoBonus,
 		TurnPhase:     gamerepo.TurnPhaseAwaitingRoll,
 		DoublesStreak: 0,
+		ChanceDeck:    newShuffledChanceDeck(),
+		ChestDeck:     newShuffledChestDeck(),
 		TurnStartedAt: now,
 		CreatedAt:     now,
 		UpdatedAt:     now,
@@ -685,10 +697,11 @@ func (s *service) UseJailCard(ctx context.Context, gameID, userID string) (*View
 	if hasPendingPayment(g) {
 		return nil, ErrMustSettle
 	}
-	if g.Players[playerIdx].GetOutOfJailFree <= 0 {
+	cardID, ok := popJailFreeCard(&g.Players[playerIdx])
+	if !ok {
 		return nil, ErrNoJailCard
 	}
-	g.Players[playerIdx].GetOutOfJailFree--
+	returnJailCardToDeck(g, cardID)
 	leaveJail(&g.Players[playerIdx])
 	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
 	g.UpdatedAt = time.Now().UTC()
@@ -1807,6 +1820,10 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 	nameByID := make(map[string]string, len(g.Players))
 	for i, p := range g.Players {
 		nameByID[p.UserID] = p.Username
+		goojf := len(p.GetOutOfJailFreeCards)
+		if goojf == 0 {
+			goojf = p.GetOutOfJailFree
+		}
 		players[i] = PlayerView{
 			UserID:           p.UserID,
 			Username:         p.Username,
@@ -1821,7 +1838,7 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 			HubRevision:      p.HubRevision,
 			InJail:           p.InJail,
 			JailTurns:        p.JailTurns,
-			GetOutOfJailFree: p.GetOutOfJailFree,
+			GetOutOfJailFree: goojf,
 		}
 		if !p.Resigned && p.TurnOrder == g.CurrentTurn {
 			currentUserID = p.UserID
@@ -1885,7 +1902,10 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 		currentInJail = g.Players[idx].InJail
 		currentJailTurns = g.Players[idx].JailTurns
 		currentCash = g.Players[idx].Cash
-		currentCards = g.Players[idx].GetOutOfJailFree
+		currentCards = len(g.Players[idx].GetOutOfJailFreeCards)
+		if currentCards == 0 {
+			currentCards = g.Players[idx].GetOutOfJailFree
+		}
 	}
 
 	canRoll := active && phase == gamerepo.TurnPhaseAwaitingRoll && !pending
@@ -1926,6 +1946,16 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 			pend.ToUsername = "Bank"
 		}
 	}
+	var lastCard *LastCardView
+	if g.LastCard != nil {
+		lastCard = &LastCardView{
+			Deck:     g.LastCard.Deck,
+			CardID:   g.LastCard.CardID,
+			Title:    g.LastCard.Title,
+			UserID:   g.LastCard.UserID,
+			Username: g.LastCard.Username,
+		}
+	}
 
 	return &View{
 		ID:              g.ID,
@@ -1950,6 +1980,7 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 		LastRoll:        last,
 		LastPayment:     lastPay,
 		PendingPayment:  pend,
+		LastCard:        lastCard,
 		WinnerUserID:    g.WinnerUserID,
 		WinnerUsername:  g.WinnerUsername,
 		TurnStartedAt:   started,
@@ -2008,6 +2039,7 @@ func trySettlePendingLocked(g *gamerepo.Game, payerIdx int) {
 
 // resolveLandingLocked auto-collects rent/tax after a move (Phase 6.5).
 // Phase 12.0: land on go_to_jail → Jail (no GO for the teleport); land on jail = Just Visiting.
+// Phase 12.2: land on chance / community_chest → draw (effects → 12.3).
 func (s *service) resolveLandingLocked(ctx context.Context, g *gamerepo.Game, payerIdx, diceTotal int) {
 	g.PendingPayment = nil
 	spaces := s.loadSpaces(ctx, g.WorldID)
@@ -2018,6 +2050,11 @@ func (s *service) resolveLandingLocked(ctx context.Context, g *gamerepo.Game, pa
 		if g.LastRoll != nil {
 			g.LastRoll.ToIndex = jail
 		}
+		return
+	}
+	if sp != nil && (sp.SpecialType == DeckChance || sp.SpecialType == DeckChest) {
+		drawCardLocked(g, payerIdx, sp.SpecialType)
+		// Phase 12.3 applies cash/move/jail/repairs from LastCard.
 		return
 	}
 
