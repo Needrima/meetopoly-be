@@ -2038,9 +2038,15 @@ func trySettlePendingLocked(g *gamerepo.Game, payerIdx int) {
 }
 
 // resolveLandingLocked auto-collects rent/tax after a move (Phase 6.5).
-// Phase 12.0: land on go_to_jail → Jail (no GO for the teleport); land on jail = Just Visiting.
-// Phase 12.2: land on chance / community_chest → draw (effects → 12.3).
+// Phase 12.0: land on go_to_jail → Jail; land on jail = Just Visiting.
+// Phase 12.2–12.3: land on chance / community_chest → draw + apply effects (lock A).
 func (s *service) resolveLandingLocked(ctx context.Context, g *gamerepo.Game, payerIdx, diceTotal int) {
+	s.resolveLandingWithOpts(ctx, g, payerIdx, diceTotal, landingOpts{})
+}
+
+func (s *service) resolveLandingWithOpts(
+	ctx context.Context, g *gamerepo.Game, payerIdx, diceTotal int, opts landingOpts,
+) {
 	g.PendingPayment = nil
 	spaces := s.loadSpaces(ctx, g.WorldID)
 	boardIndex := g.Players[payerIdx].BoardIndex
@@ -2053,8 +2059,8 @@ func (s *service) resolveLandingLocked(ctx context.Context, g *gamerepo.Game, pa
 		return
 	}
 	if sp != nil && (sp.SpecialType == DeckChance || sp.SpecialType == DeckChest) {
-		drawCardLocked(g, payerIdx, sp.SpecialType)
-		// Phase 12.3 applies cash/move/jail/repairs from LastCard.
+		id := drawCardLocked(g, payerIdx, sp.SpecialType)
+		s.applyCardEffectLocked(ctx, g, payerIdx, id)
 		return
 	}
 
@@ -2062,6 +2068,18 @@ func (s *service) resolveLandingLocked(ctx context.Context, g *gamerepo.Game, pa
 	amount, toUserID, kind, spaceName := rentDueForLanding(
 		spaces, g.Deeds, boardIndex, payerID, diceTotal,
 	)
+	if opts.utilityDiceTotal > 0 && sp != nil && sp.Kind == "utility" {
+		ownerID := ownerOf(g.Deeds, boardIndex)
+		if ownerID != "" && ownerID != payerID && !deedMortgaged(g.Deeds, boardIndex) {
+			amount = 10 * opts.utilityDiceTotal
+			kind = "rent"
+			toUserID = ownerID
+			spaceName = sp.Name
+		}
+	}
+	if opts.rentMultiplier > 1 && amount > 0 && kind == "rent" {
+		amount *= opts.rentMultiplier
+	}
 	if amount <= 0 || kind == "" {
 		return
 	}
@@ -2105,7 +2123,6 @@ func (s *service) resolveLandingLocked(ctx context.Context, g *gamerepo.Game, pa
 			BoardIndex: boardIndex,
 			SpaceName:  spaceName,
 		}
-		// Can't continue turn (incl. doubles re-roll) until settled / resign.
 		g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
 	}
 }

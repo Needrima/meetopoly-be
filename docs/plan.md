@@ -1106,7 +1106,7 @@ Manual (2 clients preferred; BE running; landscape). Backend gate: `cd meetopoly
 | **12.0** | ✅ Player jail fields; land **Go to Jail** + **third doubles** → Jail; land Jail = Just Visiting; OpenAPI 0.20 + mobile types                                    | Exit APIs, card decks, UI |
 | **12.1** | ✅ Jail exit: pay **100** MeetCoin (`POST .../pay-jail-fine`), GOOJF (`POST .../use-jail-card`), roll doubles (free + move, no re-roll), or fail 3 then forced pay+move (if broke stay until pay); OpenAPI 0.21 | Card decks, fancy UI |
 | **12.2** | ✅ Chance + Chest catalog; shuffle at start; draw on land; persist decks; `lastCard`; GOOJF held; other effects stubbed → 12.3; OpenAPI 0.22 | Full effect resolve, UI |
-| **12.3** | Card effects (tables below): cash, move by index, Jail, repairs, nearest RR/utility                                                                              | Trade of GOOJF (→ 13)    |
+| **12.3** | ✅ Card effects (tables below): cash, move by index, Jail, repairs, nearest RR/utility; apply on draw (lock **A**); OpenAPI 0.23 | Trade of GOOJF (→ 13); card modal UI |
 | **12.4** | Board UI: jail action sheet + card reveal modal (hub = toast / notify like other economy)                                                                        | Auction/trade            |
 | **12.5** | Smoke checklist                                                                                                                                                  | —                        |
 
@@ -1174,6 +1174,15 @@ Amounts = MeetCoin 1:1 with classic dollars. UI may show the world tile **name**
 - Land `specialType` `chance` / `community_chest` → draw top; set `lastCard` on game view; non-GOOJF → bottom of same deck.
 - GOOJF → remove from deck, append to player's held cards (`getOutOfJailFree` = count); use returns card to its deck bottom.
 - Cash / move / repair effects → **12.3** (draw still happens so decks progress).
+
+**12.3 notes**
+
+- **Lock A:** server applies card effects in the same state update as the draw; client shows reveal modal 3s / `__DEV__` 5s in **12.4**, then animates the already-applied cash/move.
+- Destinations by `boardIndex` (39 / 0 / 24 / 11 / 5 / nearest RR 5·15·25·35 / nearest util 12·28 / jail 10).
+- Nearest railroad → **2×** rent if owned; nearest utility → **10×** new dice roll if owned.
+- Go back 3 → resolve landing on the new tile (tax/rent/another card OK).
+- Card payments use `lastPayment.kind = card`; shortfall → `pendingPayment` (raise funds).
+- Card reveal + jail action sheet UI → **12.4**.
 
 ---
 
@@ -1377,4 +1386,5 @@ Only when the user asks:
 | 2026-09-28 | **12.0:** `inJail` / `jailTurns` / `getOutOfJailFree`; Go to Jail + third doubles → Jail; Just Visiting; OpenAPI 0.20; exit → 12.1                                                                  |
 | 2026-09-28 | **12.1:** pay-jail-fine (100) + use-jail-card; roll-from-jail doubles / 3-fail forced pay; `canPayJailFine` / `canUseJailCard`; OpenAPI 0.21; UI → 12.4                                              |
 | 2026-09-28 | **12.2:** Chance/Chest catalog by boardIndex; shuffle + draw on land; persist decks; `lastCard`; GOOJF held; effects → 12.3; OpenAPI 0.22                                                         |
+| 2026-09-28 | **12.3:** apply card effects on draw (lock A); move/cash/jail/repairs/nearest RR×2 / util 10×; `lastPayment.kind=card`; OpenAPI 0.23; modal → 12.4                                              |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

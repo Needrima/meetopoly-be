@@ -424,6 +424,7 @@ func TestDrawChanceCardOnLand(t *testing.T) {
 
 	g, _ := repo.FindByID(context.Background(), "g1")
 	g.Players[0].BoardIndex = 7
+	g.Players[0].Cash = 2000
 	g.ChanceDeck = []string{CardChanceDividend, CardChanceSpeedingFine}
 	g.ChestDeck = newShuffledChestDeck()
 	_ = repo.Update(context.Background(), g)
@@ -436,10 +437,9 @@ func TestDrawChanceCardOnLand(t *testing.T) {
 	if view.LastCard == nil || view.LastCard.CardID != CardChanceDividend {
 		t.Fatalf("lastCard=%v", view.LastCard)
 	}
-	if view.LastCard.Deck != DeckChance || view.LastCard.Title == "" {
-		t.Fatalf("lastCard=%+v", view.LastCard)
+	if view.Players[0].Cash != 2050 {
+		t.Fatalf("cash=%d want 2050 after dividend", view.Players[0].Cash)
 	}
-	// Non-GOOJF recycled to bottom: was [dividend, speeding] → draw dividend → [speeding, dividend]
 	if len(g.ChanceDeck) != 2 || g.ChanceDeck[0] != CardChanceSpeedingFine || g.ChanceDeck[1] != CardChanceDividend {
 		t.Fatalf("chanceDeck=%v", g.ChanceDeck)
 	}
@@ -473,6 +473,143 @@ func TestDrawGetOutOfJailFreeHoldsCard(t *testing.T) {
 	}
 	if g.LastCard == nil || g.LastCard.CardID != CardChestGetOutOfJail {
 		t.Fatalf("lastCard=%v", g.LastCard)
+	}
+}
+
+func TestCardAdvanceToGO(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 0, Slug: "go", Name: "GO", Kind: "special", SpecialType: "go"},
+		{BoardIndex: 7, Slug: "chance", Name: "Chance", Kind: "special", SpecialType: "chance"},
+	}
+	svc := New(repo, spaces, Config{}).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 7
+	g.Players[0].Cash = 2000
+	g.ChanceDeck = []string{CardChanceAdvanceGO}
+	g.LastRoll = &gamerepo.LastRoll{UserID: "a", FromIndex: 2, ToIndex: 7, Total: 5}
+	svc.resolveLandingLocked(context.Background(), g, 0, 5)
+
+	if g.Players[0].BoardIndex != 0 {
+		t.Fatalf("board=%d", g.Players[0].BoardIndex)
+	}
+	if g.Players[0].Cash != 2200 {
+		t.Fatalf("cash=%d want 2200", g.Players[0].Cash)
+	}
+	if g.LastRoll.ToIndex != 0 {
+		t.Fatalf("lastRoll.to=%d", g.LastRoll.ToIndex)
+	}
+}
+
+func TestCardGoToJail(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 10, Slug: "jail", Name: "Jail", Kind: "special", SpecialType: "jail"},
+		{BoardIndex: 2, Slug: "chest", Name: "Chest", Kind: "special", SpecialType: "community_chest"},
+	}
+	svc := New(repo, spaces, Config{}).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 2
+	g.ChestDeck = []string{CardChestGoToJail}
+	g.LastRoll = &gamerepo.LastRoll{UserID: "a", ToIndex: 2}
+	svc.resolveLandingLocked(context.Background(), g, 0, 2)
+
+	if !g.Players[0].InJail || g.Players[0].BoardIndex != 10 {
+		t.Fatalf("inJail=%v board=%d", g.Players[0].InJail, g.Players[0].BoardIndex)
+	}
+	if g.TurnPhase != gamerepo.TurnPhaseAwaitingEnd {
+		t.Fatalf("phase=%s", g.TurnPhase)
+	}
+}
+
+func TestCardNearestRailroadDoubleRent(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 7, Slug: "chance", Name: "Chance", Kind: "special", SpecialType: "chance"},
+		{BoardIndex: 15, Slug: "rr", Name: "Air", Kind: "railroad", Price: 200, Rents: []int{25, 50, 100, 200}},
+	}
+	svc := New(repo, spaces, Config{}).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 7
+	g.Players[0].Cash = 2000
+	g.Players[1].Cash = 2000
+	g.Deeds = []gamerepo.Deed{{BoardIndex: 15, OwnerUserID: "b"}}
+	g.ChanceDeck = []string{CardChanceNearestRailroad}
+	g.LastRoll = &gamerepo.LastRoll{UserID: "a", ToIndex: 7, Total: 5}
+	svc.resolveLandingLocked(context.Background(), g, 0, 5)
+
+	if g.Players[0].BoardIndex != 15 {
+		t.Fatalf("board=%d want 15", g.Players[0].BoardIndex)
+	}
+	// Base railroad rent 25 × 2 = 50
+	if g.Players[0].Cash != 1950 || g.Players[1].Cash != 2050 {
+		t.Fatalf("cash a=%d b=%d", g.Players[0].Cash, g.Players[1].Cash)
+	}
+}
+
+func TestCardGoBack3(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 7, Slug: "chance", Name: "Chance", Kind: "special", SpecialType: "chance"},
+		{BoardIndex: 4, Slug: "tax", Name: "Tax", Kind: "special", SpecialType: "tax", TaxAmount: 200},
+	}
+	svc := New(repo, spaces, Config{}).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 7
+	g.Players[0].Cash = 2000
+	g.ChanceDeck = []string{CardChanceGoBack3}
+	g.LastRoll = &gamerepo.LastRoll{UserID: "a", ToIndex: 7}
+	svc.resolveLandingLocked(context.Background(), g, 0, 5)
+
+	if g.Players[0].BoardIndex != 4 {
+		t.Fatalf("board=%d want 4", g.Players[0].BoardIndex)
+	}
+	if g.Players[0].Cash != 1800 {
+		t.Fatalf("cash=%d want 1800 after tax", g.Players[0].Cash)
+	}
+}
+
+func TestCardRepairsAndBirthday(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, nil, Config{}).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].Cash = 2000
+	g.Deeds = []gamerepo.Deed{
+		{BoardIndex: 1, OwnerUserID: "a", Houses: 2},
+		{BoardIndex: 3, OwnerUserID: "a", Houses: 5},
+	}
+	// Chance general repairs: 2*25 + 100 = 150
+	svc.applyCardEffectLocked(context.Background(), g, 0, CardChanceGeneralRepairs)
+	if g.Players[0].Cash != 1850 {
+		t.Fatalf("after repairs cash=%d", g.Players[0].Cash)
+	}
+
+	g.Players[0].Cash = 2000
+	g.Players[1].Cash = 2000
+	svc.applyCardEffectLocked(context.Background(), g, 0, CardChestBirthday)
+	if g.Players[0].Cash != 2010 || g.Players[1].Cash != 1990 {
+		t.Fatalf("birthday a=%d b=%d", g.Players[0].Cash, g.Players[1].Cash)
+	}
+}
+
+func TestNextIndexForward(t *testing.T) {
+	d, wrap := nextIndexForward(7, railroadIndices)
+	if d != 15 || wrap {
+		t.Fatalf("got %d wrap=%v", d, wrap)
+	}
+	d, wrap = nextIndexForward(35, railroadIndices)
+	if d != 5 || !wrap {
+		t.Fatalf("got %d wrap=%v", d, wrap)
 	}
 }
 

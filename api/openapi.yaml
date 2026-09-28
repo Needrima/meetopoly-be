@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.22.0
+  version: 0.23.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -2059,7 +2059,7 @@ components:
       properties:
         kind:
           type: string
-          enum: [rent, tax, jail_fine]
+          enum: [rent, tax, jail_fine, card]
         fromUserId:
           type: string
         fromUsername:
@@ -2091,7 +2091,7 @@ components:
       properties:
         kind:
           type: string
-          enum: [rent, tax]
+          enum: [rent, tax, card]
         amount:
           type: integer
           description: Remaining MeetCoin owed
