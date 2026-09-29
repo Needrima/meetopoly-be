@@ -1477,4 +1477,5 @@ Only when the user asks:
 | 2026-09-29 | **13.0:** bank auction APIs + 30s timer + auto-bid/fold + settle/void + bank pause; OpenAPI 0.25; must-buy → buy\|auction; UI → 13.1                                                                 |
 | 2026-09-29 | **13.1:** AuctionOverlay + Buy\|Auction + dock peek + hub auto Open board; settle toast + winner bought @ auction price; trade → 13.2                                                              |
 | 2026-09-29 | **13.1 polish:** auction bid = native TextInput (not custom keypad); turn timer **60s**; layout fix so controls stay under deed/feed                                                                |
+| 2026-09-29 | **13.1 polish:** auction overlay (and hub Open board) wait for dice/pin idle like buy — no modal over mid-walk auto-auction                                                                        |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
