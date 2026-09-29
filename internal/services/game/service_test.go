@@ -1057,10 +1057,10 @@ func TestResignAdvancesTurnWhenCurrentLeaves(t *testing.T) {
 	}
 }
 
-func TestTimeBankExhaustedEliminatesPlayer(t *testing.T) {
+func TestTurnClockFirstTimeoutForcesEndTurn(t *testing.T) {
 	repo := newMemRepo()
 	svc := New(repo, nil, Config{})
-	bank := gamerepo.TimeBankDuration.Milliseconds()
+	bank := gamerepo.TurnClockDuration.Milliseconds()
 	g := &gamerepo.Game{
 		ID:      "g1",
 		TableID: "t1",
@@ -1083,11 +1083,54 @@ func TestTimeBankExhaustedEliminatesPlayer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if view.Players[0].Resigned {
+		t.Fatal("first timeout should not resign")
+	}
+	if view.Players[0].TurnTimeouts != 1 {
+		t.Fatalf("timeouts=%d", view.Players[0].TurnTimeouts)
+	}
+	if view.LastForfeit == nil || view.LastForfeit.Reason != "turn_strike" || view.LastForfeit.Strikes != 1 {
+		t.Fatalf("lastForfeit=%+v", view.LastForfeit)
+	}
+	if view.CurrentUserID != "b" {
+		t.Fatalf("current=%s want b", view.CurrentUserID)
+	}
+}
+
+func TestTurnClockSecondTimeoutAutoResigns(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, nil, Config{})
+	bank := gamerepo.TurnClockDuration.Milliseconds()
+	g := &gamerepo.Game{
+		ID:      "g1",
+		TableID: "t1",
+		WorldID: "africa-1",
+		Status:  gamerepo.StatusActive,
+		Players: []gamerepo.Player{
+			{UserID: "a", Username: "A", SeatIndex: 0, TurnOrder: 0, Cash: 2000, BoardIndex: 0, PinColor: "#f00", TimeRemainingMs: 500, TurnTimeouts: 1},
+			{UserID: "b", Username: "B", SeatIndex: 1, TurnOrder: 1, Cash: 2000, BoardIndex: 0, PinColor: "#0f0", TimeRemainingMs: bank},
+		},
+		CurrentTurn:   0,
+		PassGoBonus:   200,
+		TurnPhase:     gamerepo.TurnPhaseAwaitingRoll,
+		TurnStartedAt: time.Now().UTC().Add(-2 * time.Second),
+	}
+	if err := repo.Insert(context.Background(), g); err != nil {
+		t.Fatal(err)
+	}
+
+	view, err := svc.Get(context.Background(), "g1")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !view.Players[0].Resigned {
-		t.Fatal("a should be eliminated")
+		t.Fatal("a should be eliminated on second timeout")
+	}
+	if view.LastForfeit == nil || view.LastForfeit.Reason != "turn_timeout" || view.LastForfeit.Strikes != 2 {
+		t.Fatalf("lastForfeit=%+v", view.LastForfeit)
 	}
 	if view.Status != gamerepo.StatusFinished {
-		t.Fatalf("status=%s want finished (last player wins)", view.Status)
+		t.Fatalf("status=%s want finished", view.Status)
 	}
 	if view.WinnerUserID != "b" {
 		t.Fatalf("winner=%s", view.WinnerUserID)
@@ -2314,5 +2357,163 @@ func TestAuctionHighBidderSitsOutUntilOutbid(t *testing.T) {
 	}
 	if view.Auction.CurrentBidderUserID != "a" {
 		t.Fatalf("want a after c fold, got %s", view.Auction.CurrentBidderUserID)
+	}
+}
+
+func TestProposeTradeAndAcceptDeedForCash(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
+		{BoardIndex: 3, Slug: "accra", Name: "Accra", Kind: "property", Price: 60},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Deeds = []gamerepo.Deed{
+		{BoardIndex: 1, OwnerUserID: "a"},
+		{BoardIndex: 3, OwnerUserID: "b"},
+	}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.ProposeTrade(context.Background(), "g1", "a", "b",
+		TradeSideInput{BoardIndexes: []int{1}},
+		TradeSideInput{Cash: 50},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Trade == nil || view.Trade.ToUserID != "b" {
+		t.Fatalf("trade=%v", view.Trade)
+	}
+	if view.CanRoll || view.TurnStartedAt != "" {
+		t.Fatalf("clock paused / roll blocked: canRoll=%v started=%q", view.CanRoll, view.TurnStartedAt)
+	}
+
+	view, err = svc.AcceptTrade(context.Background(), "g1", "b", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Trade != nil {
+		t.Fatal("trade should clear")
+	}
+	own := map[int]string{}
+	for _, d := range view.Deeds {
+		own[d.BoardIndex] = d.OwnerUserID
+	}
+	if own[1] != "b" || own[3] != "b" {
+		t.Fatalf("deeds=%v", own)
+	}
+	if view.Players[0].Cash != 2050 || view.Players[1].Cash != 1950 {
+		t.Fatalf("cash a=%d b=%d", view.Players[0].Cash, view.Players[1].Cash)
+	}
+}
+
+func TestProposeTradeRejectsCashForCash(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, nil, Config{})
+	seedTwoPlayer(t, repo)
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	_ = repo.Update(context.Background(), g)
+
+	_, err := svc.ProposeTrade(context.Background(), "g1", "a", "b",
+		TradeSideInput{Cash: 10},
+		TradeSideInput{Cash: 20},
+	)
+	if !errors.Is(err, ErrTradeNeedsDeed) {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestDeclineTradeResumesClock(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Deeds = []gamerepo.Deed{{BoardIndex: 1, OwnerUserID: "a"}}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+	_ = repo.Update(context.Background(), g)
+
+	if _, err := svc.ProposeTrade(context.Background(), "g1", "a", "b",
+		TradeSideInput{BoardIndexes: []int{1}},
+		TradeSideInput{Cash: 1},
+	); err != nil {
+		t.Fatal(err)
+	}
+	view, err := svc.DeclineTrade(context.Background(), "g1", "b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Trade != nil {
+		t.Fatal("expected nil trade")
+	}
+	if view.TurnStartedAt == "" {
+		t.Fatal("expected clock resumed")
+	}
+}
+
+func TestAcceptTradeRedeemAllMortgage(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Deeds = []gamerepo.Deed{{BoardIndex: 1, OwnerUserID: "a", Mortgaged: true}}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	_ = repo.Update(context.Background(), g)
+
+	if _, err := svc.ProposeTrade(context.Background(), "g1", "a", "b",
+		TradeSideInput{BoardIndexes: []int{1}},
+		TradeSideInput{Cash: 10},
+	); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.AcceptTrade(context.Background(), "g1", "b", ""); !errors.Is(err, ErrTradeMortgageChoice) {
+		t.Fatalf("err=%v", err)
+	}
+	view, err := svc.AcceptTrade(context.Background(), "g1", "b", MortgageRedeemAll)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// redeemCost(60) = 30+3 = 33; b pays 10 cash + 33 redeem, receives deed unmortgaged
+	if view.Players[1].Cash != 2000-10-33 {
+		t.Fatalf("b cash=%d", view.Players[1].Cash)
+	}
+	for _, d := range view.Deeds {
+		if d.BoardIndex == 1 {
+			if d.OwnerUserID != "b" || d.Mortgaged {
+				t.Fatalf("deed=%+v", d)
+			}
+		}
+	}
+}
+
+func TestProposeTradeBlockedDuringAuction(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+	seedBuyOffer(t, repo, 2000, 2000)
+	if _, err := svc.StartAuction(context.Background(), "g1", "a"); err != nil {
+		t.Fatal(err)
+	}
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].GetOutOfJailFree = 1
+	g.Players[0].GetOutOfJailFreeCards = []string{"chance_get_out_of_jail"}
+	_ = repo.Update(context.Background(), g)
+	_, err := svc.ProposeTrade(context.Background(), "g1", "a", "b",
+		TradeSideInput{GetOutOfJailFree: 1},
+		TradeSideInput{Cash: 5},
+	)
+	if !errors.Is(err, ErrAuctionActive) {
+		t.Fatalf("err=%v", err)
 	}
 }

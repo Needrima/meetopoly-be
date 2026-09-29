@@ -1256,7 +1256,7 @@ Also **pause everyone’s** personal banks (do not reset) for the **whole auctio
 | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
 | **13.0** | ✅ Auction schema + APIs: auto-start if broke / `POST .../start-auction`; bid + fold; 30s timer; auto-bid/fold; settle/void; pause all banks; remove must-buy-only; OpenAPI 0.25 + unit tests | Fancy UI, trade               |
 | **13.1** | ✅ Board auction modal (deed + feed + keypad + BID/FOLD); Buy\|Auction; dock peek; hub Open board; toasts + winner bought @ auction price | Trade                         |
-| **13.2** | Trade schema + APIs (propose / accept / decline / cancel; deeds + cash + GOOJF); pause banks while offer open | Fancy trade UI                |
+| **13.2** | ✅ Trade schema + APIs (propose / accept / decline; deeds + cash + GOOJF); 60s reply; pause turn clock; **3m turn clock** + 2-strike forfeit; panel current-only green→red | Fancy trade UI → **13.3** |
 | **13.3** | Trade board UI + wire TRADE CTA; hub notify / Open board                                                                                                          | House shortage                |
 | **13.4** | Smoke checklist; Phase 13 DONE                                                                                                                                    | House shortage (deferred)     |
 
@@ -1278,6 +1278,12 @@ Also **pause everyone’s** personal banks (do not reset) for the **whole auctio
 - Hub: on auction start → toast + prefer Open board (keep `hubId`).
 - Toast all on settle; winner board modal uses **auction amount** (`priceOverride`).
 - Per-bidder clock **60s** (server `AuctionBidTurn`).
+
+**13.2 notes**
+
+- **Trade:** `POST …/trade/propose|accept|decline`; one open offer; current-turn propose only; target 60s auto-decline; no cash↔cash; block improved titles; mortgaged OK with `redeem_all`|`leave_all` (mortgage+10%); GOOJF tradable; Roll blocked while open; pause proposer's turn clock during reply wait.
+- **Turn clock:** replaces 45m banks with **3:00 fresh each turn**; 1st timeout → force End Turn + strike; 2nd → auto-resign + `lastForfeit`; pause only for auction + trade-wait. Panel shows **current player only**; green → red at ≤1:00.
+- Fancy two-panel trade UI → **13.3**.
 
 ---
 
@@ -1478,4 +1484,5 @@ Only when the user asks:
 | 2026-09-29 | **13.1:** AuctionOverlay + Buy\|Auction + dock peek + hub auto Open board; settle toast + winner bought @ auction price; trade → 13.2                                                              |
 | 2026-09-29 | **13.1 polish:** auction bid = native TextInput (not custom keypad); turn timer **60s**; layout fix so controls stay under deed/feed                                                                |
 | 2026-09-29 | **13.1 polish:** auction overlay (and hub Open board) wait for dice/pin idle like buy — no modal over mid-walk auto-auction                                                                        |
+| 2026-09-29 | **13.2:** trade propose/accept/decline APIs + 60s reply; **3m turn clock** + 2-strike forfeit; OpenAPI 0.26; panel current-only green→red; trade UI → 13.3                                         |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

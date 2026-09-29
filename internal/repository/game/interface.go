@@ -24,8 +24,15 @@ const (
 	// AuctionMinBid — floor when high bid is 0 (Phase 13.0).
 	AuctionMinBid = 1
 
-	// TimeBankDuration — Phase 6.3b per-player bank (drains on their turn only).
-	TimeBankDuration = 45 * time.Minute
+	// TurnClockDuration — Phase 13.2 per-turn clock (fresh each time you become current).
+	TurnClockDuration = 3 * time.Minute
+	// TurnTimeoutResignAfter — auto-resign after this many turn-clock expiries (Phase 13.2).
+	TurnTimeoutResignAfter = 2
+	// TradeReplyTimeout — target must accept/decline within this window (Phase 13.2).
+	TradeReplyTimeout = 60 * time.Second
+
+	// Deprecated alias — use TurnClockDuration (Phase 13.2 replaced 45m banks).
+	TimeBankDuration = TurnClockDuration
 
 	// TurnPhaseAwaitingRoll — current player may roll (start of turn or after doubles).
 	TurnPhaseAwaitingRoll = "awaiting_roll"
@@ -48,8 +55,10 @@ type Player struct {
 	HubRevision int64 `bson:"hubRevision,omitempty" json:"hubRevision,omitempty"`
 	// Resigned — left mid-game or time-bank eliminated; skipped for turns. Assets frozen until Phase 14.
 	Resigned bool `bson:"resigned,omitempty" json:"resigned,omitempty"`
-	// TimeRemainingMs — personal time left when their clock was last paused (Phase 6.3b).
+	// TimeRemainingMs — personal turn clock remainder when last paused (Phase 13.2: 3m fresh per turn).
 	TimeRemainingMs int64 `bson:"timeRemainingMs" json:"timeRemainingMs"`
+	// TurnTimeouts — how many times this player's turn clock hit 0 (Phase 13.2); 2 → auto-resign.
+	TurnTimeouts int `bson:"turnTimeouts,omitempty" json:"turnTimeouts,omitempty"`
 	// InJail — true when sent to Jail (Go to Jail / third doubles / card). Land on Jail without this = Just Visiting (Phase 12.0).
 	InJail bool `bson:"inJail,omitempty" json:"inJail,omitempty"`
 	// JailTurns — failed exit attempts while in Jail (Phase 12.1); 0 on entry.
@@ -153,6 +162,32 @@ type LastAuction struct {
 	Void           bool   `bson:"void,omitempty" json:"void,omitempty"`
 }
 
+// TradeSide is one side of a trade offer (Phase 13.2).
+type TradeSide struct {
+	Cash              int   `bson:"cash,omitempty" json:"cash,omitempty"`
+	BoardIndexes      []int `bson:"boardIndexes,omitempty" json:"boardIndexes,omitempty"`
+	GetOutOfJailFree  int   `bson:"getOutOfJailFree,omitempty" json:"getOutOfJailFree,omitempty"`
+}
+
+// TradeOffer is the single open player-to-player trade (Phase 13.2).
+type TradeOffer struct {
+	FromUserID    string    `bson:"fromUserId" json:"fromUserId"`
+	ToUserID      string    `bson:"toUserId" json:"toUserId"`
+	Give          TradeSide `bson:"give" json:"give"` // from → to
+	Take          TradeSide `bson:"take" json:"take"` // to → from
+	ReplyDeadline time.Time `bson:"replyDeadline" json:"replyDeadline"`
+}
+
+// LastForfeit is set on turn-clock strike / auto-resign / resign for client toasts (Phase 13.2).
+type LastForfeit struct {
+	UserID   string `bson:"userId" json:"userId"`
+	Username string `bson:"username" json:"username"`
+	// Reason — turn_strike (1st clock expiry) | turn_timeout (2nd → kicked) | resign.
+	Reason string `bson:"reason" json:"reason"`
+	// Strikes — turn-timeout count after this event (1 or 2); 0 for manual resign.
+	Strikes int `bson:"strikes,omitempty" json:"strikes,omitempty"`
+}
+
 // Game is the authoritative M1 session (Phase 6+).
 type Game struct {
 	ID          string   `bson:"_id" json:"id"`
@@ -185,6 +220,10 @@ type Game struct {
 	LastAuction *LastAuction `bson:"lastAuction,omitempty" json:"lastAuction,omitempty"`
 	// SuppressBuyOffer — after auction settle/void this turn; cleared on EndTurn (Phase 13.0).
 	SuppressBuyOffer bool `bson:"suppressBuyOffer,omitempty" json:"suppressBuyOffer,omitempty"`
+	// Trade — single open trade offer (Phase 13.2); nil when none.
+	Trade *TradeOffer `bson:"trade,omitempty" json:"trade,omitempty"`
+	// LastForfeit — most recent auto/manual forfeit for toasts (Phase 13.2).
+	LastForfeit *LastForfeit `bson:"lastForfeit,omitempty" json:"lastForfeit,omitempty"`
 	// WinnerUserID — set when StatusFinished (last player standing).
 	WinnerUserID   string `bson:"winnerUserId,omitempty" json:"winnerUserId,omitempty"`
 	WinnerUsername string `bson:"winnerUsername,omitempty" json:"winnerUsername,omitempty"`

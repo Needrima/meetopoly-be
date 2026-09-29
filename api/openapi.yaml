@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.25.0
+  version: 0.26.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -991,6 +991,153 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "409":
           description: Not auction turn, no auction, or already folded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /games/{gameId}/trade/propose:
+    post:
+      operationId: proposeTrade
+      summary: Propose a player-to-player trade
+      description: |
+        Phase 13.2 — current player only. One open trade table-wide. Both sides must be
+        non-empty; cash-for-cash alone is rejected (at least one deed or GOOJF on either side).
+        Deeds with houses/hotels cannot be traded. Pauses the proposer's 3-minute turn clock
+        while the target has 60s to accept/decline (auto-decline on timeout). Fans out via WS.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TradeProposeBody"
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "400":
+          description: Invalid trade
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Not your turn, auction/trade active, or cannot afford
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /games/{gameId}/trade/accept:
+    post:
+      operationId: acceptTrade
+      summary: Accept the open trade offer
+      description: |
+        Phase 13.2 — trade target only. If any transferred deed is mortgaged, body must
+        include `mortgageAction` (`redeem_all` | `leave_all`). Redeem cost is mortgage + 10%.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TradeAcceptBody"
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "400":
+          description: Missing mortgageAction when required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not the trade target
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: No trade, auction active, or cannot afford redeem
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /games/{gameId}/trade/decline:
+    post:
+      operationId: declineTrade
+      summary: Decline the open trade offer
+      description: Phase 13.2 — trade target only. Resumes the proposer's turn clock.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not the trade target
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: No open trade
           content:
             application/json:
               schema:
@@ -2062,6 +2209,7 @@ components:
         - pinColor
         - resigned
         - timeRemainingMs
+        - turnTimeouts
         - inJail
         - jailTurns
         - getOutOfJailFree
@@ -2085,14 +2233,21 @@ components:
           description: Hex accent for the pin
         resigned:
           type: boolean
-          description: Left mid-game or time-bank eliminated; skipped for turns
+          description: Left mid-game or turn-timeout / resign eliminated; skipped for turns
         timeRemainingMs:
           type: integer
           format: int64
           description: |
-            Personal time bank remaining in milliseconds (Phase 6.3b).
-            For the current player this is live (bank minus elapsed on this turn).
-            For others it is the paused remainder. Starts at 45 minutes.
+            Phase 13.2 — current player's remaining turn clock in ms (fresh 3 minutes each
+            time they become current). Live while their turn clock is draining; paused
+            during auction and while a trade reply is pending. Other players' values are
+            unused for HUD (panel shows current player only).
+        turnTimeouts:
+          type: integer
+          minimum: 0
+          description: |
+            Phase 13.2 — how many times this player's 3m turn clock hit 0.
+            After 2, the player auto-resigns (forfeit).
         country:
           type: string
           description: |
@@ -2412,6 +2567,102 @@ components:
         void:
           type: boolean
           description: true when nobody could buy — deed stays unowned
+    TradeSide:
+      type: object
+      additionalProperties: false
+      properties:
+        cash:
+          type: integer
+          minimum: 0
+          description: MeetCoin included on this side
+        boardIndexes:
+          type: array
+          items:
+            type: integer
+          description: Deed board indexes included on this side
+        getOutOfJailFree:
+          type: integer
+          minimum: 0
+          description: Count of GOOJF cards included on this side
+    TradeProposeBody:
+      type: object
+      additionalProperties: false
+      required:
+        - toUserId
+        - give
+        - take
+      properties:
+        toUserId:
+          type: string
+        give:
+          description: Assets the proposer gives
+          allOf:
+            - $ref: "#/components/schemas/TradeSide"
+        take:
+          description: Assets the target gives
+          allOf:
+            - $ref: "#/components/schemas/TradeSide"
+    TradeAcceptBody:
+      type: object
+      additionalProperties: false
+      properties:
+        mortgageAction:
+          type: string
+          enum: [redeem_all, leave_all]
+          description: |
+            Required when any deed in the trade is mortgaged. redeem_all charges
+            mortgage+10% to each receiver for mortgaged deeds they receive.
+    GameTrade:
+      type: object
+      additionalProperties: false
+      required:
+        - fromUserId
+        - fromUsername
+        - toUserId
+        - toUsername
+        - give
+        - take
+        - replyDeadline
+      properties:
+        fromUserId:
+          type: string
+        fromUsername:
+          type: string
+        toUserId:
+          type: string
+        toUsername:
+          type: string
+        give:
+          $ref: "#/components/schemas/TradeSide"
+        take:
+          $ref: "#/components/schemas/TradeSide"
+        replyDeadline:
+          type: string
+          format: date-time
+          description: UTC instant when the target's 60s reply clock expires
+    GameLastForfeit:
+      type: object
+      additionalProperties: false
+      required:
+        - userId
+        - username
+        - reason
+      properties:
+        userId:
+          type: string
+        username:
+          type: string
+        reason:
+          type: string
+          enum: [turn_strike, turn_timeout, resign]
+          description: |
+            turn_strike — first 3m clock expiry (still in game);
+            turn_timeout — second expiry (kicked);
+            resign — manual leave
+        strikes:
+          type: integer
+          minimum: 0
+          description: Turn-timeout count after this event (1 or 2); 0 for resign
     Game:
       type: object
       additionalProperties: false
@@ -2432,6 +2683,7 @@ components:
         - canEndTurn
         - canBuy
         - canStartAuction
+        - canProposeTrade
         - canPayJailFine
         - canUseJailCard
         - deeds
@@ -2471,7 +2723,7 @@ components:
           type: boolean
           description: |
             Phase 12.1 — while in Jail, true only if jailTurns < 3 (try doubles).
-            After 3 failed attempts, false until pay/card.
+            After 3 failed attempts, false until pay/card. False while a trade is open (13.2).
         canEndTurn:
           type: boolean
         canBuy:
@@ -2481,6 +2733,10 @@ components:
           type: boolean
           description: |
             Phase 13.0 — current player has a buyOffer (can afford list price) and may start a bank auction.
+        canProposeTrade:
+          type: boolean
+          description: |
+            Phase 13.2 — current player may open a trade (not during auction/pending payment/open trade).
         canPayJailFine:
           type: boolean
           description: |
@@ -2503,6 +2759,16 @@ components:
           description: Phase 13.0 — most recent auction settle/void for toasts
           allOf:
             - $ref: "#/components/schemas/GameLastAuction"
+        trade:
+          nullable: true
+          description: Phase 13.2 — open trade offer (null when none)
+          allOf:
+            - $ref: "#/components/schemas/GameTrade"
+        lastForfeit:
+          nullable: true
+          description: Phase 13.2 — most recent forfeit for toasts
+          allOf:
+            - $ref: "#/components/schemas/GameLastForfeit"
         deeds:
           type: array
           items:

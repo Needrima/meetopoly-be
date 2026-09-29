@@ -70,6 +70,8 @@ type PlayerView struct {
 	PinColor        string `json:"pinColor"`
 	Resigned        bool   `json:"resigned"`
 	TimeRemainingMs int64  `json:"timeRemainingMs"`
+	// TurnTimeouts — turn-clock strikes (Phase 13.2); 2 → auto-resign.
+	TurnTimeouts int `json:"turnTimeouts"`
 	// Country — ISO 3166-1 alpha-2 from the user profile (Phase 9.0a); not stored on the game doc.
 	Country string `json:"country,omitempty"`
 	// HubID set while inside a hub (Phase 8.2); omitted when on the board.
@@ -170,6 +172,8 @@ type View struct {
 	CanBuy          bool         `json:"canBuy"`
 	// CanStartAuction — current player has a buyOffer and may decline into auction (Phase 13.0).
 	CanStartAuction bool `json:"canStartAuction"`
+	// CanProposeTrade — current player may open a trade (Phase 13.2).
+	CanProposeTrade bool `json:"canProposeTrade"`
 	// CanPayJailFine — current player may pay 100 MeetCoin to leave Jail (Phase 12.1).
 	CanPayJailFine bool `json:"canPayJailFine"`
 	// CanUseJailCard — current player holds a GOOJF card and may use it (Phase 12.1).
@@ -177,6 +181,8 @@ type View struct {
 	BuyOffer       *BuyOfferView       `json:"buyOffer"`
 	Auction        *AuctionView        `json:"auction,omitempty"`
 	LastAuction    *LastAuctionView    `json:"lastAuction,omitempty"`
+	Trade          *TradeView          `json:"trade,omitempty"`
+	LastForfeit    *LastForfeitView    `json:"lastForfeit,omitempty"`
 	Deeds          []DeedView          `json:"deeds"`
 	LastRoll       *LastRollView       `json:"lastRoll"`
 	LastPayment    *LastPaymentView    `json:"lastPayment,omitempty"`
@@ -215,6 +221,12 @@ type Service interface {
 	AuctionBid(ctx context.Context, gameID, userID string, amount int) (*View, error)
 	// AuctionFold folds the caller from the active auction (Phase 13.0).
 	AuctionFold(ctx context.Context, gameID, userID string) (*View, error)
+	// ProposeTrade opens a player trade (Phase 13.2).
+	ProposeTrade(ctx context.Context, gameID, userID, toUserID string, give, take TradeSideInput) (*View, error)
+	// AcceptTrade accepts the open trade (Phase 13.2).
+	AcceptTrade(ctx context.Context, gameID, userID, mortgageAction string) (*View, error)
+	// DeclineTrade declines the open trade (Phase 13.2).
+	DeclineTrade(ctx context.Context, gameID, userID string) (*View, error)
 	// Build buys one house/hotel step on an owned city (Phase 11.1).
 	Build(ctx context.Context, gameID, userID string, boardIndex int) (*View, error)
 	// SellBuilding sells one house/hotel step at half houseCost (Phase 11.2).
@@ -266,6 +278,7 @@ type service struct {
 	countries     CountryLookup
 	bankTimers    map[string]*time.Timer
 	auctionTimers map[string]*time.Timer
+	tradeTimers   map[string]*time.Timer
 	holds         map[string]*time.Timer // gameID\0userID → disconnect hold
 }
 
@@ -280,6 +293,7 @@ func New(repo gamerepo.Repository, spaces SpaceCatalog, cfg Config) Service {
 		cfg:           cfg,
 		bankTimers:    make(map[string]*time.Timer),
 		auctionTimers: make(map[string]*time.Timer),
+		tradeTimers:   make(map[string]*time.Timer),
 		holds:         make(map[string]*time.Timer),
 	}
 }
@@ -449,6 +463,9 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 	}
 	if g.Auction != nil {
 		return nil, ErrAuctionActive
+	}
+	if g.Trade != nil {
+		return nil, ErrTradeActive
 	}
 	if offer := openBuyOffer(g, s.loadSpaces(ctx, g.WorldID)); offer != nil {
 		return nil, ErrMustResolveBuy
@@ -773,6 +790,9 @@ func (s *service) EndTurn(ctx context.Context, gameID, userID string) (*View, er
 	if g.Auction != nil {
 		return nil, ErrAuctionActive
 	}
+	if g.Trade != nil {
+		return nil, ErrTradeActive
+	}
 	if offer := openBuyOffer(g, s.loadSpaces(ctx, g.WorldID)); offer != nil {
 		return nil, ErrMustResolveBuy
 	}
@@ -789,14 +809,14 @@ func (s *service) EndTurn(ctx context.Context, gameID, userID string) (*View, er
 			g.DoublesStreak = 0
 			g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
 			g.SuppressBuyOffer = false
-			s.startCurrentBankLocked(g)
+			s.startFreshTurnClockLocked(g)
 		}
 	} else {
 		advanceToNextActive(g)
 		g.DoublesStreak = 0
 		g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
 		g.SuppressBuyOffer = false
-		s.startCurrentBankLocked(g)
+		s.startFreshTurnClockLocked(g)
 	}
 	g.UpdatedAt = time.Now().UTC()
 
@@ -925,12 +945,21 @@ func (s *service) resignLocked(ctx context.Context, gameID, userID string) (*Vie
 	if g.Auction != nil {
 		s.foldPlayerFromAuctionLocked(g, userID)
 	}
+	if g.Trade != nil && (g.Trade.FromUserID == userID || g.Trade.ToUserID == userID) {
+		s.clearTradeLocked(g)
+	}
 	if wasCurrent {
 		s.pauseCurrentBankLocked(g)
 	}
 	g.Players[playerIdx].Resigned = true
 	g.Players[playerIdx].HubID = ""
 	g.Players[playerIdx].HubRevision++
+	g.LastForfeit = &gamerepo.LastForfeit{
+		UserID:   userID,
+		Username: g.Players[playerIdx].Username,
+		Reason:   "resign",
+		Strikes:  0,
+	}
 	if wasCurrent {
 		g.PendingPayment = nil
 	}
@@ -938,13 +967,15 @@ func (s *service) resignLocked(ctx context.Context, gameID, userID string) (*Vie
 	if finishIfOneActive(g) {
 		s.clearBankClockLocked(g)
 		s.cancelAuctionTimerLocked(g.ID)
+		s.cancelTradeTimerLocked(g.ID)
 		g.Auction = nil
+		g.Trade = nil
 	} else if wasCurrent {
 		advanceToNextActive(g)
 		g.DoublesStreak = 0
 		g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
 		if g.Auction == nil {
-			s.startCurrentBankLocked(g)
+			s.startFreshTurnClockLocked(g)
 		}
 	}
 
@@ -1738,7 +1769,7 @@ func normalizeTurnPhase(g *gamerepo.Game) {
 }
 
 func (s *service) ensureBanksLocked(g *gamerepo.Game) {
-	bankMs := gamerepo.TimeBankDuration.Milliseconds()
+	bankMs := gamerepo.TurnClockDuration.Milliseconds()
 	anyPositive := false
 	for i := range g.Players {
 		if g.Players[i].TimeRemainingMs > 0 {
@@ -1754,7 +1785,7 @@ func (s *service) ensureBanksLocked(g *gamerepo.Game) {
 			g.Players[i].TimeRemainingMs = bankMs
 		}
 	}
-	if g.Status == gamerepo.StatusActive && g.TurnStartedAt.IsZero() {
+	if g.Status == gamerepo.StatusActive && g.TurnStartedAt.IsZero() && g.Auction == nil && g.Trade == nil {
 		g.TurnStartedAt = time.Now().UTC()
 	}
 }
@@ -1764,6 +1795,7 @@ func (s *service) pauseCurrentBankLocked(g *gamerepo.Game) {
 	idx := currentPlayerIndex(g)
 	if idx < 0 || g.Players[idx].Resigned || g.TurnStartedAt.IsZero() {
 		g.TurnStartedAt = time.Time{}
+		s.cancelBankTimerLocked(g.ID)
 		return
 	}
 	elapsed := time.Since(g.TurnStartedAt)
@@ -1776,10 +1808,12 @@ func (s *service) pauseCurrentBankLocked(g *gamerepo.Game) {
 	}
 	g.Players[idx].TimeRemainingMs = left
 	g.TurnStartedAt = time.Time{}
+	s.cancelBankTimerLocked(g.ID)
 }
 
+// startCurrentBankLocked resumes the current player's remaining turn clock (auction/trade unpause).
 func (s *service) startCurrentBankLocked(g *gamerepo.Game) {
-	if g.Status != gamerepo.StatusActive {
+	if g.Status != gamerepo.StatusActive || g.Auction != nil || g.Trade != nil {
 		s.clearBankClockLocked(g)
 		return
 	}
@@ -1787,17 +1821,29 @@ func (s *service) startCurrentBankLocked(g *gamerepo.Game) {
 	s.armBankTimerLocked(g)
 }
 
+// startFreshTurnClockLocked resets the current player to a full 3m turn clock (Phase 13.2).
+func (s *service) startFreshTurnClockLocked(g *gamerepo.Game) {
+	idx := currentPlayerIndex(g)
+	if idx >= 0 && !g.Players[idx].Resigned {
+		g.Players[idx].TimeRemainingMs = gamerepo.TurnClockDuration.Milliseconds()
+	}
+	s.startCurrentBankLocked(g)
+}
+
 func (s *service) clearBankClockLocked(g *gamerepo.Game) {
 	g.TurnStartedAt = time.Time{}
 	s.cancelBankTimerLocked(g.ID)
 }
 
-// syncTimeBankLocked applies elapsed drain; eliminates current player if bank hit 0.
-// Returns true when the document was mutated and persisted.
+// syncTimeBankLocked applies elapsed drain; 1st timeout forces end-turn, 2nd auto-resigns (Phase 13.2).
 func (s *service) syncTimeBankLocked(ctx context.Context, g *gamerepo.Game) (bool, error) {
 	normalizeTurnPhase(g)
 	s.ensureBanksLocked(g)
 	if g.Status != gamerepo.StatusActive {
+		return false, nil
+	}
+	// Turn clock paused during auction / open trade.
+	if g.Auction != nil || g.Trade != nil {
 		return false, nil
 	}
 
@@ -1817,18 +1863,46 @@ func (s *service) syncTimeBankLocked(ctx context.Context, g *gamerepo.Game) (boo
 		}
 
 		g.Players[idx].TimeRemainingMs = 0
-		g.Players[idx].Resigned = true
+		g.Players[idx].TurnTimeouts++
 		g.TurnStartedAt = time.Time{}
 		changed = true
 
-		if finishIfOneActive(g) {
-			s.clearBankClockLocked(g)
-			break
+		if g.Trade != nil {
+			s.clearTradeLocked(g)
 		}
+
+		if g.Players[idx].TurnTimeouts >= gamerepo.TurnTimeoutResignAfter {
+			g.Players[idx].Resigned = true
+			g.LastForfeit = &gamerepo.LastForfeit{
+				UserID:   g.Players[idx].UserID,
+				Username: g.Players[idx].Username,
+				Reason:   "turn_timeout",
+				Strikes:  g.Players[idx].TurnTimeouts,
+			}
+			if finishIfOneActive(g) {
+				s.clearBankClockLocked(g)
+				break
+			}
+			advanceToNextActive(g)
+			g.DoublesStreak = 0
+			g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+			g.SuppressBuyOffer = false
+			s.startFreshTurnClockLocked(g)
+			continue
+		}
+
+		// First timeout: force end turn (skip unresolved buy offer).
+		g.LastForfeit = &gamerepo.LastForfeit{
+			UserID:   g.Players[idx].UserID,
+			Username: g.Players[idx].Username,
+			Reason:   "turn_strike",
+			Strikes:  g.Players[idx].TurnTimeouts,
+		}
+		g.SuppressBuyOffer = true
 		advanceToNextActive(g)
 		g.DoublesStreak = 0
 		g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
-		s.startCurrentBankLocked(g)
+		s.startFreshTurnClockLocked(g)
 	}
 
 	if !changed {
@@ -1989,6 +2063,7 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 			PinColor:         p.PinColor,
 			Resigned:         p.Resigned,
 			TimeRemainingMs:  liveRemainingMs(g, p, now),
+			TurnTimeouts:     p.TurnTimeouts,
 			HubID:            p.HubID,
 			HubRevision:      p.HubRevision,
 			InJail:           p.InJail,
@@ -2060,8 +2135,9 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 	canStartAuction := false
 	pending := hasPendingPayment(g)
 	auctionActive := g.Auction != nil
+	tradeActive := g.Trade != nil
 	landOffer := (*BuyOfferView)(nil)
-	if active && !pending && !auctionActive {
+	if active && !pending && !auctionActive && !tradeActive {
 		landOffer = openBuyOffer(g, spaces)
 		if landOffer != nil && currentCash >= landOffer.Price {
 			buyOffer = landOffer
@@ -2070,14 +2146,16 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 		}
 	}
 
-	canRoll := active && phase == gamerepo.TurnPhaseAwaitingRoll && !pending && !auctionActive && landOffer == nil
+	canRoll := active && phase == gamerepo.TurnPhaseAwaitingRoll && !pending && !auctionActive && !tradeActive && landOffer == nil
 	if canRoll && currentInJail && currentJailTurns >= gamerepo.MaxJailAttempts {
 		// Must pay fine or use card after 3 failed doubles attempts.
 		canRoll = false
 	}
-	canPayJail := active && currentInJail && !pending && !auctionActive && currentCash >= gamerepo.JailFine &&
+	canPayJail := active && currentInJail && !pending && !auctionActive && !tradeActive && currentCash >= gamerepo.JailFine &&
 		(phase == gamerepo.TurnPhaseAwaitingRoll || phase == gamerepo.TurnPhaseAwaitingEnd)
-	canUseCard := active && currentInJail && !pending && !auctionActive && currentCards > 0 &&
+	canUseCard := active && currentInJail && !pending && !auctionActive && !tradeActive && currentCards > 0 &&
+		(phase == gamerepo.TurnPhaseAwaitingRoll || phase == gamerepo.TurnPhaseAwaitingEnd)
+	canProposeTrade := active && !pending && !auctionActive && !tradeActive && currentUserID != "" &&
 		(phase == gamerepo.TurnPhaseAwaitingRoll || phase == gamerepo.TurnPhaseAwaitingEnd)
 
 	var lastPay *LastPaymentView
@@ -2134,14 +2212,17 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 		TurnPhase:       phase,
 		DoublesStreak:   g.DoublesStreak,
 		CanRoll:         canRoll,
-		CanEndTurn:      active && phase == gamerepo.TurnPhaseAwaitingEnd && !pending && buyOffer == nil && !auctionActive,
+		CanEndTurn:      active && phase == gamerepo.TurnPhaseAwaitingEnd && !pending && buyOffer == nil && !auctionActive && !tradeActive,
 		CanBuy:          canBuy,
 		CanStartAuction: canStartAuction,
+		CanProposeTrade: canProposeTrade,
 		CanPayJailFine:  canPayJail,
 		CanUseJailCard:  canUseCard,
 		BuyOffer:        buyOffer,
 		Auction:         auctionViewOf(g),
 		LastAuction:     lastAuctionViewOf(g),
+		Trade:           tradeViewOf(g),
+		LastForfeit:     lastForfeitViewOf(g),
 		Deeds:           deeds,
 		LastRoll:        last,
 		LastPayment:     lastPay,

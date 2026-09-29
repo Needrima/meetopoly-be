@@ -1,6 +1,7 @@
 package httpadapter
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -345,6 +346,95 @@ func handleLeaveHub(games gamesvc.Service) http.HandlerFunc {
 	}
 }
 
+type tradeSideRequest struct {
+	Cash             int   `json:"cash"`
+	BoardIndexes     []int `json:"boardIndexes"`
+	GetOutOfJailFree int   `json:"getOutOfJailFree"`
+}
+
+type tradeProposeRequest struct {
+	ToUserID string            `json:"toUserId"`
+	Give     tradeSideRequest  `json:"give"`
+	Take     tradeSideRequest  `json:"take"`
+}
+
+func handleProposeTrade(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		var req tradeProposeRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_body", "Invalid JSON body")
+			return
+		}
+		view, err := games.ProposeTrade(
+			r.Context(),
+			gameID,
+			userID,
+			req.ToUserID,
+			gamesvc.TradeSideInput{
+				Cash:             req.Give.Cash,
+				BoardIndexes:     req.Give.BoardIndexes,
+				GetOutOfJailFree: req.Give.GetOutOfJailFree,
+			},
+			gamesvc.TradeSideInput{
+				Cash:             req.Take.Cash,
+				BoardIndexes:     req.Take.BoardIndexes,
+				GetOutOfJailFree: req.Take.GetOutOfJailFree,
+			},
+		)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
+type tradeAcceptRequest struct {
+	MortgageAction string `json:"mortgageAction"`
+}
+
+func handleAcceptTrade(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		var req tradeAcceptRequest
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		view, err := games.AcceptTrade(r.Context(), gameID, userID, req.MortgageAction)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
+func handleDeclineTrade(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		view, err := games.DeclineTrade(r.Context(), gameID, userID)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
 func mapGameError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, gamesvc.ErrNotFound):
@@ -385,6 +475,20 @@ func mapGameError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "bid_too_low", "Bid must be at least the minimum")
 	case errors.Is(err, gamesvc.ErrAlreadyFolded):
 		writeError(w, http.StatusConflict, "already_folded", "You already folded from this auction")
+	case errors.Is(err, gamesvc.ErrTradeActive):
+		writeError(w, http.StatusConflict, "trade_active", "Resolve the open trade first")
+	case errors.Is(err, gamesvc.ErrNoTrade):
+		writeError(w, http.StatusConflict, "no_trade", "No open trade offer")
+	case errors.Is(err, gamesvc.ErrNotTradeTarget):
+		writeError(w, http.StatusForbidden, "not_trade_target", "Only the trade target can respond")
+	case errors.Is(err, gamesvc.ErrInvalidTrade):
+		writeError(w, http.StatusBadRequest, "invalid_trade", "Invalid trade offer")
+	case errors.Is(err, gamesvc.ErrTradeNeedsDeed):
+		writeError(w, http.StatusBadRequest, "trade_needs_deed", "Cash-for-cash trades are not allowed")
+	case errors.Is(err, gamesvc.ErrTradeHasBuildings):
+		writeError(w, http.StatusConflict, "trade_has_buildings", "Sell buildings before trading that property")
+	case errors.Is(err, gamesvc.ErrTradeMortgageChoice):
+		writeError(w, http.StatusBadRequest, "trade_mortgage_choice", "mortgageAction must be redeem_all or leave_all")
 	case errors.Is(err, gamesvc.ErrInJail):
 		writeError(w, http.StatusConflict, "in_jail", "You are in Jail")
 	case errors.Is(err, gamesvc.ErrMustLeaveJail):
