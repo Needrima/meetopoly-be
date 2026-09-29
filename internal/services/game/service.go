@@ -29,7 +29,7 @@ var (
 	ErrCannotAfford      = errors.New("insufficient MeetCoin")
 	ErrAlreadyOwned      = errors.New("space already owned")
 	ErrMustSettle        = errors.New("must settle rent or tax before continuing")
-	ErrMustBuy           = errors.New("must buy unowned property before ending turn")
+	ErrMustBuy           = ErrMustResolveBuy // alias — buy or start auction (Phase 13.0)
 	ErrInvalidPinColor   = errors.New("invalid pin color")
 	ErrInvalidHubID      = errors.New("invalid hub id")
 	ErrNotBuildable      = errors.New("space is not buildable")
@@ -168,11 +168,15 @@ type View struct {
 	CanRoll         bool         `json:"canRoll"`
 	CanEndTurn      bool         `json:"canEndTurn"`
 	CanBuy          bool         `json:"canBuy"`
+	// CanStartAuction — current player has a buyOffer and may decline into auction (Phase 13.0).
+	CanStartAuction bool `json:"canStartAuction"`
 	// CanPayJailFine — current player may pay 100 MeetCoin to leave Jail (Phase 12.1).
 	CanPayJailFine bool `json:"canPayJailFine"`
 	// CanUseJailCard — current player holds a GOOJF card and may use it (Phase 12.1).
 	CanUseJailCard bool                `json:"canUseJailCard"`
 	BuyOffer       *BuyOfferView       `json:"buyOffer"`
+	Auction        *AuctionView        `json:"auction,omitempty"`
+	LastAuction    *LastAuctionView    `json:"lastAuction,omitempty"`
 	Deeds          []DeedView          `json:"deeds"`
 	LastRoll       *LastRollView       `json:"lastRoll"`
 	LastPayment    *LastPaymentView    `json:"lastPayment,omitempty"`
@@ -205,6 +209,12 @@ type Service interface {
 	EndTurn(ctx context.Context, gameID, userID string) (*View, error)
 	Resign(ctx context.Context, gameID, userID string) (*View, error)
 	Buy(ctx context.Context, gameID, userID string) (*View, error)
+	// StartAuction declines the buy offer and opens a bank auction (Phase 13.0).
+	StartAuction(ctx context.Context, gameID, userID string) (*View, error)
+	// AuctionBid places a bid on the active auction (Phase 13.0).
+	AuctionBid(ctx context.Context, gameID, userID string, amount int) (*View, error)
+	// AuctionFold folds the caller from the active auction (Phase 13.0).
+	AuctionFold(ctx context.Context, gameID, userID string) (*View, error)
 	// Build buys one house/hotel step on an owned city (Phase 11.1).
 	Build(ctx context.Context, gameID, userID string, boardIndex int) (*View, error)
 	// SellBuilding sells one house/hotel step at half houseCost (Phase 11.2).
@@ -248,14 +258,15 @@ var pinPalette = []string{
 }
 
 type service struct {
-	repo       gamerepo.Repository
-	spaces     SpaceCatalog
-	cfg        Config
-	mu         sync.Mutex
-	bcast      Broadcaster
-	countries  CountryLookup
-	bankTimers map[string]*time.Timer
-	holds      map[string]*time.Timer // gameID\0userID → disconnect hold
+	repo          gamerepo.Repository
+	spaces        SpaceCatalog
+	cfg           Config
+	mu            sync.Mutex
+	bcast         Broadcaster
+	countries     CountryLookup
+	bankTimers    map[string]*time.Timer
+	auctionTimers map[string]*time.Timer
+	holds         map[string]*time.Timer // gameID\0userID → disconnect hold
 }
 
 // New builds a game Service. spaces may be nil in unit tests that never buy.
@@ -264,11 +275,12 @@ func New(repo gamerepo.Repository, spaces SpaceCatalog, cfg Config) Service {
 		cfg.DisconnectHold = 3 * time.Minute
 	}
 	return &service{
-		repo:       repo,
-		spaces:     spaces,
-		cfg:        cfg,
-		bankTimers: make(map[string]*time.Timer),
-		holds:      make(map[string]*time.Timer),
+		repo:          repo,
+		spaces:        spaces,
+		cfg:           cfg,
+		bankTimers:    make(map[string]*time.Timer),
+		auctionTimers: make(map[string]*time.Timer),
+		holds:         make(map[string]*time.Timer),
 	}
 }
 
@@ -434,6 +446,12 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 	}
 	if hasPendingPayment(g) {
 		return nil, ErrMustSettle
+	}
+	if g.Auction != nil {
+		return nil, ErrAuctionActive
+	}
+	if offer := openBuyOffer(g, s.loadSpaces(ctx, g.WorldID)); offer != nil {
+		return nil, ErrMustResolveBuy
 	}
 	if g.Players[playerIdx].InJail {
 		return s.rollFromJailLocked(ctx, g, gameID, userID, playerIdx)
@@ -647,6 +665,9 @@ func (s *service) PayJailFine(ctx context.Context, gameID, userID string) (*View
 	if hasPendingPayment(g) {
 		return nil, ErrMustSettle
 	}
+	if g.Auction != nil {
+		return nil, ErrAuctionActive
+	}
 	if g.TurnPhase != gamerepo.TurnPhaseAwaitingRoll && g.TurnPhase != gamerepo.TurnPhaseAwaitingEnd {
 		return nil, ErrNotInJail
 	}
@@ -698,6 +719,9 @@ func (s *service) UseJailCard(ctx context.Context, gameID, userID string) (*View
 	if hasPendingPayment(g) {
 		return nil, ErrMustSettle
 	}
+	if g.Auction != nil {
+		return nil, ErrAuctionActive
+	}
 	cardID, ok := popJailFreeCard(&g.Players[playerIdx])
 	if !ok {
 		return nil, ErrNoJailCard
@@ -746,8 +770,11 @@ func (s *service) EndTurn(ctx context.Context, gameID, userID string) (*View, er
 	if hasPendingPayment(g) {
 		return nil, ErrMustSettle
 	}
+	if g.Auction != nil {
+		return nil, ErrAuctionActive
+	}
 	if offer := openBuyOffer(g, s.loadSpaces(ctx, g.WorldID)); offer != nil {
-		return nil, ErrMustBuy
+		return nil, ErrMustResolveBuy
 	}
 
 	s.pauseCurrentBankLocked(g)
@@ -761,12 +788,14 @@ func (s *service) EndTurn(ctx context.Context, gameID, userID string) (*View, er
 			advanceToNextActive(g)
 			g.DoublesStreak = 0
 			g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+			g.SuppressBuyOffer = false
 			s.startCurrentBankLocked(g)
 		}
 	} else {
 		advanceToNextActive(g)
 		g.DoublesStreak = 0
 		g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+		g.SuppressBuyOffer = false
 		s.startCurrentBankLocked(g)
 	}
 	g.UpdatedAt = time.Now().UTC()
@@ -893,6 +922,9 @@ func (s *service) resignLocked(ctx context.Context, gameID, userID string) (*Vie
 	}
 
 	wasCurrent := g.Players[playerIdx].TurnOrder == g.CurrentTurn
+	if g.Auction != nil {
+		s.foldPlayerFromAuctionLocked(g, userID)
+	}
 	if wasCurrent {
 		s.pauseCurrentBankLocked(g)
 	}
@@ -905,11 +937,15 @@ func (s *service) resignLocked(ctx context.Context, gameID, userID string) (*Vie
 
 	if finishIfOneActive(g) {
 		s.clearBankClockLocked(g)
+		s.cancelAuctionTimerLocked(g.ID)
+		g.Auction = nil
 	} else if wasCurrent {
 		advanceToNextActive(g)
 		g.DoublesStreak = 0
 		g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
-		s.startCurrentBankLocked(g)
+		if g.Auction == nil {
+			s.startCurrentBankLocked(g)
+		}
 	}
 
 	g.UpdatedAt = time.Now().UTC()
@@ -951,6 +987,9 @@ func (s *service) Buy(ctx context.Context, gameID, userID string) (*View, error)
 	if hasPendingPayment(g) {
 		return nil, ErrMustSettle
 	}
+	if g.Auction != nil {
+		return nil, ErrAuctionActive
+	}
 
 	spaces := s.loadSpaces(ctx, g.WorldID)
 	sp := spaceAt(spaces, g.Players[playerIdx].BoardIndex)
@@ -971,6 +1010,107 @@ func (s *service) Buy(ctx context.Context, gameID, userID string) (*View, error)
 		Houses:      0,
 		Mortgaged:   false,
 	})
+	g.SuppressBuyOffer = true
+	g.UpdatedAt = time.Now().UTC()
+	if err := s.repo.Update(ctx, g); err != nil {
+		return nil, err
+	}
+	view := s.viewOf(ctx, g)
+	s.broadcast(gameID, Event{Type: "state", Game: view})
+	return view, nil
+}
+
+// StartAuction declines list-price buy and opens a bank auction (Phase 13.0).
+func (s *service) StartAuction(ctx context.Context, gameID, userID string) (*View, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	g, err := s.repo.FindByID(ctx, gameID)
+	if err != nil {
+		if errors.Is(err, gamerepo.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return nil, ErrInactive
+	}
+	normalizeTurnPhase(g)
+	if _, err := s.syncTimeBankLocked(ctx, g); err != nil {
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return s.viewOf(ctx, g), nil
+	}
+	if g.Auction != nil {
+		return nil, ErrAuctionActive
+	}
+	if _, err := requireCurrentPlayer(g, userID); err != nil {
+		return nil, err
+	}
+	if hasPendingPayment(g) {
+		return nil, ErrMustSettle
+	}
+	spaces := s.loadSpaces(ctx, g.WorldID)
+	offer := openBuyOffer(g, spaces)
+	if offer == nil {
+		return nil, ErrNoBuyOffer
+	}
+	s.beginAuctionLocked(g, offer, userID)
+	g.UpdatedAt = time.Now().UTC()
+	if err := s.repo.Update(ctx, g); err != nil {
+		return nil, err
+	}
+	view := s.viewOf(ctx, g)
+	s.broadcast(gameID, Event{Type: "state", Game: view})
+	return view, nil
+}
+
+// AuctionBid places a MeetCoin bid on the active auction (Phase 13.0).
+func (s *service) AuctionBid(ctx context.Context, gameID, userID string, amount int) (*View, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	g, err := s.repo.FindByID(ctx, gameID)
+	if err != nil {
+		if errors.Is(err, gamerepo.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return nil, ErrInactive
+	}
+	if err := s.applyAuctionBidLocked(g, userID, amount, false); err != nil {
+		return nil, err
+	}
+	g.UpdatedAt = time.Now().UTC()
+	if err := s.repo.Update(ctx, g); err != nil {
+		return nil, err
+	}
+	view := s.viewOf(ctx, g)
+	s.broadcast(gameID, Event{Type: "state", Game: view})
+	return view, nil
+}
+
+// AuctionFold folds the caller from the active auction (Phase 13.0).
+func (s *service) AuctionFold(ctx context.Context, gameID, userID string) (*View, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	g, err := s.repo.FindByID(ctx, gameID)
+	if err != nil {
+		if errors.Is(err, gamerepo.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if g.Status != gamerepo.StatusActive {
+		return nil, ErrInactive
+	}
+	if err := s.applyAuctionFoldLocked(g, userID, false); err != nil {
+		return nil, err
+	}
 	g.UpdatedAt = time.Now().UTC()
 	if err := s.repo.Update(ctx, g); err != nil {
 		return nil, err
@@ -1009,6 +1149,9 @@ func (s *service) Build(ctx context.Context, gameID, userID string, boardIndex i
 	}
 	if hasPendingPayment(g) {
 		return nil, ErrMustSettle
+	}
+	if g.Auction != nil {
+		return nil, ErrAuctionActive
 	}
 
 	spaces := s.loadSpaces(ctx, g.WorldID)
@@ -1089,6 +1232,9 @@ func (s *service) SellBuilding(ctx context.Context, gameID, userID string, board
 	playerIdx, err := requireCurrentPlayer(g, userID)
 	if err != nil {
 		return nil, err
+	}
+	if g.Auction != nil {
+		return nil, ErrAuctionActive
 	}
 	// Intentionally NOT blocked by pendingPayment — sell raises funds (option A).
 
@@ -1181,6 +1327,9 @@ func (s *service) Mortgage(ctx context.Context, gameID, userID string, boardInde
 	if err != nil {
 		return nil, err
 	}
+	if g.Auction != nil {
+		return nil, ErrAuctionActive
+	}
 
 	spaces := s.loadSpaces(ctx, g.WorldID)
 	sp := spaceAt(spaces, boardIndex)
@@ -1254,6 +1403,9 @@ func (s *service) Redeem(ctx context.Context, gameID, userID string, boardIndex 
 	}
 	if hasPendingPayment(g) {
 		return nil, ErrMustSettle
+	}
+	if g.Auction != nil {
+		return nil, ErrAuctionActive
 	}
 
 	spaces := s.loadSpaces(ctx, g.WorldID)
@@ -1783,9 +1935,11 @@ func (s *service) enrichCountries(ctx context.Context, v *View) {
 }
 
 // openBuyOffer is set when the current player just landed on unowned buyable land.
-// Until Phase 13 auction, EndTurn is blocked while this is non-nil.
+// Phase 13.0: EndTurn blocked while this is non-nil until Buy or StartAuction;
+// if cash < list price, resolveLanding auto-starts an auction instead.
+// After an auction settles/voids this turn, SuppressBuyOffer hides the offer so End can proceed.
 func openBuyOffer(g *gamerepo.Game, spaces []Space) *BuyOfferView {
-	if g == nil || g.Status != gamerepo.StatusActive {
+	if g == nil || g.Status != gamerepo.StatusActive || g.SuppressBuyOffer || g.Auction != nil {
 		return nil
 	}
 	idx := currentPlayerIndex(g)
@@ -1887,14 +2041,6 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 		started = g.TurnStartedAt.UTC().Format(time.RFC3339Nano)
 	}
 
-	var buyOffer *BuyOfferView
-	canBuy := false
-	pending := hasPendingPayment(g)
-	if active && !pending {
-		buyOffer = openBuyOffer(g, spaces)
-		canBuy = buyOffer != nil
-	}
-
 	currentInJail := false
 	currentJailTurns := 0
 	currentCash := 0
@@ -1909,14 +2055,29 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 		}
 	}
 
-	canRoll := active && phase == gamerepo.TurnPhaseAwaitingRoll && !pending
+	var buyOffer *BuyOfferView
+	canBuy := false
+	canStartAuction := false
+	pending := hasPendingPayment(g)
+	auctionActive := g.Auction != nil
+	landOffer := (*BuyOfferView)(nil)
+	if active && !pending && !auctionActive {
+		landOffer = openBuyOffer(g, spaces)
+		if landOffer != nil && currentCash >= landOffer.Price {
+			buyOffer = landOffer
+			canBuy = true
+			canStartAuction = true
+		}
+	}
+
+	canRoll := active && phase == gamerepo.TurnPhaseAwaitingRoll && !pending && !auctionActive && landOffer == nil
 	if canRoll && currentInJail && currentJailTurns >= gamerepo.MaxJailAttempts {
 		// Must pay fine or use card after 3 failed doubles attempts.
 		canRoll = false
 	}
-	canPayJail := active && currentInJail && !pending && currentCash >= gamerepo.JailFine &&
+	canPayJail := active && currentInJail && !pending && !auctionActive && currentCash >= gamerepo.JailFine &&
 		(phase == gamerepo.TurnPhaseAwaitingRoll || phase == gamerepo.TurnPhaseAwaitingEnd)
-	canUseCard := active && currentInJail && !pending && currentCards > 0 &&
+	canUseCard := active && currentInJail && !pending && !auctionActive && currentCards > 0 &&
 		(phase == gamerepo.TurnPhaseAwaitingRoll || phase == gamerepo.TurnPhaseAwaitingEnd)
 
 	var lastPay *LastPaymentView
@@ -1973,11 +2134,14 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 		TurnPhase:       phase,
 		DoublesStreak:   g.DoublesStreak,
 		CanRoll:         canRoll,
-		CanEndTurn:      active && phase == gamerepo.TurnPhaseAwaitingEnd && !pending && buyOffer == nil,
+		CanEndTurn:      active && phase == gamerepo.TurnPhaseAwaitingEnd && !pending && buyOffer == nil && !auctionActive,
 		CanBuy:          canBuy,
+		CanStartAuction: canStartAuction,
 		CanPayJailFine:  canPayJail,
 		CanUseJailCard:  canUseCard,
 		BuyOffer:        buyOffer,
+		Auction:         auctionViewOf(g),
+		LastAuction:     lastAuctionViewOf(g),
 		Deeds:           deeds,
 		LastRoll:        last,
 		LastPayment:     lastPay,
@@ -2083,6 +2247,7 @@ func (s *service) resolveLandingWithOpts(
 		amount *= opts.rentMultiplier
 	}
 	if amount <= 0 || kind == "" {
+		s.maybeAutoStartAuctionLocked(g, spaces, payerIdx)
 		return
 	}
 

@@ -19,6 +19,11 @@ const (
 	// MaxJailAttempts — failed doubles tries before fine is required (Phase 12.1).
 	MaxJailAttempts = 3
 
+	// AuctionBidTurn — per-bidder clock while an auction is active (Phase 13.0).
+	AuctionBidTurn = 30 * time.Second
+	// AuctionMinBid — floor when high bid is 0 (Phase 13.0).
+	AuctionMinBid = 1
+
 	// TimeBankDuration — Phase 6.3b per-player bank (drains on their turn only).
 	TimeBankDuration = 45 * time.Minute
 
@@ -114,6 +119,40 @@ type LastCard struct {
 	CashDelta int `bson:"cashDelta,omitempty" json:"cashDelta,omitempty"`
 }
 
+// AuctionEvent is one bid/fold line in the auction feed (Phase 13.0).
+type AuctionEvent struct {
+	Kind     string `bson:"kind" json:"kind"` // bid | fold | auto_bid | auto_fold
+	UserID   string `bson:"userId" json:"userId"`
+	Username string `bson:"username" json:"username"`
+	Amount   int    `bson:"amount,omitempty" json:"amount,omitempty"`
+}
+
+// Auction is an active bank auction for one unowned space (Phase 13.0).
+type Auction struct {
+	BoardIndex            int            `bson:"boardIndex" json:"boardIndex"`
+	Slug                  string         `bson:"slug" json:"slug"`
+	Name                  string         `bson:"name" json:"name"`
+	Kind                  string         `bson:"kind" json:"kind"`
+	ListPrice             int            `bson:"listPrice" json:"listPrice"`
+	HighBid               int            `bson:"highBid" json:"highBid"`
+	HighBidderUserID      string         `bson:"highBidderUserId,omitempty" json:"highBidderUserId,omitempty"`
+	CurrentBidderUserID   string         `bson:"currentBidderUserId" json:"currentBidderUserId"`
+	BidderTurnStartedAt   time.Time      `bson:"bidderTurnStartedAt" json:"bidderTurnStartedAt"`
+	FoldedUserIDs         []string       `bson:"foldedUserIds,omitempty" json:"foldedUserIds,omitempty"`
+	History               []AuctionEvent `bson:"history,omitempty" json:"history,omitempty"`
+	StartedByUserID       string         `bson:"startedByUserId" json:"startedByUserId"`
+}
+
+// LastAuction is the most recent auction settle/void (Phase 13.0) for client toasts.
+type LastAuction struct {
+	BoardIndex     int    `bson:"boardIndex" json:"boardIndex"`
+	SpaceName      string `bson:"spaceName" json:"spaceName"`
+	WinnerUserID   string `bson:"winnerUserId,omitempty" json:"winnerUserId,omitempty"`
+	WinnerUsername string `bson:"winnerUsername,omitempty" json:"winnerUsername,omitempty"`
+	Amount         int    `bson:"amount,omitempty" json:"amount,omitempty"`
+	Void           bool   `bson:"void,omitempty" json:"void,omitempty"`
+}
+
 // Game is the authoritative M1 session (Phase 6+).
 type Game struct {
 	ID          string   `bson:"_id" json:"id"`
@@ -140,6 +179,12 @@ type Game struct {
 	ChestDeck []string `bson:"chestDeck,omitempty" json:"chestDeck,omitempty"`
 	// LastCard — most recent Chance/Chest draw (Phase 12.2); effects in 12.3.
 	LastCard *LastCard `bson:"lastCard,omitempty" json:"lastCard,omitempty"`
+	// Auction — active bank auction (Phase 13.0); nil when none.
+	Auction *Auction `bson:"auction,omitempty" json:"auction,omitempty"`
+	// LastAuction — most recent auction result for toasts (Phase 13.0).
+	LastAuction *LastAuction `bson:"lastAuction,omitempty" json:"lastAuction,omitempty"`
+	// SuppressBuyOffer — after auction settle/void this turn; cleared on EndTurn (Phase 13.0).
+	SuppressBuyOffer bool `bson:"suppressBuyOffer,omitempty" json:"suppressBuyOffer,omitempty"`
 	// WinnerUserID — set when StatusFinished (last player standing).
 	WinnerUserID   string `bson:"winnerUserId,omitempty" json:"winnerUserId,omitempty"`
 	WinnerUsername string `bson:"winnerUsername,omitempty" json:"winnerUsername,omitempty"`

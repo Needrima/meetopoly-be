@@ -79,6 +79,16 @@ func cloneGame(g *gamerepo.Game) *gamerepo.Game {
 		lc := *g.LastCard
 		cp.LastCard = &lc
 	}
+	if g.Auction != nil {
+		a := *g.Auction
+		a.FoldedUserIDs = append([]string(nil), g.Auction.FoldedUserIDs...)
+		a.History = append([]gamerepo.AuctionEvent(nil), g.Auction.History...)
+		cp.Auction = &a
+	}
+	if g.LastAuction != nil {
+		la := *g.LastAuction
+		cp.LastAuction = &la
+	}
 	return &cp
 }
 
@@ -1196,8 +1206,8 @@ func TestEndTurnBlockedWhileBuyOffer(t *testing.T) {
 	}
 
 	_, err = svc.EndTurn(context.Background(), "g1", "a")
-	if !errors.Is(err, ErrMustBuy) {
-		t.Fatalf("err=%v want ErrMustBuy", err)
+	if !errors.Is(err, ErrMustResolveBuy) {
+		t.Fatalf("err=%v want ErrMustResolveBuy", err)
 	}
 
 	view, err = svc.Buy(context.Background(), "g1", "a")
@@ -2079,5 +2089,230 @@ func TestCancelDisconnectHoldKeepsPlayer(t *testing.T) {
 	}
 	if view.Players[0].Resigned {
 		t.Fatal("a should still be active after cancel")
+	}
+}
+
+func seedBuyOffer(t *testing.T, repo *memRepo, cashA, cashB int) {
+	t.Helper()
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 1
+	g.Players[0].Cash = cashA
+	g.Players[1].Cash = cashB
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	g.LastRoll = &gamerepo.LastRoll{
+		UserID: "a", Username: "A", Die1: 1, Die2: 0, Total: 1,
+		FromIndex: 0, ToIndex: 1,
+	}
+	_ = repo.Update(context.Background(), g)
+}
+
+func TestStartAuctionAndFoldWinsAtBid(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+	seedBuyOffer(t, repo, 2000, 2000)
+
+	view, err := svc.StartAuction(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Auction == nil || view.BuyOffer != nil {
+		t.Fatalf("auction=%v buyOffer=%v", view.Auction, view.BuyOffer)
+	}
+	if view.Auction.CurrentBidderUserID != "a" || view.Auction.MinBid != 1 {
+		t.Fatalf("bidder=%s min=%d", view.Auction.CurrentBidderUserID, view.Auction.MinBid)
+	}
+	if view.CanEndTurn || view.TurnStartedAt != "" {
+		t.Fatalf("banks should pause; canEnd=%v started=%q", view.CanEndTurn, view.TurnStartedAt)
+	}
+
+	view, err = svc.AuctionBid(context.Background(), "g1", "a", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Auction == nil || view.Auction.HighBid != 10 || view.Auction.HighBidderUserID != "a" {
+		t.Fatalf("after bid: %+v", view.Auction)
+	}
+	if view.Auction.CurrentBidderUserID != "b" {
+		t.Fatalf("next bidder=%s want b", view.Auction.CurrentBidderUserID)
+	}
+
+	view, err = svc.AuctionFold(context.Background(), "g1", "b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Auction != nil {
+		t.Fatal("auction should clear after last fold")
+	}
+	if view.LastAuction == nil || view.LastAuction.Void || view.LastAuction.Amount != 10 {
+		t.Fatalf("lastAuction=%+v", view.LastAuction)
+	}
+	if view.LastAuction.WinnerUserID != "a" {
+		t.Fatalf("winner=%s", view.LastAuction.WinnerUserID)
+	}
+	if len(view.Deeds) != 1 || view.Deeds[0].OwnerUserID != "a" {
+		t.Fatalf("deeds=%+v", view.Deeds)
+	}
+	if view.Players[0].Cash != 1990 {
+		t.Fatalf("cash=%d want 1990", view.Players[0].Cash)
+	}
+	if !view.CanEndTurn {
+		t.Fatal("lander should end turn after auction")
+	}
+}
+
+func TestAuctionAllFoldNoBidsAwardsOneMeetCoin(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+	seedBuyOffer(t, repo, 2000, 2000)
+
+	if _, err := svc.StartAuction(context.Background(), "g1", "a"); err != nil {
+		t.Fatal(err)
+	}
+	view, err := svc.AuctionFold(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A folded with no bids → only B left → B wins at 1
+	if view.Auction != nil {
+		t.Fatal("expected settle")
+	}
+	if view.LastAuction == nil || view.LastAuction.WinnerUserID != "b" || view.LastAuction.Amount != 1 {
+		t.Fatalf("lastAuction=%+v", view.LastAuction)
+	}
+	if view.Players[1].Cash != 1999 {
+		t.Fatalf("b cash=%d", view.Players[1].Cash)
+	}
+}
+
+func TestAuctionVoidWhenWinnerCannotPayOne(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+	seedBuyOffer(t, repo, 2000, 0)
+
+	if _, err := svc.StartAuction(context.Background(), "g1", "a"); err != nil {
+		t.Fatal(err)
+	}
+	view, err := svc.AuctionFold(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.LastAuction == nil || !view.LastAuction.Void {
+		t.Fatalf("want void, got %+v", view.LastAuction)
+	}
+	if len(view.Deeds) != 0 {
+		t.Fatalf("deeds=%+v", view.Deeds)
+	}
+	if !view.CanEndTurn {
+		t.Fatal("canEnd after void")
+	}
+}
+
+func TestAutoStartAuctionWhenCannotAfford(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
+	}
+	svc := New(repo, spaces, Config{}).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 1
+	g.Players[0].Cash = 50
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	g.LastRoll = &gamerepo.LastRoll{
+		UserID: "a", Username: "A", Die1: 1, Die2: 0, Total: 1,
+		FromIndex: 0, ToIndex: 1,
+	}
+	svc.resolveLandingLocked(context.Background(), g, 0, 1)
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.Get(context.Background(), "g1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.BuyOffer != nil {
+		t.Fatal("broke lander must not see buyOffer")
+	}
+	if view.Auction == nil || view.Auction.BoardIndex != 1 {
+		t.Fatalf("auction=%+v", view.Auction)
+	}
+}
+
+func TestAuctionBidTooLowAndNotYourTurn(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+	seedBuyOffer(t, repo, 2000, 2000)
+
+	if _, err := svc.StartAuction(context.Background(), "g1", "a"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.AuctionBid(context.Background(), "g1", "b", 5); !errors.Is(err, ErrNotAuctionTurn) {
+		t.Fatalf("err=%v", err)
+	}
+	if _, err := svc.AuctionBid(context.Background(), "g1", "a", 10); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.AuctionBid(context.Background(), "g1", "b", 10); !errors.Is(err, ErrBidTooLow) {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestAuctionHighBidderSitsOutUntilOutbid(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+	// need 3 players for sit-out clarity
+	bank := gamerepo.TimeBankDuration.Milliseconds()
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players = append(g.Players, gamerepo.Player{
+		UserID: "c", Username: "C", SeatIndex: 2, TurnOrder: 2, Cash: 2000,
+		BoardIndex: 0, PinColor: "#00f", TimeRemainingMs: bank,
+	})
+	_ = repo.Update(context.Background(), g)
+	seedBuyOffer(t, repo, 2000, 2000)
+
+	if _, err := svc.StartAuction(context.Background(), "g1", "a"); err != nil {
+		t.Fatal(err)
+	}
+	view, err := svc.AuctionBid(context.Background(), "g1", "a", 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Auction.CurrentBidderUserID != "b" {
+		t.Fatalf("want b, got %s", view.Auction.CurrentBidderUserID)
+	}
+	view, err = svc.AuctionBid(context.Background(), "g1", "b", 6)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// high is b — next should be c (skip b), not a yet... a is not high, so after b, next is c then a
+	if view.Auction.CurrentBidderUserID != "c" {
+		t.Fatalf("want c (skip high b), got %s", view.Auction.CurrentBidderUserID)
+	}
+	view, err = svc.AuctionFold(context.Background(), "g1", "c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Auction.CurrentBidderUserID != "a" {
+		t.Fatalf("want a after c fold, got %s", view.Auction.CurrentBidderUserID)
 	}
 }

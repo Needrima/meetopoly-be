@@ -522,7 +522,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 
 - After landing on unowned `property` / `railroad` / `utility` with `price > 0`: `canBuy` + `buyOffer`.
 - `POST /games/{id}/buy` deducts list price, appends deed (`boardIndex` + owner).
-- **Interim (until Phase 13 auction):** End turn blocked while `buyOffer` open (`canEndTurn` false; `ErrMustBuy`). Board buy modal non-dismissible; no skip hint.
+- **Interim (until Phase 13 auction):** ~~End turn blocked while `buyOffer` open~~ — **replaced in 13.0** by Buy \| start-auction; End blocked while buyOffer or active auction.
 - Classic US rent/price ladder by `boardIndex` in seeds (colors stay Meetopoly); buy modal lists Rent + 1–4 houses + Hotel.
 - **Ownership chip:** outer-corner dot in owner `pinColor` on deed tiles (client from `deeds` + `players`).
 - **Tap tile:** info overlay (buyable = deed + Available/Owned by; Chance/Chest = icon + name; tax = icon + name + amount). Disabled only while **local** buy modal is open.
@@ -1109,7 +1109,7 @@ Manual (2 clients preferred; BE running; landscape). Backend gate: `cd meetopoly
 | **12.3** | ✅ Card effects (tables below): cash, move by index, Jail, repairs, nearest RR/utility; apply on draw (lock **A**); OpenAPI 0.23 | Trade of GOOJF (→ 13); card modal UI |
 | **12.4** | ✅ Card reveal (all seated) + move pause; Just Visiting modal; hub toasts; jail pin layout; jail options **v1** (next-turn only) | Jail modal UX polish → **12.4b** |
 | **12.4b** | ✅ Jail options modal: avatar + **Pay** / **Roll a Double** / **Use card**; dock Roll gating while modal open | Negative cash / bankruptcy → **14** |
-| **12.5** | Smoke checklist                                                                                                                                                  | —                        |
+| **12.5** | ✅ Smoke checklist (manual playtest; M3 jail + cards closed)                                                                                                      | Auction/trade → **13**   |
 
 **Chance deck (16 cards — locked; destinations = `boardIndex`)**
 
@@ -1216,29 +1216,59 @@ Dock Roll gating:
 
 Out of scope (→ **Phase 14**): negative MeetCoin after 3 fails when broke; bankruptcy gate.
 
-Smoke → **12.5**.
+Smoke → **12.5** ✅ (manual playtest 2026-09-28/29). **Phase 12 DONE.**
 
 ---
 
 ### Phase 13 — Rules M4 (trading + auctions)
 
-**Official alignment:** Players may trade deeds, cash, and Get Out of Jail Free cards. **When a player lands on unowned property and does not buy at list price, the Bank auctions it immediately** — all players may bid (including the one who declined). Also: house-shortage auctions if not done in M2; bankruptcy-to-bank may re-auction deeds (coord with Phase 14).
+**Official alignment:** Players may trade deeds, cash, and Get Out of Jail Free cards. **When a player lands on unowned property and does not buy at list price, the Bank auctions it immediately** — all players may bid (including the one who declined). House-shortage auctions **deferred** (not required for M4 exit). Bankruptcy-to-bank re-auction → **Phase 14**.
 
-**Hub → board (locked with 8.3):** Auction, trade, and raise-funds UIs live **on the board only**. When an auction (or similar multi-step economy phase) starts, clients still in a hub get a strong notify and **prefer auto Open board** (keep `hubId` like 8.3). Do not rebuild auction/trade clients inside the hub sheet.
+**Hub → board (locked with 8.3):** Auction, trade, and raise-funds UIs live **on the board only**. When an auction starts, clients still in a hub get a strong notify and **prefer auto Open board** (keep `hubId` like 8.3). Do not rebuild auction/trade clients inside the hub sheet.
 
 **Time bank pauses (encompassing — locked here)**
 
-Baseline (**6.3b**): each player has a **45-minute** bank that drains **only on their turn** and **auto-eliminates at 0**. Until this phase, the only pause is “not your turn.”
+Baseline (**6.3b**): each player has a **45-minute** bank that drains **only on their turn** and **auto-eliminates at 0**.
 
-When buy / auction / trade / debt flows exist, **also pause** (do not reset) the relevant bank(s) during:
+Also **pause everyone’s** personal banks (do not reset) for the **whole auction**; only the **per-bidder 30s** auction sub-clock ticks. Later: open trade offers; forced raise-funds (→ 14).
 
-- **Bank auction** (prefer a short shared auction sub-clock so bid time does not eat personal banks unfairly)
-- **Open trade offers** awaiting accept/decline
-- **Forced raise-funds** before bankruptcy (coord Phase 14)
+**Exit criteria:** Multi-property / cash trades; **auction when purchase declined** (completes Phase 6.4); bank pause list enforced with those flows. House-shortage **not** required to close M4.
 
-Document the exact pause list in this phase’s implementation notes; do not invent pauses ad hoc in earlier slices.
+**Locked — bank auction (from playtest refs + product decisions)**
 
-**Exit criteria:** Multi-property / cash trades; **auction when purchase declined** (completes the official unowned-land rule started in Phase 6.4 buy); bank pause list enforced with those flows.
+- **All seated** see the auction modal (board-only UI in **13.1**); non-dismissible until settle/void.
+- **Buy \| Auction** when lander can afford list price. **Cash &lt; list → skip buy modal, auto-start auction.**
+- **Turn-based** bidding starting with the player who triggered the auction, then seat order among non-folded.
+- **High bidder does not get a turn** while they hold the high bid. Turn comes back only after someone outbids them. If everyone else folds → **win immediately** at current high bid (no extra turn).
+- **Min raise +1 MeetCoin.** First bid floor = **1** when high = 0.
+- **BID / FOLD** only enabled on your auction turn.
+- High bidder **may fold** on a later turn (after being outbid); high reverts to latest bid among remaining; if none → high 0 / min 1.
+- On turn start: if cash &lt; min next → **auto-fold**. Not checked continuously.
+- **Per-bidder timer 30s** (runs only on current bidder’s turn). Timeout → auto-**BID high+1** if affordable, else auto-**fold**.
+- Last non-folded wins at their high bid. Never bid + others all folded → award at **1** if cash ≥ 1, else **void** (unowned). No legal winner → **void**.
+- Settle: toast all `{player} won auction for {location}`; winner gets bought modal at **auction price** (**13.1**).
+- Bid amount UI: **typed keypad only**. Peek board: dock hold **`eye-sharp`**, enabled only during auction (**13.1**).
+- Ship **one sub-slice at a time** — ask before each.
+
+**Sub-slices**
+
+| Slice    | Done when                                                                                                                                                         | Avoid                         |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| **13.0** | ✅ Auction schema + APIs: auto-start if broke / `POST .../start-auction`; bid + fold; 30s timer; auto-bid/fold; settle/void; pause all banks; remove must-buy-only; OpenAPI 0.25 + unit tests | Fancy UI, trade               |
+| **13.1** | Board auction modal (deed + feed + keypad + BID/FOLD); Buy\|Auction; dock peek; hub Open board; toasts + winner bought @ auction price | Trade                         |
+| **13.2** | Trade schema + APIs (propose / accept / decline / cancel; deeds + cash + GOOJF); pause banks while offer open | Fancy trade UI                |
+| **13.3** | Trade board UI + wire TRADE CTA; hub notify / Open board                                                                                                          | House shortage                |
+| **13.4** | Smoke checklist; Phase 13 DONE                                                                                                                                    | House shortage (deferred)     |
+
+**13.0 notes**
+
+- Persist `auction` on game doc; `lastAuction` result for clients after clear (like `lastPayment`).
+- `POST /games/{id}/start-auction` — current player with buyOffer (can afford). Broke path starts auction in the same land resolve (no buyOffer).
+- `POST /games/{id}/auction/bid` body `{ amount }`; `POST /games/{id}/auction/fold`.
+- EndTurn blocked while buyOffer **or** auction; Roll/Buy/build blocked during auction.
+- After auction settle/void: `suppressBuyOffer` so buyOffer does not reopen; cleared on EndTurn.
+- Resign mid-auction → fold that player.
+- UI + hub auto-open → **13.1**.
 
 ---
 
@@ -1433,4 +1463,7 @@ Only when the user asks:
 | 2026-09-28 | **12.4c:** `lastCard.cashDelta` (signed MeetCoin) for cash / pay-each / birthday / repairs; card modal + toast show +/- amount; OpenAPI 0.24 |
 | 2026-09-28 | **12.4d:** Chance/Chest — drawer modal only; others toast (name + card text + cashDelta); jail failed-doubles toast after roll |
 | 2026-09-28 | **12.4e:** Pass-GO salary deferred until after Chance/Chest reveal + pin resume (card → move → salary); OpenAPI unchanged |
+| 2026-09-29 | **12.5:** Phase 12 smoke OK (manual); **Phase 12 DONE**                                                                                                                                  |
+| 2026-09-29 | **Phase 13 split:** 13.0–13.4 auction then trade; house-shortage deferred; auction locks (30s, turn-based, high sits out, keypad, banks paused); ask before each slice                  |
+| 2026-09-29 | **13.0:** bank auction APIs + 30s timer + auto-bid/fold + settle/void + bank pause; OpenAPI 0.25; must-buy → buy\|auction; UI → 13.1                                                                 |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

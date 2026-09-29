@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.24.0
+  version: 0.25.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -791,8 +791,7 @@ paths:
       summary: Buy the unowned space you landed on
       description: |
         Phase 6.4 — purchase at list price when the current player occupies an unowned
-        property / railroad / utility after landing. Skipping buy = End turn without calling this
-        (deed stays unowned until Phase 13 auction).
+        property / railroad / utility after landing. To decline, call `start-auction` (Phase 13.0).
       tags:
         - Games
       security:
@@ -829,7 +828,169 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "409":
-          description: Not your turn, not buyable, already owned, cannot afford, or inactive
+          description: Not your turn, not buyable, already owned, cannot afford, auction active, or inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /games/{gameId}/start-auction:
+    post:
+      operationId: startAuction
+      summary: Decline list-price buy and start a bank auction
+      description: |
+        Phase 13.0 — current player with an open buyOffer starts a turn-based auction.
+        If cash < list price, the server auto-starts an auction on land (no buyOffer).
+        All personal time banks pause for the whole auction; each bidder gets a 30s clock.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated game snapshot with auction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: No buy offer, auction already active, not your turn, or inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /games/{gameId}/auction/bid:
+    post:
+      operationId: auctionBid
+      summary: Place a bid on the active auction
+      description: |
+        Phase 13.0 — only the current auction bidder. Amount must be ≥ highBid+1 (or ≥ 1 if no bids)
+        and ≤ the bidder's cash. High bidder then sits out until outbid.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - amount
+              properties:
+                amount:
+                  type: integer
+                  minimum: 1
+                  description: MeetCoin bid (≥ minBid)
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Not auction turn, bid too low, cannot afford, no auction, or already folded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /games/{gameId}/auction/fold:
+    post:
+      operationId: auctionFold
+      summary: Fold from the active auction
+      description: |
+        Phase 13.0 — only the current auction bidder. If the high bidder later folds after being
+        outbid, high reverts to the latest bid among remaining players. Last non-folded wins.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Not auction turn, no auction, or already folded
           content:
             application/json:
               schema:
@@ -2155,6 +2316,102 @@ components:
         price:
           type: integer
           description: List price in MeetCoin
+    GameAuctionEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - kind
+        - userId
+        - username
+      properties:
+        kind:
+          type: string
+          enum: [bid, fold, auto_bid, auto_fold]
+        userId:
+          type: string
+        username:
+          type: string
+        amount:
+          type: integer
+          description: MeetCoin for bid / auto_bid; omitted for folds
+    GameAuction:
+      type: object
+      additionalProperties: false
+      required:
+        - boardIndex
+        - slug
+        - name
+        - kind
+        - listPrice
+        - highBid
+        - currentBidderUserId
+        - minBid
+        - bidDeadline
+        - foldedUserIds
+        - history
+        - startedByUserId
+      properties:
+        boardIndex:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+          enum: [property, railroad, utility]
+        listPrice:
+          type: integer
+        highBid:
+          type: integer
+          description: 0 when no bids yet
+        highBidderUserId:
+          type: string
+        highBidderUsername:
+          type: string
+        currentBidderUserId:
+          type: string
+        currentBidderUsername:
+          type: string
+        minBid:
+          type: integer
+          description: Minimum next bid (1 if highBid is 0, else highBid+1)
+        bidDeadline:
+          type: string
+          format: date-time
+          description: UTC instant when the current bidder's 30s clock expires
+        foldedUserIds:
+          type: array
+          items:
+            type: string
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/GameAuctionEvent"
+        startedByUserId:
+          type: string
+    GameLastAuction:
+      type: object
+      additionalProperties: false
+      required:
+        - boardIndex
+        - spaceName
+        - void
+      properties:
+        boardIndex:
+          type: integer
+        spaceName:
+          type: string
+        winnerUserId:
+          type: string
+        winnerUsername:
+          type: string
+        amount:
+          type: integer
+          description: MeetCoin paid by winner (omitted when void)
+        void:
+          type: boolean
+          description: true when nobody could buy — deed stays unowned
     Game:
       type: object
       additionalProperties: false
@@ -2174,6 +2431,7 @@ components:
         - canRoll
         - canEndTurn
         - canBuy
+        - canStartAuction
         - canPayJailFine
         - canUseJailCard
         - deeds
@@ -2218,7 +2476,11 @@ components:
           type: boolean
         canBuy:
           type: boolean
-          description: Current player may buy the space they just landed on (Phase 6.4)
+          description: Current player may buy the space they just landed on at list price (Phase 6.4)
+        canStartAuction:
+          type: boolean
+          description: |
+            Phase 13.0 — current player has a buyOffer (can afford list price) and may start a bank auction.
         canPayJailFine:
           type: boolean
           description: |
@@ -2231,6 +2493,16 @@ components:
           nullable: true
           allOf:
             - $ref: "#/components/schemas/GameBuyOffer"
+        auction:
+          nullable: true
+          description: Phase 13.0 — active bank auction (null when none)
+          allOf:
+            - $ref: "#/components/schemas/GameAuction"
+        lastAuction:
+          nullable: true
+          description: Phase 13.0 — most recent auction settle/void for toasts
+          allOf:
+            - $ref: "#/components/schemas/GameLastAuction"
         deeds:
           type: array
           items:

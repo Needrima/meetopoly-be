@@ -89,6 +89,66 @@ func handleBuyProperty(games gamesvc.Service) http.HandlerFunc {
 	}
 }
 
+func handleStartAuction(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		view, err := games.StartAuction(r.Context(), gameID, userID)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
+type auctionBidRequest struct {
+	Amount int `json:"amount"`
+}
+
+func handleAuctionBid(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		var req auctionBidRequest
+		if err := decodeJSON(r, &req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_body", "Invalid request body")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		view, err := games.AuctionBid(r.Context(), gameID, userID, req.Amount)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
+func handleAuctionFold(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		view, err := games.AuctionFold(r.Context(), gameID, userID)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
 type buildRequest struct {
 	BoardIndex int `json:"boardIndex"`
 }
@@ -311,8 +371,20 @@ func mapGameError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "cannot_afford", "Not enough MeetCoin")
 	case errors.Is(err, gamesvc.ErrMustSettle):
 		writeError(w, http.StatusConflict, "must_settle", "Settle rent or tax before continuing (resign if you cannot pay)")
-	case errors.Is(err, gamesvc.ErrMustBuy):
-		writeError(w, http.StatusConflict, "must_buy", "Buy this property before ending your turn (auction comes later)")
+	case errors.Is(err, gamesvc.ErrMustResolveBuy), errors.Is(err, gamesvc.ErrMustBuy):
+		writeError(w, http.StatusConflict, "must_resolve_buy", "Buy this property or start an auction before ending your turn")
+	case errors.Is(err, gamesvc.ErrAuctionActive):
+		writeError(w, http.StatusConflict, "auction_active", "Finish the auction first")
+	case errors.Is(err, gamesvc.ErrNoAuction):
+		writeError(w, http.StatusConflict, "no_auction", "No active auction")
+	case errors.Is(err, gamesvc.ErrNoBuyOffer):
+		writeError(w, http.StatusConflict, "no_buy_offer", "Nothing to auction")
+	case errors.Is(err, gamesvc.ErrNotAuctionTurn):
+		writeError(w, http.StatusConflict, "not_auction_turn", "It is not your turn to bid")
+	case errors.Is(err, gamesvc.ErrBidTooLow):
+		writeError(w, http.StatusConflict, "bid_too_low", "Bid must be at least the minimum")
+	case errors.Is(err, gamesvc.ErrAlreadyFolded):
+		writeError(w, http.StatusConflict, "already_folded", "You already folded from this auction")
 	case errors.Is(err, gamesvc.ErrInJail):
 		writeError(w, http.StatusConflict, "in_jail", "You are in Jail")
 	case errors.Is(err, gamesvc.ErrMustLeaveJail):
