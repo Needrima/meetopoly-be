@@ -182,6 +182,7 @@ type View struct {
 	Auction        *AuctionView        `json:"auction,omitempty"`
 	LastAuction    *LastAuctionView    `json:"lastAuction,omitempty"`
 	Trade          *TradeView          `json:"trade,omitempty"`
+	LastTrade      *LastTradeView      `json:"lastTrade,omitempty"`
 	LastForfeit    *LastForfeitView    `json:"lastForfeit,omitempty"`
 	Deeds          []DeedView          `json:"deeds"`
 	LastRoll       *LastRollView       `json:"lastRoll"`
@@ -2222,6 +2223,7 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 		Auction:         auctionViewOf(g),
 		LastAuction:     lastAuctionViewOf(g),
 		Trade:           tradeViewOf(g),
+		LastTrade:       lastTradeViewOf(g),
 		LastForfeit:     lastForfeitViewOf(g),
 		Deeds:           deeds,
 		LastRoll:        last,

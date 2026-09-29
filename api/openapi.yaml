@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.26.0
+  version: 0.27.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -2567,6 +2567,33 @@ components:
         void:
           type: boolean
           description: true when nobody could buy — deed stays unowned
+    GameLastTrade:
+      type: object
+      additionalProperties: false
+      required:
+        - fromUserId
+        - fromUsername
+        - toUserId
+        - toUsername
+        - outcome
+        - settledAt
+      properties:
+        fromUserId:
+          type: string
+        fromUsername:
+          type: string
+        toUserId:
+          type: string
+        toUsername:
+          type: string
+        outcome:
+          type: string
+          enum: [accepted, declined]
+          description: accepted by target, or declined (manual or reply timeout)
+        settledAt:
+          type: string
+          format: date-time
+          description: UTC instant the offer settled (dedupe key for toasts)
     TradeSide:
       type: object
       additionalProperties: false
@@ -2764,6 +2791,11 @@ components:
           description: Phase 13.2 — open trade offer (null when none)
           allOf:
             - $ref: "#/components/schemas/GameTrade"
+        lastTrade:
+          nullable: true
+          description: Phase 13.3 — most recent trade accept/decline for toasts
+          allOf:
+            - $ref: "#/components/schemas/GameLastTrade"
         lastForfeit:
           nullable: true
           description: Phase 13.2 — most recent forfeit for toasts

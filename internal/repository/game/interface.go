@@ -178,6 +178,18 @@ type TradeOffer struct {
 	ReplyDeadline time.Time `bson:"replyDeadline" json:"replyDeadline"`
 }
 
+// LastTrade is the most recent trade settle for client toasts (Phase 13.3).
+type LastTrade struct {
+	FromUserID   string `bson:"fromUserId" json:"fromUserId"`
+	FromUsername string `bson:"fromUsername" json:"fromUsername"`
+	ToUserID     string `bson:"toUserId" json:"toUserId"`
+	ToUsername   string `bson:"toUsername" json:"toUsername"`
+	// Outcome — accepted | declined (manual decline or reply timeout).
+	Outcome string `bson:"outcome" json:"outcome"`
+	// SettledAt — UTC; makes consecutive same-party outcomes uniquely toastable.
+	SettledAt time.Time `bson:"settledAt" json:"settledAt"`
+}
+
 // LastForfeit is set on turn-clock strike / auto-resign / resign for client toasts (Phase 13.2).
 type LastForfeit struct {
 	UserID   string `bson:"userId" json:"userId"`
@@ -222,6 +234,8 @@ type Game struct {
 	SuppressBuyOffer bool `bson:"suppressBuyOffer,omitempty" json:"suppressBuyOffer,omitempty"`
 	// Trade — single open trade offer (Phase 13.2); nil when none.
 	Trade *TradeOffer `bson:"trade,omitempty" json:"trade,omitempty"`
+	// LastTrade — most recent trade accept/decline for toasts (Phase 13.3).
+	LastTrade *LastTrade `bson:"lastTrade,omitempty" json:"lastTrade,omitempty"`
 	// LastForfeit — most recent auto/manual forfeit for toasts (Phase 13.2).
 	LastForfeit *LastForfeit `bson:"lastForfeit,omitempty" json:"lastForfeit,omitempty"`
 	// WinnerUserID — set when StatusFinished (last player standing).

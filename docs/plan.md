@@ -1290,6 +1290,7 @@ Also **pause everyone’s** personal banks (do not reset) for the **whole auctio
 - Board `TradeOverlay`: compose (left you offer / right partner carousel ask) + Offer; incoming review with Accept (green) / Decline (red) + View board peek; mortgaged → redeem-all | leave-all sheet.
 - TRADE dock CTA enabled when `canProposeTrade`.
 - Hub: toast + prefer Open board when local player is in an open trade.
+- Modal only for parties (proposer waiting / target review); third players get propose toast + accept/reject outcome toasts via `lastTrade` (OpenAPI 0.27).
 
 ---
 
@@ -1491,5 +1492,5 @@ Only when the user asks:
 | 2026-09-29 | **13.1 polish:** auction bid = native TextInput (not custom keypad); turn timer **60s**; layout fix so controls stay under deed/feed                                                                |
 | 2026-09-29 | **13.1 polish:** auction overlay (and hub Open board) wait for dice/pin idle like buy — no modal over mid-walk auto-auction                                                                        |
 | 2026-09-29 | **13.2:** trade propose/accept/decline APIs + 60s reply; **3m turn clock** + 2-strike forfeit; OpenAPI 0.26; panel current-only green→red; trade UI → 13.3                                         |
-| 2026-09-29 | **13.3:** TradeOverlay compose + accept/decline + mortgage choice; TRADE CTA; hub Open board on trade; smoke → 13.4                                                                               |
+| 2026-09-29 | **13.3:** TradeOverlay compose + accept/decline + mortgage choice; TRADE CTA; hub Open board on trade; party-only modal; `lastTrade` toasts (OpenAPI 0.27); smoke → 13.4                                                                               |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

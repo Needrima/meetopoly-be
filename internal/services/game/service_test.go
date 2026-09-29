@@ -89,6 +89,20 @@ func cloneGame(g *gamerepo.Game) *gamerepo.Game {
 		la := *g.LastAuction
 		cp.LastAuction = &la
 	}
+	if g.Trade != nil {
+		tr := *g.Trade
+		tr.Give.BoardIndexes = append([]int(nil), g.Trade.Give.BoardIndexes...)
+		tr.Take.BoardIndexes = append([]int(nil), g.Trade.Take.BoardIndexes...)
+		cp.Trade = &tr
+	}
+	if g.LastTrade != nil {
+		lt := *g.LastTrade
+		cp.LastTrade = &lt
+	}
+	if g.LastForfeit != nil {
+		lf := *g.LastForfeit
+		cp.LastForfeit = &lf
+	}
 	return &cp
 }
 
@@ -2397,6 +2411,12 @@ func TestProposeTradeAndAcceptDeedForCash(t *testing.T) {
 	if view.Trade != nil {
 		t.Fatal("trade should clear")
 	}
+	if view.LastTrade == nil || view.LastTrade.Outcome != TradeOutcomeAccepted {
+		t.Fatalf("lastTrade=%+v", view.LastTrade)
+	}
+	if view.LastTrade.FromUserID != "a" || view.LastTrade.ToUserID != "b" {
+		t.Fatalf("lastTrade parties=%+v", view.LastTrade)
+	}
 	own := map[int]string{}
 	for _, d := range view.Deeds {
 		own[d.BoardIndex] = d.OwnerUserID
@@ -2450,6 +2470,9 @@ func TestDeclineTradeResumesClock(t *testing.T) {
 	}
 	if view.Trade != nil {
 		t.Fatal("expected nil trade")
+	}
+	if view.LastTrade == nil || view.LastTrade.Outcome != TradeOutcomeDeclined {
+		t.Fatalf("lastTrade=%+v", view.LastTrade)
 	}
 	if view.TurnStartedAt == "" {
 		t.Fatal("expected clock resumed")

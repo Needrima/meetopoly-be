@@ -36,6 +36,16 @@ type TradeView struct {
 	ReplyDeadline string        `json:"replyDeadline"`
 }
 
+// LastTradeView for accept/decline toasts (Phase 13.3).
+type LastTradeView struct {
+	FromUserID   string `json:"fromUserId"`
+	FromUsername string `json:"fromUsername"`
+	ToUserID     string `json:"toUserId"`
+	ToUsername   string `json:"toUsername"`
+	Outcome      string `json:"outcome"` // accepted | declined
+	SettledAt    string `json:"settledAt"`
+}
+
 // LastForfeitView for client toasts (Phase 13.2).
 type LastForfeitView struct {
 	UserID   string `json:"userId"`
@@ -89,6 +99,43 @@ func tradeViewOf(g *gamerepo.Game) *TradeView {
 		Take:          tradeSideViewOf(t.Take),
 		ReplyDeadline: t.ReplyDeadline.UTC().Format(time.RFC3339Nano),
 	}
+}
+
+func lastTradeViewOf(g *gamerepo.Game) *LastTradeView {
+	if g == nil || g.LastTrade == nil {
+		return nil
+	}
+	lt := g.LastTrade
+	return &LastTradeView{
+		FromUserID:   lt.FromUserID,
+		FromUsername: lt.FromUsername,
+		ToUserID:     lt.ToUserID,
+		ToUsername:   lt.ToUsername,
+		Outcome:      lt.Outcome,
+		SettledAt:    lt.SettledAt.UTC().Format(time.RFC3339Nano),
+	}
+}
+
+const (
+	TradeOutcomeAccepted = "accepted"
+	TradeOutcomeDeclined = "declined"
+)
+
+// recordTradeOutcomeLocked snapshots the open trade into LastTrade then clears it.
+func (s *service) recordTradeOutcomeLocked(g *gamerepo.Game, outcome string) {
+	if g.Trade == nil {
+		return
+	}
+	t := g.Trade
+	g.LastTrade = &gamerepo.LastTrade{
+		FromUserID:   t.FromUserID,
+		FromUsername: playerUsername(g, t.FromUserID),
+		ToUserID:     t.ToUserID,
+		ToUsername:   playerUsername(g, t.ToUserID),
+		Outcome:      outcome,
+		SettledAt:    time.Now().UTC(),
+	}
+	s.clearTradeLocked(g)
 }
 
 func lastForfeitViewOf(g *gamerepo.Game) *LastForfeitView {
@@ -206,7 +253,7 @@ func (s *service) onTradeReplyTimeout(ctx context.Context, gameID string) error 
 	if time.Now().Before(g.Trade.ReplyDeadline.Add(-50 * time.Millisecond)) {
 		return nil
 	}
-	s.clearTradeLocked(g)
+	s.recordTradeOutcomeLocked(g, TradeOutcomeDeclined)
 	s.startCurrentBankLocked(g) // resume offerer clock
 	g.UpdatedAt = time.Now().UTC()
 	if err := s.repo.Update(ctx, g); err != nil {
@@ -291,6 +338,7 @@ func (s *service) ProposeTrade(ctx context.Context, gameID, userID, toUserID str
 	s.pauseCurrentBankLocked(g)
 	s.cancelBankTimerLocked(g.ID)
 	now := time.Now().UTC()
+	g.LastTrade = nil
 	g.Trade = &gamerepo.TradeOffer{
 		FromUserID:    userID,
 		ToUserID:      toUserID,
@@ -329,7 +377,7 @@ func (s *service) DeclineTrade(ctx context.Context, gameID, userID string) (*Vie
 	if g.Trade.ToUserID != userID {
 		return nil, ErrNotTradeTarget
 	}
-	s.clearTradeLocked(g)
+	s.recordTradeOutcomeLocked(g, TradeOutcomeDeclined)
 	s.startCurrentBankLocked(g)
 	g.UpdatedAt = time.Now().UTC()
 	if err := s.repo.Update(ctx, g); err != nil {
@@ -454,7 +502,7 @@ func (s *service) AcceptTrade(ctx context.Context, gameID, userID, mortgageActio
 		}
 	}
 
-	s.clearTradeLocked(g)
+	s.recordTradeOutcomeLocked(g, TradeOutcomeAccepted)
 	s.startCurrentBankLocked(g)
 	g.UpdatedAt = time.Now().UTC()
 	if err := s.repo.Update(ctx, g); err != nil {
