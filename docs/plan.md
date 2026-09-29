@@ -1230,7 +1230,7 @@ Smoke → **12.5** ✅ (manual playtest 2026-09-28/29). **Phase 12 DONE.**
 
 Baseline (**6.3b**): each player has a **45-minute** bank that drains **only on their turn** and **auto-eliminates at 0**.
 
-Also **pause everyone’s** personal banks (do not reset) for the **whole auction**; only the **per-bidder 30s** auction sub-clock ticks. Later: open trade offers; forced raise-funds (→ 14).
+Also **pause everyone’s** personal banks (do not reset) for the **whole auction**; only the **per-bidder 60s** auction sub-clock ticks. Later: open trade offers; forced raise-funds (→ 14).
 
 **Exit criteria:** Multi-property / cash trades; **auction when purchase declined** (completes Phase 6.4); bank pause list enforced with those flows. House-shortage **not** required to close M4.
 
@@ -1244,10 +1244,10 @@ Also **pause everyone’s** personal banks (do not reset) for the **whole auctio
 - **BID / FOLD** only enabled on your auction turn.
 - High bidder **may fold** on a later turn (after being outbid); high reverts to latest bid among remaining; if none → high 0 / min 1.
 - On turn start: if cash &lt; min next → **auto-fold**. Not checked continuously.
-- **Per-bidder timer 30s** (runs only on current bidder’s turn). Timeout → auto-**BID high+1** if affordable, else auto-**fold**.
+- **Per-bidder timer 60s** (runs only on current bidder’s turn). Timeout → auto-**BID high+1** if affordable, else auto-**fold**.
 - Last non-folded wins at their high bid. Never bid + others all folded → award at **1** if cash ≥ 1, else **void** (unowned). No legal winner → **void**.
 - Settle: toast all `{player} won auction for {location}`; winner gets bought modal at **auction price** (**13.1**).
-- Bid amount UI: **typed keypad only**. Peek board: dock hold **`eye-sharp`**, enabled only during auction (**13.1**).
+- Bid amount UI: **native numeric TextInput** (device keyboard). Peek board: dock hold **`eye-sharp`**, enabled only during auction (**13.1**).
 - Ship **one sub-slice at a time** — ask before each.
 
 **Sub-slices**
@@ -1255,7 +1255,7 @@ Also **pause everyone’s** personal banks (do not reset) for the **whole auctio
 | Slice    | Done when                                                                                                                                                         | Avoid                         |
 | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
 | **13.0** | ✅ Auction schema + APIs: auto-start if broke / `POST .../start-auction`; bid + fold; 30s timer; auto-bid/fold; settle/void; pause all banks; remove must-buy-only; OpenAPI 0.25 + unit tests | Fancy UI, trade               |
-| **13.1** | Board auction modal (deed + feed + keypad + BID/FOLD); Buy\|Auction; dock peek; hub Open board; toasts + winner bought @ auction price | Trade                         |
+| **13.1** | ✅ Board auction modal (deed + feed + keypad + BID/FOLD); Buy\|Auction; dock peek; hub Open board; toasts + winner bought @ auction price | Trade                         |
 | **13.2** | Trade schema + APIs (propose / accept / decline / cancel; deeds + cash + GOOJF); pause banks while offer open | Fancy trade UI                |
 | **13.3** | Trade board UI + wire TRADE CTA; hub notify / Open board                                                                                                          | House shortage                |
 | **13.4** | Smoke checklist; Phase 13 DONE                                                                                                                                    | House shortage (deferred)     |
@@ -1269,6 +1269,15 @@ Also **pause everyone’s** personal banks (do not reset) for the **whole auctio
 - After auction settle/void: `suppressBuyOffer` so buyOffer does not reopen; cleared on EndTurn.
 - Resign mid-auction → fold that player.
 - UI + hub auto-open → **13.1**.
+
+**13.1 notes**
+
+- All seated see non-dismissible `AuctionOverlay` (deed + history + numeric TextInput + BID/FOLD).
+- Buy modal → **Buy | Auction**; broke landers skip buy (server auto-auction).
+- Dock **eye-sharp** hold-to-peek (enabled only while auction active).
+- Hub: on auction start → toast + prefer Open board (keep `hubId`).
+- Toast all on settle; winner board modal uses **auction amount** (`priceOverride`).
+- Per-bidder clock **60s** (server `AuctionBidTurn`).
 
 ---
 
@@ -1466,4 +1475,6 @@ Only when the user asks:
 | 2026-09-29 | **12.5:** Phase 12 smoke OK (manual); **Phase 12 DONE**                                                                                                                                  |
 | 2026-09-29 | **Phase 13 split:** 13.0–13.4 auction then trade; house-shortage deferred; auction locks (30s, turn-based, high sits out, keypad, banks paused); ask before each slice                  |
 | 2026-09-29 | **13.0:** bank auction APIs + 30s timer + auto-bid/fold + settle/void + bank pause; OpenAPI 0.25; must-buy → buy\|auction; UI → 13.1                                                                 |
+| 2026-09-29 | **13.1:** AuctionOverlay + Buy\|Auction + dock peek + hub auto Open board; settle toast + winner bought @ auction price; trade → 13.2                                                              |
+| 2026-09-29 | **13.1 polish:** auction bid = native TextInput (not custom keypad); turn timer **60s**; layout fix so controls stay under deed/feed                                                                |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

@@ -841,7 +841,7 @@ paths:
       description: |
         Phase 13.0 — current player with an open buyOffer starts a turn-based auction.
         If cash < list price, the server auto-starts an auction on land (no buyOffer).
-        All personal time banks pause for the whole auction; each bidder gets a 30s clock.
+        All personal time banks pause for the whole auction; each bidder gets a 60s clock.
       tags:
         - Games
       security:
@@ -2379,7 +2379,7 @@ components:
         bidDeadline:
           type: string
           format: date-time
-          description: UTC instant when the current bidder's 30s clock expires
+          description: UTC instant when the current bidder's 60s clock expires
         foldedUserIds:
           type: array
           items:

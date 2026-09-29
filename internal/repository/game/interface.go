@@ -19,8 +19,8 @@ const (
 	// MaxJailAttempts — failed doubles tries before fine is required (Phase 12.1).
 	MaxJailAttempts = 3
 
-	// AuctionBidTurn — per-bidder clock while an auction is active (Phase 13.0).
-	AuctionBidTurn = 30 * time.Second
+	// AuctionBidTurn — per-bidder clock while an auction is active (Phase 13.0 / 13.1).
+	AuctionBidTurn = 60 * time.Second
 	// AuctionMinBid — floor when high bid is 0 (Phase 13.0).
 	AuctionMinBid = 1
 
