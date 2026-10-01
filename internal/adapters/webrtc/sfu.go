@@ -324,7 +324,7 @@ func (s *SFU) HandleOffer(roomID, userID string, sdp string) error {
 			if !s.allowPose(roomID, fromUser) {
 				return
 			}
-			stamped, err := StampPose(fromUser, fromName, msg.Data)
+			stamped, err := StampPresenceDC(fromUser, fromName, msg.Data)
 			if err != nil {
 				return
 			}

@@ -1456,6 +1456,7 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 **16.2 notes**
 
 - ✅ Shipped: `BoardSeatGrid` / `BoardSeatTile` / `PlayerInfoModal`; replace panel text roster; keep turn line; grid cols 2/3/2/2/3 for 2–6; pin-color border + hub chip when in hub; local-only mic / flip / cam; cam-off → black + `AvatarPod`; long-press info modal; remove joystick `MuteMicButton`; `flipCamera` via `replaceTrack`; board wires presence streams.
+- ✅ SFU `StampPresenceDC` fans out `videoMuted` + `videoOrientation` (pose-only `StampPose` was dropping them → remotes froze on cam-off / missed iOS upright). Mobile: rotate wrapper `View` around `RTCView` (native transform ignored on iOS).
 
 **Still deferred until asked:**
 
@@ -1637,4 +1638,5 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 | 2026-10-01 | **16.0:** SFU board-only `videoPubs` + RTP relay (`video-{userId}`); hub ignores video; tests |
 | 2026-10-01 | **16.1:** `muteVideo` + Settings; board publish/play camera; hub audio-only; stream maps on presence result |
 | 2026-10-01 | **16.2:** Meet seat grid + local mic/cam/flip + long-press info modal; remove joystick mute |
+| 2026-10-01 | **16.2 fix:** SFU relay `videoMuted`/`videoOrientation`; RTCView rotate via wrapper View |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
