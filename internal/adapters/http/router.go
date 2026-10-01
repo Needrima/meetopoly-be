@@ -73,6 +73,8 @@ func NewRouter(deps Deps) http.Handler {
 		r.Post("/games/{gameId}/roll", handleRollDice(deps.Games))
 		r.Post("/games/{gameId}/end-turn", handleEndTurn(deps.Games))
 		r.Post("/games/{gameId}/resign", handleResignGame(deps.Games))
+		r.Post("/games/{gameId}/bankrupt", handleBankruptGame(deps.Games))
+		r.Post("/games/{gameId}/debt-pay/start", handleStartDebtPay(deps.Games))
 		r.Post("/games/{gameId}/buy", handleBuyProperty(deps.Games))
 		r.Post("/games/{gameId}/start-auction", handleStartAuction(deps.Games))
 		r.Post("/games/{gameId}/auction/bid", handleAuctionBid(deps.Games))

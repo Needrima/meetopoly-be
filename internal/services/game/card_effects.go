@@ -271,33 +271,16 @@ func debitToBank(g *gamerepo.Game, playerIdx, amount int, kind, spaceName string
 		return
 	}
 	pay := amount
-	paidInFull := true
 	if g.Players[playerIdx].Cash < amount {
-		pay = g.Players[playerIdx].Cash
-		paidInFull = false
-	}
-	g.Players[playerIdx].Cash -= pay
-	g.LastPayment = &gamerepo.LastPayment{
-		Kind:         kind,
-		FromUserID:   g.Players[playerIdx].UserID,
-		FromUsername: g.Players[playerIdx].Username,
-		ToUserID:     "",
-		ToUsername:   "Bank",
-		Amount:       pay,
-		BoardIndex:   g.Players[playerIdx].BoardIndex,
-		SpaceName:    spaceName,
-		PaidInFull:   paidInFull,
-	}
-	if !paidInFull {
-		g.PendingPayment = &gamerepo.PendingPayment{
-			Kind:       kind,
-			Amount:     amount - pay,
-			ToUserID:   "",
-			BoardIndex: g.Players[playerIdx].BoardIndex,
-			SpaceName:  spaceName,
+		if g.Players[playerIdx].Cash > 0 {
+			pay = g.Players[playerIdx].Cash
+		} else {
+			pay = 0
 		}
-		g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
 	}
+	applyPaymentShortfallLocked(
+		g, playerIdx, amount, pay, "", kind, spaceName, g.Players[playerIdx].BoardIndex,
+	)
 }
 
 func payEachOtherPlayer(g *gamerepo.Game, playerIdx, each int) {
@@ -305,21 +288,41 @@ func payEachOtherPlayer(g *gamerepo.Game, playerIdx, each int) {
 		return
 	}
 	payer := &g.Players[playerIdx]
+	others := 0
+	for i := range g.Players {
+		if i != playerIdx && !g.Players[i].Resigned {
+			others++
+		}
+	}
+	owed := others * each
+	if owed <= 0 {
+		return
+	}
+	startCash := payer.Cash
 	paidTotal := 0
 	for i := range g.Players {
 		if i == playerIdx || g.Players[i].Resigned {
 			continue
 		}
-		pay := each
-		if payer.Cash < pay {
-			pay = payer.Cash
+		need := each
+		avail := payer.Cash
+		if avail < 0 {
+			avail = 0
 		}
-		if pay <= 0 {
-			break
+		pay := need
+		if avail < pay {
+			pay = avail
 		}
-		payer.Cash -= pay
-		g.Players[i].Cash += pay
-		paidTotal += pay
+		if pay > 0 {
+			payer.Cash -= pay
+			g.Players[i].Cash += pay
+			paidTotal += pay
+		}
+	}
+	// Drive cash to startCash - owed (negative shortfall).
+	target := startCash - owed
+	if payer.Cash > target {
+		payer.Cash = target
 	}
 	g.LastPayment = &gamerepo.LastPayment{
 		Kind:         "card",
@@ -330,25 +333,17 @@ func payEachOtherPlayer(g *gamerepo.Game, playerIdx, each int) {
 		Amount:       paidTotal,
 		BoardIndex:   payer.BoardIndex,
 		SpaceName:    "Elected Chairman",
-		PaidInFull:   true,
+		PaidInFull:   paidTotal >= owed,
 	}
-	// Shortfall vs full obligation → pending to bank (raise funds / Phase 14).
-	others := 0
-	for i := range g.Players {
-		if i != playerIdx && !g.Players[i].Resigned {
-			others++
-		}
-	}
-	owed := others * each
 	if paidTotal < owed {
 		g.PendingPayment = &gamerepo.PendingPayment{
 			Kind:       "card",
 			Amount:     owed - paidTotal,
+			FromUserID: payer.UserID,
 			ToUserID:   "",
 			BoardIndex: payer.BoardIndex,
 			SpaceName:  "Elected Chairman",
 		}
-		g.LastPayment.PaidInFull = false
 		g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
 	}
 }

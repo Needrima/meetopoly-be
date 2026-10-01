@@ -1258,7 +1258,7 @@ Also **pause everyone’s** personal banks (do not reset) for the **whole auctio
 | **13.1** | ✅ Board auction modal (deed + feed + keypad + BID/FOLD); Buy\|Auction; dock peek; hub Open board; toasts + winner bought @ auction price | Trade                         |
 | **13.2** | ✅ Trade schema + APIs (propose / accept / decline; deeds + cash + GOOJF); 60s reply; pause turn clock; **3m turn clock** + 2-strike forfeit; panel current-only green→red | Fancy trade UI → **13.3** |
 | **13.3** | ✅ Trade board UI + wire TRADE CTA; hub notify / Open board                                                                                                          | House shortage                |
-| **13.4** | Smoke checklist; Phase 13 DONE                                                                                                                                    | House shortage (deferred)     |
+| **13.4** | ✅ Smoke checklist (manual playtest; M4 auction + trade closed)                                                                                                       | House shortage (deferred)     |
 
 **13.0 notes**
 
@@ -1292,21 +1292,101 @@ Also **pause everyone’s** personal banks (do not reset) for the **whole auctio
 - Hub: toast + prefer Open board when local player is in an open trade.
 - Modal only for parties (proposer waiting / target review); third players get propose toast + accept/reject outcome toasts via `lastTrade` (OpenAPI 0.27).
 
+**13.4 — smoke checklist (Phase 13 / M4 close)**
+
+Manual (2–3 clients preferred; BE running; landscape). Backend gate: `cd meetopoly-be && go test ./internal/services/game/ -count=1`.
+
+**A. Auction (13.0–13.1)**
+
+1. Decline buy / broke land → auction starts; all seated see overlay; banks pause.
+2. Bid / fold / 60s bidder clock; settle → toast + winner bought @ auction price; void path OK.
+3. Hub client: toast + Open board on auction start; dock eye hold peeks board.
+
+**B. Trade + turn clock (13.2–13.3)**
+
+1. Propose on turn only; cash↔cash blocked; improved deeds blocked; GOOJF + mortgaged (`redeem_all` / `leave_all`) OK.
+2. Target 60s reply; proposer waiting sheet; third players **no** modal (toast only); accept/reject toasts for all via `lastTrade`.
+3. Panel **3:00** current-only green→red; 1st timeout strike; 2nd forfeit; clock pauses during auction + open trade.
+
+Smoke → **13.4** ✅ (manual playtest 2026-09-29/30). **Phase 13 DONE.** House-shortage auction remains deferred.
+
 ---
 
 ### Phase 14 — Rules M5 (bankruptcy)
 
-**Official alignment:** Raise funds (sell buildings, mortgage, trade) before elimination; debt to player → assets transfer; debt to Bank → deeds return to Bank (auction where applicable); bankrupt token leaves the game.
+**Meetopoly debt model (locked — not classic asset-to-creditor):**
 
-**Also from jail (locked with 12.4b deferral):**
+- Cash may go **negative**. HUD shows red while &lt; 0.
+- On shortfall (rent / tax / card / jail fine): pay current cash to the payee, set cash to **−(remainder)**, remember `owedTo` (player id or Bank).
+- **Landing turn:** **End allowed** while negative; **Roll blocked**.
+- **Next turn** (indebted player): modal **Pay** | **Bankruptcy**.
+  - **Pay** → **2:00** raise-funds window; pause turn clock; others toast + live cash; actions = **sell buildings + mortgage only** (**no trade/swap**).
+  - As cash climbs toward 0, each raise chunk settles debt (**owed player receives MeetCoin**; Bank debt just clears).
+  - **Bankruptcy** always available in modal → eliminate **that player only** (table continues; last active wins).
+  - **2:00 expires** still &lt; 0 → **auto-bankrupt**.
+  - **Auto-bankrupt (assets):** `cash < 0` and no buildings left and no unmortgaged deeds — no trade required.
+- **Eliminate wipe (always → Bank):** clear houses; deeds → **unowned**; GOOJF → **bottom** of its deck; no player receives assets. If still owed a player, **Bank (infinite) credits** them the remaining unpaid amount.
+- **Resign / turn-timeout / disconnect eliminate:** same Bank wipe (classic quit ≈ bankrupt to Bank).
+- Bank re-auction of returned deeds → **14.3** (14.0 leaves deeds unowned).
+- Hub → board: debt Pay UI is **board-only** (toast + prefer Open board), same as auction/trade.
 
-- After **3** failed doubles from Jail while cash &lt; 100 (and no GOOJF path): force leave with MeetCoin driven **negative** by the unpaid 100 fine (or equivalent `pendingPayment` debt) — do **not** soft-lock forever as in **12.1** interim.
-- On the next turn: must **settle that debt** (raise funds / pay) **or declare bankruptcy** before Roll.
-- Coordinate with existing `pendingPayment` / resign flows from Phase 6.5.
+**Also from jail (locked with 12.4b deferral → 14.1):**
 
-**Exit criteria:** Debt resolution; player elimination; assets transfer correctly; jail forced-debt path covered.
+- After **3** failed doubles from Jail while cash &lt; 100 (and no GOOJF): force leave with MeetCoin **negative** by the unpaid 100 fine (Bank `owedTo`) — do **not** soft-lock forever as in **12.1** interim.
+- On the next turn: Pay | Bankruptcy gate before Roll (same as other debt).
+
+**Exit criteria:** Negative-cash debt + settle-on-raise; Pay/Bankruptcy gate + 2:00; player elimination with Bank wipe + creditor cash top-up; jail forced-debt path; bank re-auction of returned deeds (**14.3**).
+
+| Slice | Deliverable | Not yet |
+| --- | --- | --- |
+| **14.0** | ✅ Negative-cash debt model + `owedTo`; shortfall → pay what you can then cash `−(remainder)`; sell/mortgage during debt settles creditor; End OK / Roll blocked while negative; declare-bankrupt + auto-bankrupt APIs; resign/timeout/disconnect use Bank wipe (deeds unowned, GOOJF deck bottom, Bank pays remaining owed); pause turn clock during debt-pay; OpenAPI 0.28 + unit tests | Jail path, UI, re-auction |
+| **14.1** | Jail 3-fail broke → leave Jail, cash `−` fine, Bank `owedTo`; next-turn Pay \| Bankruptcy (same gate as 14.0) | Fancy UI |
+| **14.2** | Board modal Pay \| Bankruptcy; **2:00** pay timer; red negative cash; live cash for all; toasts; hub Open board; wire Declare bankrupt | Re-auction |
+| **14.3** | Bank re-auction of deeds returned on wipe (reuse Phase 13 auction; one-at-a-time) | Smoke |
+| **14.4** | Smoke checklist → close M5 | — |
+
+**14.0 notes**
+
+- ✅ Shipped (2026-10-01): negative cash shortfall; `PendingPayment.fromUserId` + amount = `−cash`; End OK / Roll blocked while current cash &lt; 0; sell/mortgage → `applyRaiseTowardDebtLocked` (creditor gets chunks); trade blocked while in debt; `POST /games/{id}/bankrupt`; `POST /games/{id}/debt-pay/start` (2m, pause turn clock; `awaiting_roll` only); auto-bankrupt on insolvent / timer; resign/timeout wipe to Bank (deeds unowned, GOOJF deck bottom, Bank tops up creditor); OpenAPI **0.28** + mobile codegen; `go test ./internal/services/game/` green.
+- Raise during debt: **sell + mortgage only**; block **trade** propose/accept while indebted / debt-pay active.
+- UI modal / red cash / toasts → **14.2**. Jail path → **14.1**.
+
+**14.1 notes**
+
+- Remove 12.1 soft-lock (stay in Jail forever when broke after 3 fails).
+- Force leave + negative fine; End; next turn uses 14.0 debt gate.
+
+**14.2 notes**
+
+- Board-only overlay; non-dismissible until Pay chosen or Bankruptcy.
+- Pay starts 2:00; pause turn clock; toast others “{player} is paying debt”.
+- Cash color red while &lt; 0; counts up live for all clients (WS state).
+
+**14.3 notes**
+
+- After Bank wipe, queue auction each returned deed (Phase 13 engine); order TBD at slice start (ask if ambiguous).
+
+**14.4 — smoke checklist (Phase 14 / M5 close)**
+
+**A. Debt + raise (14.0–14.2)**
+
+1. Rent/tax/card shortfall → cash negative; End OK; Roll blocked; creditor got partial cash.
+2. Next turn → Pay \| Bankruptcy; Pay → 2:00; sell/mortgage only; cash climbs; creditor receives; at ≥ 0 Roll unlocks.
+3. Bankruptcy / 2:00 expiry / no assets left → eliminate that player; deeds unowned; GOOJF deck bottom; owed player topped up by Bank; table continues.
+
+**B. Jail + resign (14.1 + wipe)**
+
+1. Jail 3-fail broke → negative fine; next-turn gate works.
+2. Resign / timeout → same Bank wipe (no frozen deeds).
+
+**C. Re-auction (14.3)**
+
+1. Wiped deeds auction via existing auction flow.
+
+Smoke → **14.4**. Ask before each sub-slice.
 
 ---
+
 
 ### Phase 15 — Production hardening (Contabo)
 
@@ -1493,4 +1573,7 @@ Only when the user asks:
 | 2026-09-29 | **13.1 polish:** auction overlay (and hub Open board) wait for dice/pin idle like buy — no modal over mid-walk auto-auction                                                                        |
 | 2026-09-29 | **13.2:** trade propose/accept/decline APIs + 60s reply; **3m turn clock** + 2-strike forfeit; OpenAPI 0.26; panel current-only green→red; trade UI → 13.3                                         |
 | 2026-09-29 | **13.3:** TradeOverlay compose + accept/decline + mortgage choice; TRADE CTA; hub Open board on trade; party-only modal; `lastTrade` toasts (OpenAPI 0.27); smoke → 13.4                                                                               |
+| 2026-09-30 | **13.4:** Phase 13 smoke OK (manual); **Phase 13 DONE** (house-shortage auction deferred)                                                                                              |
+| 2026-09-30 | **Phase 14 split:** 14.0–14.4 negative-cash debt; Pay 2:00 (sell/mortgage, no trade) \| Bankruptcy; Bank wipe + creditor cash (no asset transfer); jail **14.1**; UI **14.2**; re-auction **14.3**; ask before each slice |
+| 2026-10-01 | **14.0:** negative cash + `owedTo`/`fromUserId`; End OK / Roll blocked; sell/mortgage settle creditor; `POST …/bankrupt` + `…/debt-pay/start` (2m); resign wipe to Bank; OpenAPI 0.28; UI → **14.2** |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

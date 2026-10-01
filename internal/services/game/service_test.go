@@ -1563,16 +1563,18 @@ func TestSellBuildingHotelStep(t *testing.T) {
 	}
 }
 
-func TestSellBuildingDuringPendingAppliesRefund(t *testing.T) {
+func TestSellBuildingDuringDebtAppliesRefund(t *testing.T) {
 	repo := newMemRepo()
 	svc := New(repo, brownBuildSpaces(), Config{})
 	seedTwoPlayer(t, repo)
 	seedBrownMonopoly(t, repo, "a", 1, 1)
 
 	g, _ := repo.FindByID(context.Background(), "g1")
-	g.Players[0].Cash = 10
+	// Owed 30 after paying what they had: cash −30, B already credited earlier.
+	g.Players[0].Cash = -30
+	g.Players[1].Cash = 2030
 	g.PendingPayment = &gamerepo.PendingPayment{
-		Kind: "rent", Amount: 30, ToUserID: "b", BoardIndex: 5, SpaceName: "Debt",
+		Kind: "rent", Amount: 30, FromUserID: "a", ToUserID: "b", BoardIndex: 5, SpaceName: "Debt",
 	}
 	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
 	_ = repo.Update(context.Background(), g)
@@ -1581,31 +1583,59 @@ func TestSellBuildingDuringPendingAppliesRefund(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// +25 refund → 35, then pay 30 pending → cash 5; B gains 30.
+	// +25 refund → cash −5; B gains 25.
+	if view.Players[0].Cash != -5 {
+		t.Fatalf("payer cash=%d want -5", view.Players[0].Cash)
+	}
+	if view.Players[1].Cash != 2055 {
+		t.Fatalf("owner cash=%d want 2055", view.Players[1].Cash)
+	}
+	if view.PendingPayment == nil || view.PendingPayment.Amount != 5 {
+		t.Fatalf("pending=%+v want amount 5", view.PendingPayment)
+	}
+}
+
+func TestSellBuildingClearsDebt(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 1, 1)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].Cash = -20
+	g.Players[1].Cash = 2020
+	g.PendingPayment = &gamerepo.PendingPayment{
+		Kind: "rent", Amount: 20, FromUserID: "a", ToUserID: "b", BoardIndex: 5, SpaceName: "Debt",
+	}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.SellBuilding(context.Background(), "g1", "a", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// +25 → pay 20 debt, keep 5.
 	if view.Players[0].Cash != 5 {
 		t.Fatalf("payer cash=%d want 5", view.Players[0].Cash)
 	}
-	if view.Players[1].Cash != 2030 {
-		t.Fatalf("owner cash=%d want 2030", view.Players[1].Cash)
+	if view.Players[1].Cash != 2040 {
+		t.Fatalf("owner cash=%d want 2040", view.Players[1].Cash)
 	}
 	if view.PendingPayment != nil {
 		t.Fatalf("pending should be cleared, got %+v", view.PendingPayment)
 	}
-	if view.LastPayment == nil || !view.LastPayment.PaidInFull || view.LastPayment.Amount != 30 {
-		t.Fatalf("lastPayment=%+v", view.LastPayment)
-	}
 }
 
-func TestSellBuildingPartialPending(t *testing.T) {
+func TestSellBuildingPartialDebt(t *testing.T) {
 	repo := newMemRepo()
 	svc := New(repo, brownBuildSpaces(), Config{})
 	seedTwoPlayer(t, repo)
 	seedBrownMonopoly(t, repo, "a", 1, 1)
 
 	g, _ := repo.FindByID(context.Background(), "g1")
-	g.Players[0].Cash = 0
+	g.Players[0].Cash = -40
 	g.PendingPayment = &gamerepo.PendingPayment{
-		Kind: "rent", Amount: 40, ToUserID: "b", BoardIndex: 5, SpaceName: "Debt",
+		Kind: "rent", Amount: 40, FromUserID: "a", ToUserID: "b", BoardIndex: 5, SpaceName: "Debt",
 	}
 	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
 	_ = repo.Update(context.Background(), g)
@@ -1614,9 +1644,9 @@ func TestSellBuildingPartialPending(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// +25 → pay 25 of 40 → cash 0, pending 15.
-	if view.Players[0].Cash != 0 {
-		t.Fatalf("cash=%d want 0", view.Players[0].Cash)
+	// +25 → cash −15, pending 15.
+	if view.Players[0].Cash != -15 {
+		t.Fatalf("cash=%d want -15", view.Players[0].Cash)
 	}
 	if view.PendingPayment == nil || view.PendingPayment.Amount != 15 {
 		t.Fatalf("pending=%+v want amount 15", view.PendingPayment)
@@ -1724,16 +1754,16 @@ func TestRedeemCannotAfford(t *testing.T) {
 	}
 }
 
-func TestMortgageDuringPendingAppliesPayout(t *testing.T) {
+func TestMortgageDuringDebtAppliesPayout(t *testing.T) {
 	repo := newMemRepo()
 	svc := New(repo, brownBuildSpaces(), Config{})
 	seedTwoPlayer(t, repo)
 	seedBrownMonopoly(t, repo, "a", 0, 0)
 
 	g, _ := repo.FindByID(context.Background(), "g1")
-	g.Players[0].Cash = 0
+	g.Players[0].Cash = -20
 	g.PendingPayment = &gamerepo.PendingPayment{
-		Kind: "rent", Amount: 20, ToUserID: "b", BoardIndex: 5, SpaceName: "Debt",
+		Kind: "rent", Amount: 20, FromUserID: "a", ToUserID: "b", BoardIndex: 5, SpaceName: "Debt",
 	}
 	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
 	_ = repo.Update(context.Background(), g)
@@ -1742,7 +1772,7 @@ func TestMortgageDuringPendingAppliesPayout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// +30 mortgage → pay 20 pending → cash 10.
+	// +30 mortgage → pay 20 debt → cash 10.
 	if view.Players[0].Cash != 10 {
 		t.Fatalf("cash=%d want 10", view.Players[0].Cash)
 	}
@@ -1751,17 +1781,18 @@ func TestMortgageDuringPendingAppliesPayout(t *testing.T) {
 	}
 }
 
-func TestRedeemBlockedDuringPending(t *testing.T) {
+func TestRedeemBlockedDuringDebt(t *testing.T) {
 	repo := newMemRepo()
 	svc := New(repo, brownBuildSpaces(), Config{})
 	seedTwoPlayer(t, repo)
 
 	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].Cash = -10
 	g.Deeds = []gamerepo.Deed{
 		{BoardIndex: 1, OwnerUserID: "a", Mortgaged: true},
 		{BoardIndex: 3, OwnerUserID: "a"},
 	}
-	g.PendingPayment = &gamerepo.PendingPayment{Kind: "rent", Amount: 10, ToUserID: "b"}
+	g.PendingPayment = &gamerepo.PendingPayment{Kind: "rent", Amount: 10, FromUserID: "a", ToUserID: "b"}
 	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
 	_ = repo.Update(context.Background(), g)
 
@@ -1894,7 +1925,7 @@ func TestOwnTileNoRent(t *testing.T) {
 	}
 }
 
-func TestCannotAffordRentBlocksEnd(t *testing.T) {
+func TestCannotAffordRentGoesNegativeAllowsEnd(t *testing.T) {
 	repo := newMemRepo()
 	spaces := memSpaces{
 		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60, Rents: []int{100}, ColorGroup: "brown"},
@@ -1911,10 +1942,10 @@ func TestCannotAffordRentBlocksEnd(t *testing.T) {
 	svc.resolveLandingLocked(context.Background(), g, 0, 5)
 	_ = repo.Update(context.Background(), g)
 
-	if g.Players[0].Cash != 0 || g.Players[1].Cash != 2040 {
+	if g.Players[0].Cash != -60 || g.Players[1].Cash != 2040 {
 		t.Fatalf("cash a=%d b=%d", g.Players[0].Cash, g.Players[1].Cash)
 	}
-	if g.PendingPayment == nil || g.PendingPayment.Amount != 60 {
+	if g.PendingPayment == nil || g.PendingPayment.Amount != 60 || g.PendingPayment.FromUserID != "a" {
 		t.Fatalf("pending=%v", g.PendingPayment)
 	}
 
@@ -1922,13 +1953,20 @@ func TestCannotAffordRentBlocksEnd(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if view.CanEndTurn || view.CanRoll {
+	if !view.CanEndTurn || view.CanRoll {
 		t.Fatalf("canEnd=%v canRoll=%v", view.CanEndTurn, view.CanRoll)
 	}
 
-	_, err = svc.EndTurn(context.Background(), "g1", "a")
-	if !errors.Is(err, ErrMustSettle) {
-		t.Fatalf("err=%v", err)
+	view, err = svc.EndTurn(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.CurrentUserID != "b" {
+		t.Fatalf("current=%s want b", view.CurrentUserID)
+	}
+	// A's debt persists; B can play.
+	if view.CanRoll != true {
+		t.Fatal("B should be able to roll")
 	}
 }
 
@@ -2538,5 +2576,236 @@ func TestProposeTradeBlockedDuringAuction(t *testing.T) {
 	)
 	if !errors.Is(err, ErrAuctionActive) {
 		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestBankruptWipesAssetsAndPaysCreditor(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60, ColorGroup: "brown", HouseCost: 50},
+		{BoardIndex: 3, Slug: "accra", Name: "Accra", Kind: "property", Price: 60, ColorGroup: "brown", HouseCost: 50},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].Cash = -80
+	g.Players[0].GetOutOfJailFree = 1
+	g.Players[0].GetOutOfJailFreeCards = []string{CardChanceGetOutOfJail}
+	g.Players[1].Cash = 2000
+	g.Deeds = []gamerepo.Deed{
+		{BoardIndex: 1, OwnerUserID: "a", Houses: 2},
+		{BoardIndex: 3, OwnerUserID: "a", Houses: 1},
+	}
+	g.PendingPayment = &gamerepo.PendingPayment{
+		Kind: "rent", Amount: 80, FromUserID: "a", ToUserID: "b", BoardIndex: 5, SpaceName: "Debt",
+	}
+	g.ChanceDeck = []string{CardChanceDividend}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.Bankrupt(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !view.Players[0].Resigned {
+		t.Fatal("a should be resigned")
+	}
+	if view.Players[0].Cash != 0 {
+		t.Fatalf("a cash=%d", view.Players[0].Cash)
+	}
+	// Bank pays remaining 80 to b.
+	if view.Players[1].Cash != 2080 {
+		t.Fatalf("b cash=%d want 2080", view.Players[1].Cash)
+	}
+	if len(view.Deeds) != 0 {
+		t.Fatalf("deeds should be wiped, got %d", len(view.Deeds))
+	}
+	if view.PendingPayment != nil {
+		t.Fatal("pending should clear")
+	}
+	if view.LastBankruptcy == nil || view.LastBankruptcy.Reason != "declare" || view.LastBankruptcy.BankPaid != 80 {
+		t.Fatalf("lastBankruptcy=%+v", view.LastBankruptcy)
+	}
+	g2, _ := repo.FindByID(context.Background(), "g1")
+	if len(g2.ChanceDeck) == 0 || g2.ChanceDeck[len(g2.ChanceDeck)-1] != CardChanceGetOutOfJail {
+		t.Fatalf("GOOJF should return to chance bottom: %v", g2.ChanceDeck)
+	}
+	if view.Status != gamerepo.StatusFinished || view.WinnerUserID != "b" {
+		t.Fatalf("status=%s winner=%s", view.Status, view.WinnerUserID)
+	}
+}
+
+func TestBankruptRequiresNegativeCash(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, memSpaces{}, Config{})
+	seedTwoPlayer(t, repo)
+	_, err := svc.Bankrupt(context.Background(), "g1", "a")
+	if !errors.Is(err, ErrNotInDebt) {
+		t.Fatalf("err=%v want ErrNotInDebt", err)
+	}
+}
+
+func TestDebtPayStartAndSettle(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 1, 1)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].Cash = -20
+	g.PendingPayment = &gamerepo.PendingPayment{
+		Kind: "rent", Amount: 20, FromUserID: "a", ToUserID: "b", BoardIndex: 5, SpaceName: "Debt",
+	}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+	g.TurnStartedAt = time.Time{}
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.StartDebtPay(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.DebtPay == nil || view.DebtPay.UserID != "a" {
+		t.Fatalf("debtPay=%+v", view.DebtPay)
+	}
+	if view.TurnStartedAt != "" {
+		t.Fatal("turn clock should be paused during debt pay")
+	}
+	if view.CanProposeTrade {
+		t.Fatal("trade blocked during debt")
+	}
+
+	view, err = svc.SellBuilding(context.Background(), "g1", "a", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Players[0].Cash < 0 {
+		t.Fatalf("cash should clear debt, got %d", view.Players[0].Cash)
+	}
+	if view.DebtPay != nil {
+		t.Fatal("debt pay should clear after settle")
+	}
+	if view.PendingPayment != nil {
+		t.Fatal("pending should clear")
+	}
+}
+
+func TestDebtPayAutoBankruptWhenNoAssets(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, memSpaces{}, Config{})
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].Cash = -50
+	g.PendingPayment = &gamerepo.PendingPayment{
+		Kind: "tax", Amount: 50, FromUserID: "a", ToUserID: "", BoardIndex: 4, SpaceName: "Tax",
+	}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.StartDebtPay(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !view.Players[0].Resigned {
+		t.Fatal("should auto-bankrupt with nothing to raise")
+	}
+	if view.LastBankruptcy == nil || view.LastBankruptcy.Reason != "auto_insolvent" {
+		t.Fatalf("lastBankruptcy=%+v", view.LastBankruptcy)
+	}
+}
+
+func TestResignWipesDeedsToBank(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Deeds = []gamerepo.Deed{{BoardIndex: 1, OwnerUserID: "a", Houses: 3}}
+	g.Players[0].GetOutOfJailFreeCards = []string{CardChestGetOutOfJail}
+	g.Players[0].GetOutOfJailFree = 1
+	g.ChestDeck = []string{CardChestBankError}
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.Resign(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !view.Players[0].Resigned || len(view.Deeds) != 0 {
+		t.Fatalf("resigned=%v deeds=%d", view.Players[0].Resigned, len(view.Deeds))
+	}
+	g2, _ := repo.FindByID(context.Background(), "g1")
+	if len(g2.ChestDeck) < 2 || g2.ChestDeck[len(g2.ChestDeck)-1] != CardChestGetOutOfJail {
+		t.Fatalf("chestDeck=%v", g2.ChestDeck)
+	}
+	if view.LastBankruptcy == nil || view.LastBankruptcy.Reason != "resign" {
+		t.Fatalf("lastBankruptcy=%+v", view.LastBankruptcy)
+	}
+}
+
+func TestTradeBlockedWhileInDebt(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].Cash = -10
+	g.Deeds = []gamerepo.Deed{{BoardIndex: 1, OwnerUserID: "a"}}
+	g.PendingPayment = &gamerepo.PendingPayment{Kind: "rent", Amount: 10, FromUserID: "a", ToUserID: "b"}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	_ = repo.Update(context.Background(), g)
+
+	_, err := svc.ProposeTrade(context.Background(), "g1", "a", "b",
+		TradeSideInput{BoardIndexes: []int{1}},
+		TradeSideInput{Cash: 5},
+	)
+	if !errors.Is(err, ErrMustSettle) {
+		t.Fatalf("err=%v want ErrMustSettle", err)
+	}
+}
+
+func TestTurnStartInsolventAutoBankrupts(t *testing.T) {
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60, Rents: []int{100}},
+	}
+	svc := New(repo, spaces, Config{}).(*service)
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].BoardIndex = 1
+	g.Players[0].Cash = 40
+	g.Deeds = []gamerepo.Deed{{BoardIndex: 1, OwnerUserID: "b"}}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	svc.resolveLandingLocked(context.Background(), g, 0, 5)
+	_ = repo.Update(context.Background(), g)
+
+	// A ends with debt and no deeds → on B's turn OK; when turn returns to A with no assets → bankrupt.
+	// Give A no deeds (already none). End turn to B, then force A's turn start via EndTurn from B after stubbing.
+	view, err := svc.EndTurn(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.CurrentUserID != "b" {
+		t.Fatalf("current=%s", view.CurrentUserID)
+	}
+	g, _ = repo.FindByID(context.Background(), "g1")
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	_ = repo.Update(context.Background(), g)
+
+	view, err = svc.EndTurn(context.Background(), "g1", "b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A becomes current with cash < 0 and no raisable assets → auto_insolvent.
+	if !view.Players[0].Resigned {
+		t.Fatal("a should auto-bankrupt on turn start")
+	}
+	if view.LastBankruptcy == nil || view.LastBankruptcy.Reason != "auto_insolvent" {
+		t.Fatalf("lastBankruptcy=%+v", view.LastBankruptcy)
 	}
 }

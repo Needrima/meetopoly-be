@@ -133,14 +133,16 @@ type LastPaymentView struct {
 	PaidInFull   bool   `json:"paidInFull"`
 }
 
-// PendingPaymentView — unpaid remainder blocking Roll/End.
+// PendingPaymentView — debt metadata while debtor cash is negative (Phase 14.0).
 type PendingPaymentView struct {
-	Kind       string `json:"kind"`
-	Amount     int    `json:"amount"`
-	ToUserID   string `json:"toUserId,omitempty"`
-	ToUsername string `json:"toUsername,omitempty"`
-	BoardIndex int    `json:"boardIndex"`
-	SpaceName  string `json:"spaceName"`
+	Kind         string `json:"kind"`
+	Amount       int    `json:"amount"`
+	FromUserID   string `json:"fromUserId,omitempty"`
+	FromUsername string `json:"fromUsername,omitempty"`
+	ToUserID     string `json:"toUserId,omitempty"`
+	ToUsername   string `json:"toUsername,omitempty"`
+	BoardIndex   int    `json:"boardIndex"`
+	SpaceName    string `json:"spaceName"`
 }
 
 // LastCardView is the public last Chance/Chest draw (Phase 12.2).
@@ -188,9 +190,15 @@ type View struct {
 	LastRoll       *LastRollView       `json:"lastRoll"`
 	LastPayment    *LastPaymentView    `json:"lastPayment,omitempty"`
 	PendingPayment *PendingPaymentView `json:"pendingPayment,omitempty"`
+	DebtPay        *DebtPayView        `json:"debtPay,omitempty"`
+	LastBankruptcy *LastBankruptcyView `json:"lastBankruptcy,omitempty"`
 	LastCard       *LastCardView       `json:"lastCard,omitempty"`
-	WinnerUserID   string              `json:"winnerUserId,omitempty"`
-	WinnerUsername string              `json:"winnerUsername,omitempty"`
+	// CanBankrupt — caller/current may declare bankruptcy (cash < 0).
+	CanBankrupt bool `json:"canBankrupt"`
+	// CanStartDebtPay — current player may open the 2m raise-funds window.
+	CanStartDebtPay bool `json:"canStartDebtPay"`
+	WinnerUserID    string `json:"winnerUserId,omitempty"`
+	WinnerUsername  string `json:"winnerUsername,omitempty"`
 	// TurnStartedAt — RFC3339 UTC; current player's bank drains from this instant.
 	TurnStartedAt string `json:"turnStartedAt,omitempty"`
 }
@@ -228,6 +236,10 @@ type Service interface {
 	AcceptTrade(ctx context.Context, gameID, userID, mortgageAction string) (*View, error)
 	// DeclineTrade declines the open trade (Phase 13.2).
 	DeclineTrade(ctx context.Context, gameID, userID string) (*View, error)
+	// Bankrupt declares bankruptcy while cash is negative (Phase 14.0).
+	Bankrupt(ctx context.Context, gameID, userID string) (*View, error)
+	// StartDebtPay opens the 2-minute sell/mortgage raise-funds window (Phase 14.0).
+	StartDebtPay(ctx context.Context, gameID, userID string) (*View, error)
 	// Build buys one house/hotel step on an owned city (Phase 11.1).
 	Build(ctx context.Context, gameID, userID string, boardIndex int) (*View, error)
 	// SellBuilding sells one house/hotel step at half houseCost (Phase 11.2).
@@ -280,6 +292,7 @@ type service struct {
 	bankTimers    map[string]*time.Timer
 	auctionTimers map[string]*time.Timer
 	tradeTimers   map[string]*time.Timer
+	debtPayTimers map[string]*time.Timer
 	holds         map[string]*time.Timer // gameID\0userID → disconnect hold
 }
 
@@ -295,6 +308,7 @@ func New(repo gamerepo.Repository, spaces SpaceCatalog, cfg Config) Service {
 		bankTimers:    make(map[string]*time.Timer),
 		auctionTimers: make(map[string]*time.Timer),
 		tradeTimers:   make(map[string]*time.Timer),
+		debtPayTimers: make(map[string]*time.Timer),
 		holds:         make(map[string]*time.Timer),
 	}
 }
@@ -459,7 +473,7 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 	if g.TurnPhase != gamerepo.TurnPhaseAwaitingRoll {
 		return nil, ErrMustEndTurn
 	}
-	if hasPendingPayment(g) {
+	if currentPlayerInDebt(g) {
 		return nil, ErrMustSettle
 	}
 	if g.Auction != nil {
@@ -680,7 +694,7 @@ func (s *service) PayJailFine(ctx context.Context, gameID, userID string) (*View
 	if !g.Players[playerIdx].InJail {
 		return nil, ErrNotInJail
 	}
-	if hasPendingPayment(g) {
+	if currentPlayerInDebt(g) {
 		return nil, ErrMustSettle
 	}
 	if g.Auction != nil {
@@ -734,7 +748,7 @@ func (s *service) UseJailCard(ctx context.Context, gameID, userID string) (*View
 	if !g.Players[playerIdx].InJail {
 		return nil, ErrNotInJail
 	}
-	if hasPendingPayment(g) {
+	if currentPlayerInDebt(g) {
 		return nil, ErrMustSettle
 	}
 	if g.Auction != nil {
@@ -785,9 +799,7 @@ func (s *service) EndTurn(ctx context.Context, gameID, userID string) (*View, er
 	if g.TurnPhase != gamerepo.TurnPhaseAwaitingEnd {
 		return nil, ErrMustRoll
 	}
-	if hasPendingPayment(g) {
-		return nil, ErrMustSettle
-	}
+	// Phase 14.0: End allowed while cash is negative; Roll blocked until settled.
 	if g.Auction != nil {
 		return nil, ErrAuctionActive
 	}
@@ -801,23 +813,14 @@ func (s *service) EndTurn(ctx context.Context, gameID, userID string) (*View, er
 	s.pauseCurrentBankLocked(g)
 	curIdx := currentPlayerIndex(g)
 	if curIdx >= 0 && g.Players[curIdx].TimeRemainingMs <= 0 {
-		g.Players[curIdx].Resigned = true
-		g.Players[curIdx].TimeRemainingMs = 0
-		if finishIfOneActive(g) {
-			s.clearBankClockLocked(g)
-		} else {
-			advanceToNextActive(g)
-			g.DoublesStreak = 0
-			g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
-			g.SuppressBuyOffer = false
-			s.startFreshTurnClockLocked(g)
-		}
+		s.eliminatePlayerLocked(g, curIdx, "turn_timeout")
 	} else {
 		advanceToNextActive(g)
 		g.DoublesStreak = 0
 		g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
 		g.SuppressBuyOffer = false
 		s.startFreshTurnClockLocked(g)
+		s.maybeHandleDebtOnTurnStartLocked(g)
 	}
 	g.UpdatedAt = time.Now().UTC()
 
@@ -829,7 +832,7 @@ func (s *service) EndTurn(ctx context.Context, gameID, userID string) (*View, er
 	return view, nil
 }
 
-// Resign marks the caller as out (Phase 6.2c). Leaving the board mid-game is resigning.
+// Resign marks the caller as out (Phase 6.2c / 14.0). Leaving mid-game wipes assets to Bank.
 func (s *service) Resign(ctx context.Context, gameID, userID string) (*View, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -928,13 +931,7 @@ func (s *service) resignLocked(ctx context.Context, gameID, userID string) (*Vie
 		return s.viewOf(ctx, g), nil
 	}
 
-	playerIdx := -1
-	for i := range g.Players {
-		if g.Players[i].UserID == userID {
-			playerIdx = i
-			break
-		}
-	}
+	playerIdx := playerIndexByID(g, userID)
 	if playerIdx < 0 {
 		return nil, ErrNotPlayer
 	}
@@ -942,44 +939,7 @@ func (s *service) resignLocked(ctx context.Context, gameID, userID string) (*Vie
 		return nil, ErrAlreadyOut
 	}
 
-	wasCurrent := g.Players[playerIdx].TurnOrder == g.CurrentTurn
-	if g.Auction != nil {
-		s.foldPlayerFromAuctionLocked(g, userID)
-	}
-	if g.Trade != nil && (g.Trade.FromUserID == userID || g.Trade.ToUserID == userID) {
-		s.clearTradeLocked(g)
-	}
-	if wasCurrent {
-		s.pauseCurrentBankLocked(g)
-	}
-	g.Players[playerIdx].Resigned = true
-	g.Players[playerIdx].HubID = ""
-	g.Players[playerIdx].HubRevision++
-	g.LastForfeit = &gamerepo.LastForfeit{
-		UserID:   userID,
-		Username: g.Players[playerIdx].Username,
-		Reason:   "resign",
-		Strikes:  0,
-	}
-	if wasCurrent {
-		g.PendingPayment = nil
-	}
-
-	if finishIfOneActive(g) {
-		s.clearBankClockLocked(g)
-		s.cancelAuctionTimerLocked(g.ID)
-		s.cancelTradeTimerLocked(g.ID)
-		g.Auction = nil
-		g.Trade = nil
-	} else if wasCurrent {
-		advanceToNextActive(g)
-		g.DoublesStreak = 0
-		g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
-		if g.Auction == nil {
-			s.startFreshTurnClockLocked(g)
-		}
-	}
-
+	s.eliminatePlayerLocked(g, playerIdx, "resign")
 	g.UpdatedAt = time.Now().UTC()
 	if err := s.repo.Update(ctx, g); err != nil {
 		return nil, err
@@ -1016,7 +976,7 @@ func (s *service) Buy(ctx context.Context, gameID, userID string) (*View, error)
 	if err != nil {
 		return nil, err
 	}
-	if hasPendingPayment(g) {
+	if currentPlayerInDebt(g) {
 		return nil, ErrMustSettle
 	}
 	if g.Auction != nil {
@@ -1080,7 +1040,7 @@ func (s *service) StartAuction(ctx context.Context, gameID, userID string) (*Vie
 	if _, err := requireCurrentPlayer(g, userID); err != nil {
 		return nil, err
 	}
-	if hasPendingPayment(g) {
+	if currentPlayerInDebt(g) {
 		return nil, ErrMustSettle
 	}
 	spaces := s.loadSpaces(ctx, g.WorldID)
@@ -1179,7 +1139,7 @@ func (s *service) Build(ctx context.Context, gameID, userID string, boardIndex i
 	if err != nil {
 		return nil, err
 	}
-	if hasPendingPayment(g) {
+	if currentPlayerInDebt(g) {
 		return nil, ErrMustSettle
 	}
 	if g.Auction != nil {
@@ -1305,9 +1265,9 @@ func (s *service) SellBuilding(ctx context.Context, gameID, userID string, board
 	}
 
 	refund := sp.HouseCost / 2
-	g.Players[playerIdx].Cash += refund
+	applyRaiseTowardDebtLocked(g, playerIdx, refund)
 	g.Deeds[deedIdx].Houses = curH - 1
-	trySettlePendingLocked(g, playerIdx)
+	s.afterRaiseCheckDebtLocked(g, playerIdx)
 	g.UpdatedAt = time.Now().UTC()
 	if err := s.repo.Update(ctx, g); err != nil {
 		return nil, err
@@ -1395,8 +1355,8 @@ func (s *service) Mortgage(ctx context.Context, gameID, userID string, boardInde
 
 	payout := mortgageValue(sp.Price)
 	g.Deeds[deedIdx].Mortgaged = true
-	g.Players[playerIdx].Cash += payout
-	trySettlePendingLocked(g, playerIdx)
+	applyRaiseTowardDebtLocked(g, playerIdx, payout)
+	s.afterRaiseCheckDebtLocked(g, playerIdx)
 	g.UpdatedAt = time.Now().UTC()
 	if err := s.repo.Update(ctx, g); err != nil {
 		return nil, err
@@ -1433,7 +1393,7 @@ func (s *service) Redeem(ctx context.Context, gameID, userID string, boardIndex 
 	if err != nil {
 		return nil, err
 	}
-	if hasPendingPayment(g) {
+	if currentPlayerInDebt(g) {
 		return nil, ErrMustSettle
 	}
 	if g.Auction != nil {
@@ -1786,7 +1746,7 @@ func (s *service) ensureBanksLocked(g *gamerepo.Game) {
 			g.Players[i].TimeRemainingMs = bankMs
 		}
 	}
-	if g.Status == gamerepo.StatusActive && g.TurnStartedAt.IsZero() && g.Auction == nil && g.Trade == nil {
+	if g.Status == gamerepo.StatusActive && g.TurnStartedAt.IsZero() && g.Auction == nil && g.Trade == nil && g.DebtPay == nil && !currentPlayerInDebt(g) {
 		g.TurnStartedAt = time.Now().UTC()
 	}
 }
@@ -1812,9 +1772,14 @@ func (s *service) pauseCurrentBankLocked(g *gamerepo.Game) {
 	s.cancelBankTimerLocked(g.ID)
 }
 
-// startCurrentBankLocked resumes the current player's remaining turn clock (auction/trade unpause).
+// startCurrentBankLocked resumes the current player's remaining turn clock (auction/trade/debt-pay unpause).
 func (s *service) startCurrentBankLocked(g *gamerepo.Game) {
-	if g.Status != gamerepo.StatusActive || g.Auction != nil || g.Trade != nil {
+	if g.Status != gamerepo.StatusActive || g.Auction != nil || g.Trade != nil || g.DebtPay != nil {
+		s.clearBankClockLocked(g)
+		return
+	}
+	// Keep paused while current player is in debt awaiting Pay | Bankruptcy.
+	if currentPlayerInDebt(g) {
 		s.clearBankClockLocked(g)
 		return
 	}
@@ -1843,8 +1808,8 @@ func (s *service) syncTimeBankLocked(ctx context.Context, g *gamerepo.Game) (boo
 	if g.Status != gamerepo.StatusActive {
 		return false, nil
 	}
-	// Turn clock paused during auction / open trade.
-	if g.Auction != nil || g.Trade != nil {
+	// Turn clock paused during auction / open trade / debt-pay / negative-cash gate.
+	if g.Auction != nil || g.Trade != nil || g.DebtPay != nil || currentPlayerInDebt(g) {
 		return false, nil
 	}
 
@@ -1873,22 +1838,10 @@ func (s *service) syncTimeBankLocked(ctx context.Context, g *gamerepo.Game) (boo
 		}
 
 		if g.Players[idx].TurnTimeouts >= gamerepo.TurnTimeoutResignAfter {
-			g.Players[idx].Resigned = true
-			g.LastForfeit = &gamerepo.LastForfeit{
-				UserID:   g.Players[idx].UserID,
-				Username: g.Players[idx].Username,
-				Reason:   "turn_timeout",
-				Strikes:  g.Players[idx].TurnTimeouts,
-			}
-			if finishIfOneActive(g) {
-				s.clearBankClockLocked(g)
+			s.eliminatePlayerLocked(g, idx, "turn_timeout")
+			if g.Status != gamerepo.StatusActive {
 				break
 			}
-			advanceToNextActive(g)
-			g.DoublesStreak = 0
-			g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
-			g.SuppressBuyOffer = false
-			s.startFreshTurnClockLocked(g)
 			continue
 		}
 
@@ -1904,6 +1857,7 @@ func (s *service) syncTimeBankLocked(ctx context.Context, g *gamerepo.Game) (boo
 		g.DoublesStreak = 0
 		g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
 		s.startFreshTurnClockLocked(g)
+		s.maybeHandleDebtOnTurnStartLocked(g)
 	}
 
 	if !changed {
@@ -2134,11 +2088,12 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 	var buyOffer *BuyOfferView
 	canBuy := false
 	canStartAuction := false
-	pending := hasPendingPayment(g)
+	pending := currentPlayerInDebt(g)
 	auctionActive := g.Auction != nil
 	tradeActive := g.Trade != nil
+	debtPayActive := g.DebtPay != nil
 	landOffer := (*BuyOfferView)(nil)
-	if active && !pending && !auctionActive && !tradeActive {
+	if active && !pending && !auctionActive && !tradeActive && !debtPayActive {
 		landOffer = openBuyOffer(g, spaces)
 		if landOffer != nil && currentCash >= landOffer.Price {
 			buyOffer = landOffer
@@ -2147,17 +2102,23 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 		}
 	}
 
-	canRoll := active && phase == gamerepo.TurnPhaseAwaitingRoll && !pending && !auctionActive && !tradeActive && landOffer == nil
+	canRoll := active && phase == gamerepo.TurnPhaseAwaitingRoll && !pending && !auctionActive && !tradeActive && !debtPayActive && landOffer == nil
 	if canRoll && currentInJail && currentJailTurns >= gamerepo.MaxJailAttempts {
 		// Must pay fine or use card after 3 failed doubles attempts.
 		canRoll = false
 	}
-	canPayJail := active && currentInJail && !pending && !auctionActive && !tradeActive && currentCash >= gamerepo.JailFine &&
+	// Phase 14.0: End allowed while in debt; Roll blocked.
+	canEndTurn := active && phase == gamerepo.TurnPhaseAwaitingEnd && !auctionActive && !tradeActive && !debtPayActive && buyOffer == nil
+	canPayJail := active && currentInJail && !pending && !auctionActive && !tradeActive && !debtPayActive && currentCash >= gamerepo.JailFine &&
 		(phase == gamerepo.TurnPhaseAwaitingRoll || phase == gamerepo.TurnPhaseAwaitingEnd)
-	canUseCard := active && currentInJail && !pending && !auctionActive && !tradeActive && currentCards > 0 &&
+	canUseCard := active && currentInJail && !pending && !auctionActive && !tradeActive && !debtPayActive && currentCards > 0 &&
 		(phase == gamerepo.TurnPhaseAwaitingRoll || phase == gamerepo.TurnPhaseAwaitingEnd)
-	canProposeTrade := active && !pending && !auctionActive && !tradeActive && currentUserID != "" &&
+	canProposeTrade := active && !pending && !auctionActive && !tradeActive && !debtPayActive && currentUserID != "" &&
 		(phase == gamerepo.TurnPhaseAwaitingRoll || phase == gamerepo.TurnPhaseAwaitingEnd)
+	canBankrupt := active && pending && currentUserID != ""
+	canStartDebtPay := active && pending && !debtPayActive && !auctionActive && !tradeActive &&
+		currentUserID != "" && canRaiseFunds(g, currentPlayerIndex(g)) &&
+		phase == gamerepo.TurnPhaseAwaitingRoll
 
 	var lastPay *LastPaymentView
 	if g.LastPayment != nil {
@@ -2176,15 +2137,55 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 	var pend *PendingPaymentView
 	if g.PendingPayment != nil && g.PendingPayment.Amount > 0 {
 		pend = &PendingPaymentView{
-			Kind:       g.PendingPayment.Kind,
-			Amount:     g.PendingPayment.Amount,
-			ToUserID:   g.PendingPayment.ToUserID,
-			ToUsername: nameByID[g.PendingPayment.ToUserID],
-			BoardIndex: g.PendingPayment.BoardIndex,
-			SpaceName:  g.PendingPayment.SpaceName,
+			Kind:         g.PendingPayment.Kind,
+			Amount:       g.PendingPayment.Amount,
+			FromUserID:   g.PendingPayment.FromUserID,
+			FromUsername: nameByID[g.PendingPayment.FromUserID],
+			ToUserID:     g.PendingPayment.ToUserID,
+			ToUsername:   nameByID[g.PendingPayment.ToUserID],
+			BoardIndex:   g.PendingPayment.BoardIndex,
+			SpaceName:    g.PendingPayment.SpaceName,
 		}
 		if g.PendingPayment.ToUserID == "" {
 			pend.ToUsername = "Bank"
+		}
+	} else if pending && currentUserID != "" {
+		// Derive display debt from negative cash if pending metadata missing.
+		pend = &PendingPaymentView{
+			Kind:         "rent",
+			Amount:       -currentCash,
+			FromUserID:   currentUserID,
+			FromUsername: currentUsername,
+			ToUsername:   "Bank",
+			BoardIndex:   0,
+			SpaceName:    "Debt",
+		}
+	}
+	var debtPay *DebtPayView
+	if g.DebtPay != nil {
+		rem := time.Until(g.DebtPay.Deadline).Milliseconds()
+		if rem < 0 {
+			rem = 0
+		}
+		debtPay = &DebtPayView{
+			UserID:    g.DebtPay.UserID,
+			Username:  nameByID[g.DebtPay.UserID],
+			Deadline:  g.DebtPay.Deadline.UTC().Format(time.RFC3339Nano),
+			Remaining: rem,
+		}
+	}
+	var lastBk *LastBankruptcyView
+	if g.LastBankruptcy != nil {
+		lastBk = &LastBankruptcyView{
+			UserID:         g.LastBankruptcy.UserID,
+			Username:       g.LastBankruptcy.Username,
+			Reason:         g.LastBankruptcy.Reason,
+			OwedToUserID:   g.LastBankruptcy.OwedToUserID,
+			OwedToUsername: nameByID[g.LastBankruptcy.OwedToUserID],
+			BankPaid:       g.LastBankruptcy.BankPaid,
+		}
+		if g.LastBankruptcy.OwedToUserID == "" && g.LastBankruptcy.BankPaid > 0 {
+			lastBk.OwedToUsername = "Bank"
 		}
 	}
 	var lastCard *LastCardView
@@ -2213,12 +2214,14 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 		TurnPhase:       phase,
 		DoublesStreak:   g.DoublesStreak,
 		CanRoll:         canRoll,
-		CanEndTurn:      active && phase == gamerepo.TurnPhaseAwaitingEnd && !pending && buyOffer == nil && !auctionActive && !tradeActive,
+		CanEndTurn:      canEndTurn,
 		CanBuy:          canBuy,
 		CanStartAuction: canStartAuction,
 		CanProposeTrade: canProposeTrade,
 		CanPayJailFine:  canPayJail,
 		CanUseJailCard:  canUseCard,
+		CanBankrupt:     canBankrupt,
+		CanStartDebtPay: canStartDebtPay,
 		BuyOffer:        buyOffer,
 		Auction:         auctionViewOf(g),
 		LastAuction:     lastAuctionViewOf(g),
@@ -2229,6 +2232,8 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 		LastRoll:        last,
 		LastPayment:     lastPay,
 		PendingPayment:  pend,
+		DebtPay:         debtPay,
+		LastBankruptcy:  lastBk,
 		LastCard:        lastCard,
 		WinnerUserID:    g.WinnerUserID,
 		WinnerUsername:  g.WinnerUsername,
@@ -2240,55 +2245,10 @@ func hasPendingPayment(g *gamerepo.Game) bool {
 	return g.PendingPayment != nil && g.PendingPayment.Amount > 0
 }
 
-// trySettlePendingLocked applies available cash toward an outstanding rent/tax remainder.
-func trySettlePendingLocked(g *gamerepo.Game, payerIdx int) {
-	if !hasPendingPayment(g) || payerIdx < 0 || payerIdx >= len(g.Players) {
-		return
-	}
-	remaining := g.PendingPayment.Amount
-	pay := remaining
-	if g.Players[payerIdx].Cash < remaining {
-		pay = g.Players[payerIdx].Cash
-	}
-	if pay <= 0 {
-		return
-	}
-
-	g.Players[payerIdx].Cash -= pay
-	toUserID := g.PendingPayment.ToUserID
-	toUsername := "Bank"
-	if toUserID != "" {
-		for i := range g.Players {
-			if g.Players[i].UserID == toUserID {
-				g.Players[i].Cash += pay
-				toUsername = g.Players[i].Username
-				break
-			}
-		}
-	}
-
-	paidInFull := pay >= remaining
-	g.LastPayment = &gamerepo.LastPayment{
-		Kind:         g.PendingPayment.Kind,
-		FromUserID:   g.Players[payerIdx].UserID,
-		FromUsername: g.Players[payerIdx].Username,
-		ToUserID:     toUserID,
-		ToUsername:   toUsername,
-		Amount:       pay,
-		BoardIndex:   g.PendingPayment.BoardIndex,
-		SpaceName:    g.PendingPayment.SpaceName,
-		PaidInFull:   paidInFull,
-	}
-	if paidInFull {
-		g.PendingPayment = nil
-	} else {
-		g.PendingPayment.Amount = remaining - pay
-	}
-}
-
 // resolveLandingLocked auto-collects rent/tax after a move (Phase 6.5).
 // Phase 12.0: land on go_to_jail → Jail; land on jail = Just Visiting.
 // Phase 12.2–12.3: land on chance / community_chest → draw + apply effects (lock A).
+// Phase 14.0: shortfall drives cash negative and sets pendingPayment / owedTo.
 func (s *service) resolveLandingLocked(ctx context.Context, g *gamerepo.Game, payerIdx, diceTotal int) {
 	s.resolveLandingWithOpts(ctx, g, payerIdx, diceTotal, landingOpts{})
 }
@@ -2296,7 +2256,13 @@ func (s *service) resolveLandingLocked(ctx context.Context, g *gamerepo.Game, pa
 func (s *service) resolveLandingWithOpts(
 	ctx context.Context, g *gamerepo.Game, payerIdx, diceTotal int, opts landingOpts,
 ) {
-	g.PendingPayment = nil
+	// Clear prior debt metadata only for this payer (another player may still be negative).
+	if g.PendingPayment != nil {
+		from := g.PendingPayment.FromUserID
+		if from == "" || (payerIdx >= 0 && payerIdx < len(g.Players) && from == g.Players[payerIdx].UserID) {
+			g.PendingPayment = nil
+		}
+	}
 	spaces := s.loadSpaces(ctx, g.WorldID)
 	boardIndex := g.Players[payerIdx].BoardIndex
 	sp := spaceAt(spaces, boardIndex)
@@ -2335,46 +2301,14 @@ func (s *service) resolveLandingWithOpts(
 	}
 
 	pay := amount
-	paidInFull := true
 	if g.Players[payerIdx].Cash < amount {
-		pay = g.Players[payerIdx].Cash
-		paidInFull = false
-	}
-	g.Players[payerIdx].Cash -= pay
-	toUsername := "Bank"
-	if toUserID != "" {
-		for i := range g.Players {
-			if g.Players[i].UserID == toUserID {
-				g.Players[i].Cash += pay
-				toUsername = g.Players[i].Username
-				break
-			}
+		if g.Players[payerIdx].Cash > 0 {
+			pay = g.Players[payerIdx].Cash
+		} else {
+			pay = 0
 		}
 	}
-
-	g.LastPayment = &gamerepo.LastPayment{
-		Kind:         kind,
-		FromUserID:   payerID,
-		FromUsername: g.Players[payerIdx].Username,
-		ToUserID:     toUserID,
-		ToUsername:   toUsername,
-		Amount:       pay,
-		BoardIndex:   boardIndex,
-		SpaceName:    spaceName,
-		PaidInFull:   paidInFull,
-	}
-
-	if !paidInFull {
-		remaining := amount - pay
-		g.PendingPayment = &gamerepo.PendingPayment{
-			Kind:       kind,
-			Amount:     remaining,
-			ToUserID:   toUserID,
-			BoardIndex: boardIndex,
-			SpaceName:  spaceName,
-		}
-		g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
-	}
+	applyPaymentShortfallLocked(g, payerIdx, amount, pay, toUserID, kind, spaceName, boardIndex)
 }
 
 // jailBoardIndex returns the Jail / Just Visiting space, defaulting to classic index 10.
@@ -2399,7 +2333,12 @@ func sendPlayerToJail(g *gamerepo.Game, playerIdx int, spaces []Space) int {
 	g.Players[playerIdx].JailTurns = 0
 	g.DoublesStreak = 0
 	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
-	g.PendingPayment = nil
+	if g.PendingPayment != nil {
+		from := g.PendingPayment.FromUserID
+		if from == "" || from == g.Players[playerIdx].UserID {
+			g.PendingPayment = nil
+		}
+	}
 	return jail
 }
 

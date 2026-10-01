@@ -291,7 +291,7 @@ func (s *service) ProposeTrade(ctx context.Context, gameID, userID, toUserID str
 	if g.Trade != nil {
 		return nil, ErrTradeActive
 	}
-	if hasPendingPayment(g) {
+	if currentPlayerInDebt(g) {
 		return nil, ErrMustSettle
 	}
 	if _, err := requireCurrentPlayer(g, userID); err != nil {
@@ -406,6 +406,9 @@ func (s *service) AcceptTrade(ctx context.Context, gameID, userID, mortgageActio
 	}
 	if g.Auction != nil {
 		return nil, ErrAuctionActive
+	}
+	if g.DebtPay != nil {
+		return nil, ErrMustSettle
 	}
 	if g.Trade == nil {
 		return nil, ErrNoTrade

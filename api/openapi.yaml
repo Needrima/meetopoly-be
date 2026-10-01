@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.27.0
+  version: 0.28.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -740,9 +740,9 @@ paths:
       summary: Resign and leave the game
       description: |
         Phase 6.2c — voluntary leave mid-game counts as resigning.
-        Marks the caller `resigned`, skips them for turns, broadcasts state.
-        If only one active player remains, that player wins and `status` becomes `finished`.
-        Asset transfer / bankruptcy cleanup stays Phase 14.
+        Marks the caller `resigned`, wipes deeds/buildings/GOOJF to the Bank (Phase 14.0),
+        skips them for turns, broadcasts state. If a creditor was still owed, the Bank
+        credits that player the remaining debt. If only one active player remains, they win.
       tags:
         - Games
       security:
@@ -780,6 +780,107 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "409":
           description: Already resigned or game inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /games/{gameId}/bankrupt:
+    post:
+      operationId: bankruptGame
+      summary: Declare bankruptcy
+      description: |
+        Phase 14.0 — caller must have negative MeetCoin. Eliminates that player only:
+        deeds become unowned, buildings cleared, GOOJF returned to deck bottoms,
+        Bank credits any remaining owed amount to the creditor. Table continues unless
+        one active player remains (they win).
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Not in debt, already out, or inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /games/{gameId}/debt-pay/start:
+    post:
+      operationId: startDebtPay
+      summary: Start the 2-minute debt raise-funds window
+      description: |
+        Phase 14.0 — current player with negative cash opens a 2:00 window to sell
+        buildings and mortgage (trade blocked). Turn clock pauses. Expiry or no
+        raisable assets → auto-bankrupt. Settling cash to ≥ 0 clears the window.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated game snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a player / not your turn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Not in debt, debt-pay already active, or inactive
           content:
             application/json:
               schema:
@@ -2407,18 +2508,64 @@ components:
       properties:
         kind:
           type: string
-          enum: [rent, tax, card]
+          enum: [rent, tax, card, jail]
         amount:
           type: integer
-          description: Remaining MeetCoin owed
+          description: Remaining MeetCoin owed (matches −cash while indebted)
+        fromUserId:
+          type: string
+          description: Debtor user id (Phase 14.0)
+        fromUsername:
+          type: string
         toUserId:
           type: string
+          description: Creditor user id; empty = Bank
         toUsername:
           type: string
         boardIndex:
           type: integer
         spaceName:
           type: string
+    GameDebtPay:
+      type: object
+      additionalProperties: false
+      required:
+        - userId
+        - deadline
+        - remainingMs
+      properties:
+        userId:
+          type: string
+        username:
+          type: string
+        deadline:
+          type: string
+          format: date-time
+        remainingMs:
+          type: integer
+          format: int64
+    GameLastBankruptcy:
+      type: object
+      additionalProperties: false
+      required:
+        - userId
+        - username
+        - reason
+      properties:
+        userId:
+          type: string
+        username:
+          type: string
+        reason:
+          type: string
+          enum: [declare, auto_timeout, auto_insolvent, resign, turn_timeout]
+        owedToUserId:
+          type: string
+        owedToUsername:
+          type: string
+        bankPaid:
+          type: integer
+          description: MeetCoin the Bank credited to the creditor on wipe
     GameLastCard:
       type: object
       additionalProperties: false
@@ -2713,6 +2860,8 @@ components:
         - canProposeTrade
         - canPayJailFine
         - canUseJailCard
+        - canBankrupt
+        - canStartDebtPay
         - deeds
       properties:
         id:
@@ -2753,6 +2902,9 @@ components:
             After 3 failed attempts, false until pay/card. False while a trade is open (13.2).
         canEndTurn:
           type: boolean
+          description: |
+            Phase 14.0 — true in awaiting_end even while cash is negative (End allowed).
+            False during auction, trade, or active debt-pay window.
         canBuy:
           type: boolean
           description: Current player may buy the space they just landed on at list price (Phase 6.4)
@@ -2763,7 +2915,7 @@ components:
         canProposeTrade:
           type: boolean
           description: |
-            Phase 13.2 — current player may open a trade (not during auction/pending payment/open trade).
+            Phase 13.2 — current player may open a trade (not during auction/debt/open trade).
         canPayJailFine:
           type: boolean
           description: |
@@ -2772,6 +2924,13 @@ components:
           type: boolean
           description: |
             Phase 12.1 — current player is in Jail and holds at least one Get Out of Jail Free card.
+        canBankrupt:
+          type: boolean
+          description: Phase 14.0 — current player has negative cash and may declare bankruptcy
+        canStartDebtPay:
+          type: boolean
+          description: |
+            Phase 14.0 — current player is in debt, has raisable assets, and may open the 2:00 Pay window
         buyOffer:
           nullable: true
           allOf:
@@ -2816,9 +2975,21 @@ components:
             - $ref: "#/components/schemas/GameLastPayment"
         pendingPayment:
           nullable: true
-          description: Unpaid remainder; canRoll/canEndTurn false until resign or Phase 14
+          description: |
+            Phase 14.0 — debt metadata while debtor cash is negative. Roll blocked for debtor;
+            End allowed on the landing turn. Amount matches −cash.
           allOf:
             - $ref: "#/components/schemas/GamePendingPayment"
+        debtPay:
+          nullable: true
+          description: Phase 14.0 — active 2:00 raise-funds window
+          allOf:
+            - $ref: "#/components/schemas/GameDebtPay"
+        lastBankruptcy:
+          nullable: true
+          description: Phase 14.0 — most recent eliminate wipe for toasts
+          allOf:
+            - $ref: "#/components/schemas/GameLastBankruptcy"
         lastCard:
           nullable: true
           description: |

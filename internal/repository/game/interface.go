@@ -30,6 +30,8 @@ const (
 	TurnTimeoutResignAfter = 2
 	// TradeReplyTimeout — target must accept/decline within this window (Phase 13.2).
 	TradeReplyTimeout = 60 * time.Second
+	// DebtPayDuration — Phase 14.0 raise-funds window after choosing Pay.
+	DebtPayDuration = 2 * time.Minute
 
 	// Deprecated alias — use TurnClockDuration (Phase 13.2 replaced 45m banks).
 	TimeBankDuration = TurnClockDuration
@@ -91,13 +93,30 @@ type LastPayment struct {
 	PaidInFull   bool   `bson:"paidInFull" json:"paidInFull"`
 }
 
-// PendingPayment — unpaid remainder after a land; blocks Roll/End until resign / Phase 14.
+// PendingPayment — debt metadata while debtor cash is negative (Phase 14.0).
+// Amount should match -cash for FromUserID. Roll blocked for debtor; End allowed.
 type PendingPayment struct {
-	Kind       string `bson:"kind" json:"kind"` // rent | tax
+	Kind       string `bson:"kind" json:"kind"` // rent | tax | card | jail
 	Amount     int    `bson:"amount" json:"amount"`
-	ToUserID   string `bson:"toUserId,omitempty" json:"toUserId,omitempty"`
+	FromUserID string `bson:"fromUserId,omitempty" json:"fromUserId,omitempty"` // debtor
+	ToUserID   string `bson:"toUserId,omitempty" json:"toUserId,omitempty"`     // empty = Bank
 	BoardIndex int    `bson:"boardIndex" json:"boardIndex"`
 	SpaceName  string `bson:"spaceName" json:"spaceName"`
+}
+
+// DebtPay — active 2-minute raise-funds window (Phase 14.0). Turn clock paused while set.
+type DebtPay struct {
+	UserID   string    `bson:"userId" json:"userId"`
+	Deadline time.Time `bson:"deadline" json:"deadline"`
+}
+
+// LastBankruptcy — most recent eliminate for toasts (Phase 14.0).
+type LastBankruptcy struct {
+	UserID       string `bson:"userId" json:"userId"`
+	Username     string `bson:"username" json:"username"`
+	Reason       string `bson:"reason" json:"reason"` // declare | auto_timeout | auto_insolvent | resign | turn_timeout
+	OwedToUserID string `bson:"owedToUserId,omitempty" json:"owedToUserId,omitempty"`
+	BankPaid     int    `bson:"bankPaid,omitempty" json:"bankPaid,omitempty"` // MeetCoin Bank credited to creditor
 }
 
 // LastRoll is the most recent dice result (Phase 6.1+).
@@ -213,8 +232,12 @@ type Game struct {
 	Deeds []Deed `bson:"deeds,omitempty" json:"deeds,omitempty"`
 	// LastPayment — most recent auto rent/tax (Phase 6.5).
 	LastPayment *LastPayment `bson:"lastPayment,omitempty" json:"lastPayment,omitempty"`
-	// PendingPayment — unpaid remainder; blocks turn actions until settled (Phase 6.5 / 14).
+	// PendingPayment — debt metadata while a player’s cash is negative (Phase 14.0).
 	PendingPayment *PendingPayment `bson:"pendingPayment,omitempty" json:"pendingPayment,omitempty"`
+	// DebtPay — active raise-funds window (Phase 14.0); nil when none.
+	DebtPay *DebtPay `bson:"debtPay,omitempty" json:"debtPay,omitempty"`
+	// LastBankruptcy — most recent wipe eliminate (Phase 14.0).
+	LastBankruptcy *LastBankruptcy `bson:"lastBankruptcy,omitempty" json:"lastBankruptcy,omitempty"`
 	// TurnPhase — awaiting_roll | awaiting_end (Phase 6.2).
 	TurnPhase string `bson:"turnPhase" json:"turnPhase"`
 	// DoublesStreak — consecutive doubles this turn (0–3).

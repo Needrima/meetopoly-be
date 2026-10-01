@@ -370,7 +370,7 @@ func (s *service) resumeBanksAfterAuctionLocked(g *gamerepo.Game) {
 }
 
 func (s *service) maybeAutoStartAuctionLocked(g *gamerepo.Game, spaces []Space, payerIdx int) {
-	if g == nil || g.Auction != nil || hasPendingPayment(g) {
+	if g == nil || g.Auction != nil || currentPlayerInDebt(g) {
 		return
 	}
 	if payerIdx < 0 || payerIdx >= len(g.Players) || g.Players[payerIdx].Resigned {

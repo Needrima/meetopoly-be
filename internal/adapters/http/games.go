@@ -73,6 +73,40 @@ func handleResignGame(games gamesvc.Service) http.HandlerFunc {
 	}
 }
 
+func handleBankruptGame(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		view, err := games.Bankrupt(r.Context(), gameID, userID)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
+func handleStartDebtPay(games gamesvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		gameID := chi.URLParam(r, "gameId")
+		view, err := games.StartDebtPay(r.Context(), gameID, userID)
+		if err != nil {
+			mapGameError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
 func handleBuyProperty(games gamesvc.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := userIDFromContext(r.Context())
@@ -460,7 +494,13 @@ func mapGameError(w http.ResponseWriter, err error) {
 	case errors.Is(err, gamesvc.ErrCannotAfford):
 		writeError(w, http.StatusConflict, "cannot_afford", "Not enough MeetCoin")
 	case errors.Is(err, gamesvc.ErrMustSettle):
-		writeError(w, http.StatusConflict, "must_settle", "Settle rent or tax before continuing (resign if you cannot pay)")
+		writeError(w, http.StatusConflict, "must_settle", "Settle debt before continuing (sell, mortgage, or declare bankruptcy)")
+	case errors.Is(err, gamesvc.ErrNotInDebt):
+		writeError(w, http.StatusConflict, "not_in_debt", "You are not in debt")
+	case errors.Is(err, gamesvc.ErrDebtPayActive):
+		writeError(w, http.StatusConflict, "debt_pay_active", "Debt pay window is already open")
+	case errors.Is(err, gamesvc.ErrNoDebtPay):
+		writeError(w, http.StatusConflict, "no_debt_pay", "No debt pay window is open")
 	case errors.Is(err, gamesvc.ErrMustResolveBuy), errors.Is(err, gamesvc.ErrMustBuy):
 		writeError(w, http.StatusConflict, "must_resolve_buy", "Buy this property or start an auction before ending your turn")
 	case errors.Is(err, gamesvc.ErrAuctionActive):
