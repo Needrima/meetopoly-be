@@ -57,6 +57,8 @@ type room struct {
 	peers map[string]*peer // userID → peer
 	// audioPubs: voice rooms (hub + board) published mic relays (Phase 10). Key = publisher userID.
 	audioPubs map[string]*hubAudioPub
+	// videoPubs: board rooms only (Phase 16.0). Key = publisher userID. Stream id = video-{userId}.
+	videoPubs map[string]*boardVideoPub
 }
 
 type hubAudioPub struct {
@@ -65,15 +67,23 @@ type hubAudioPub struct {
 	stop       chan struct{}
 }
 
+type boardVideoPub struct {
+	fromUserID string
+	track      *webrtc.TrackLocalStaticRTP
+	stop       chan struct{}
+}
+
 type peer struct {
-	userID     string
-	username   string
-	country    string
-	pc         *webrtc.PeerConnection
-	dc         *webrtc.DataChannel
-	signal     SignalWriter
-	lastPoseAt time.Time
+	userID      string
+	username    string
+	country     string
+	pc          *webrtc.PeerConnection
+	dc          *webrtc.DataChannel
+	signal      SignalWriter
+	lastPoseAt  time.Time
 	negotiating bool
+	// renegotiateAgain: another AddTrack arrived while an SFU offer was in flight (Phase 16.0 audio+video).
+	renegotiateAgain bool
 }
 
 // NewSFU builds a memory SFU with Google public STUN (no TURN in Phase 7.0).
@@ -99,6 +109,18 @@ func IsBoardRoom(roomID string) bool {
 // IsVoiceRoom reports rooms that forward mic audio (hub + board, Phase 10).
 func IsVoiceRoom(roomID string) bool {
 	return IsHubRoom(roomID) || IsBoardRoom(roomID)
+}
+
+// IsVideoRoom reports rooms that forward camera video (board only, Phase 16.0).
+// Hubs stay audio-only.
+func IsVideoRoom(roomID string) bool {
+	return IsBoardRoom(roomID)
+}
+
+// BoardVideoStreamID is the SFU local track stream id for a publisher's camera.
+// Mobile maps remote video tiles by parsing the userId suffix.
+func BoardVideoStreamID(userID string) string {
+	return "video-" + userID
 }
 
 // BoardRoomID returns the locked room id for a game board presence room.
@@ -157,6 +179,17 @@ func (s *SFU) HubAudioPublisherCount(roomID string) int {
 	return len(r.audioPubs)
 }
 
+// BoardVideoPublisherCount returns how many board video pubs are active (tests / debug).
+func (s *SFU) BoardVideoPublisherCount(roomID string) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	r := s.rooms[roomID]
+	if r == nil || r.videoPubs == nil {
+		return 0
+	}
+	return len(r.videoPubs)
+}
+
 // Attach registers a signaling sink for userID before SDP exchange.
 // If the user was already attached, the previous PeerConnection is closed.
 // Hub rooms (`hub:…`) reject a new userId when the room already has MaxHubPeers.
@@ -171,10 +204,14 @@ func (s *SFU) Attach(roomID, userID, username, country string, signal SignalWrit
 		if IsVoiceRoom(roomID) {
 			r.audioPubs = make(map[string]*hubAudioPub)
 		}
+		if IsVideoRoom(roomID) {
+			r.videoPubs = make(map[string]*boardVideoPub)
+		}
 		s.rooms[roomID] = r
 	}
 	if old, ok := r.peers[userID]; ok {
 		s.unpublishHubAudioLocked(r, userID)
+		s.unpublishBoardVideoLocked(r, userID)
 		s.closePeerLocked(old)
 		delete(r.peers, userID)
 	} else if IsHubRoom(roomID) && len(r.peers) >= MaxHubPeers {
@@ -208,6 +245,7 @@ func (s *SFU) Detach(roomID, userID string, signal SignalWriter) (info PeerInfo,
 	}
 	info = PeerInfo{UserID: p.userID, Username: p.username, Country: p.country}
 	s.unpublishHubAudioLocked(r, userID)
+	s.unpublishBoardVideoLocked(r, userID)
 	s.closePeerLocked(p)
 	delete(r.peers, userID)
 	if len(r.peers) == 0 {
@@ -232,6 +270,7 @@ func (s *SFU) HandleOffer(roomID, userID string, sdp string) error {
 	}
 	signal := p.signal
 	voice := IsVoiceRoom(roomID)
+	video := IsVideoRoom(roomID)
 	s.mu.Unlock()
 
 	cfg := webrtc.Configuration{ICEServers: s.iceServers}
@@ -295,7 +334,7 @@ func (s *SFU) HandleOffer(roomID, userID string, sdp string) error {
 
 	if voice {
 		pc.OnTrack(func(remote *webrtc.TrackRemote, _ *webrtc.RTPReceiver) {
-			s.onHubTrack(roomID, userID, remote)
+			s.onMediaTrack(roomID, userID, remote)
 		})
 	}
 
@@ -308,6 +347,11 @@ func (s *SFU) HandleOffer(roomID, userID string, sdp string) error {
 	if voice {
 		if err := s.addExistingHubAudioToPC(roomID, userID, pc); err != nil {
 			slog.Warn("voice add existing audio", "roomId", roomID, "userId", userID, "err", err)
+		}
+	}
+	if video {
+		if err := s.addExistingBoardVideoToPC(roomID, userID, pc); err != nil {
+			slog.Warn("board add existing video", "roomId", roomID, "userId", userID, "err", err)
 		}
 	}
 
@@ -344,19 +388,29 @@ func (s *SFU) HandleOffer(roomID, userID string, sdp string) error {
 	})
 }
 
-// HandleAnswer applies a client SDP answer to an SFU-initiated renegotiation offer (hub audio).
+// HandleAnswer applies a client SDP answer to an SFU-initiated renegotiation offer (hub audio / board video).
 func (s *SFU) HandleAnswer(roomID, userID string, sdp string) error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	p := s.peerLocked(roomID, userID)
 	if p == nil || p.pc == nil {
+		s.mu.Unlock()
 		return fmt.Errorf("no peer connection")
 	}
 	answer := webrtc.SessionDescription{Type: webrtc.SDPTypeAnswer, SDP: sdp}
 	if err := p.pc.SetRemoteDescription(answer); err != nil {
+		s.mu.Unlock()
 		return fmt.Errorf("set remote description: %w", err)
 	}
 	p.negotiating = false
+	again := p.renegotiateAgain
+	p.renegotiateAgain = false
+	s.mu.Unlock()
+
+	if again {
+		if err := s.negotiateOffer(roomID, userID); err != nil {
+			slog.Debug("presence follow-up renegotiate", "userId", userID, "err", err)
+		}
+	}
 	return nil
 }
 
@@ -379,16 +433,30 @@ func (s *SFU) peerLocked(roomID, userID string) *peer {
 	return r.peers[userID]
 }
 
-func (s *SFU) onHubTrack(roomID, fromUserID string, remote *webrtc.TrackRemote) {
-	if remote.Kind() != webrtc.RTPCodecTypeAudio {
-		slog.Debug("hub ignoring non-audio track",
+func (s *SFU) onMediaTrack(roomID, fromUserID string, remote *webrtc.TrackRemote) {
+	switch remote.Kind() {
+	case webrtc.RTPCodecTypeAudio:
+		s.onHubAudioTrack(roomID, fromUserID, remote)
+	case webrtc.RTPCodecTypeVideo:
+		if !IsVideoRoom(roomID) {
+			slog.Debug("presence ignoring video on non-video room",
+				"roomId", roomID,
+				"userId", fromUserID,
+			)
+			go drainRemoteTrack(remote)
+			return
+		}
+		s.onBoardVideoTrack(roomID, fromUserID, remote)
+	default:
+		slog.Debug("presence ignoring unsupported track",
 			"roomId", roomID,
 			"userId", fromUserID,
 			"kind", remote.Kind().String(),
 		)
-		return
 	}
+}
 
+func (s *SFU) onHubAudioTrack(roomID, fromUserID string, remote *webrtc.TrackRemote) {
 	local, err := webrtc.NewTrackLocalStaticRTP(
 		remote.Codec().RTPCodecCapability,
 		"audio",
@@ -413,32 +481,12 @@ func (s *SFU) onHubTrack(roomID, fromUserID string, remote *webrtc.TrackRemote) 
 	}
 	r.audioPubs[fromUserID] = pub
 
-	// Snapshot peers that should receive this pub.
-	type recv struct {
-		userID string
-		pc     *webrtc.PeerConnection
-		signal SignalWriter
-	}
-	recvs := make([]recv, 0, len(r.peers))
-	for id, p := range r.peers {
-		if id == fromUserID || p.pc == nil {
-			continue
-		}
-		recvs = append(recvs, recv{userID: id, pc: p.pc, signal: p.signal})
-	}
+	recvs := s.snapshotMediaReceiversLocked(r, fromUserID)
 	s.mu.Unlock()
 
-	go relayHubAudio(remote, local, stop)
+	go relayRTP(remote, local, stop)
 
-	for _, rv := range recvs {
-		if _, err := rv.pc.AddTrack(local); err != nil {
-			slog.Debug("hub AddTrack", "toUserId", rv.userID, "err", err)
-			continue
-		}
-		if err := s.negotiateOffer(roomID, rv.userID); err != nil {
-			slog.Debug("hub renegotiate", "toUserId", rv.userID, "err", err)
-		}
-	}
+	s.fanoutLocalTrack(roomID, local, recvs)
 
 	slog.Info("hub audio published",
 		"roomId", roomID,
@@ -447,7 +495,78 @@ func (s *SFU) onHubTrack(roomID, fromUserID string, remote *webrtc.TrackRemote) 
 	)
 }
 
-func relayHubAudio(remote *webrtc.TrackRemote, local *webrtc.TrackLocalStaticRTP, stop <-chan struct{}) {
+func (s *SFU) onBoardVideoTrack(roomID, fromUserID string, remote *webrtc.TrackRemote) {
+	local, err := webrtc.NewTrackLocalStaticRTP(
+		remote.Codec().RTPCodecCapability,
+		"video",
+		BoardVideoStreamID(fromUserID),
+	)
+	if err != nil {
+		slog.Warn("board video local track", "roomId", roomID, "userId", fromUserID, "err", err)
+		return
+	}
+
+	stop := make(chan struct{})
+	pub := &boardVideoPub{fromUserID: fromUserID, track: local, stop: stop}
+
+	s.mu.Lock()
+	r := s.rooms[roomID]
+	if r == nil || r.videoPubs == nil {
+		s.mu.Unlock()
+		return
+	}
+	if old := r.videoPubs[fromUserID]; old != nil {
+		s.stopBoardVideoPubLocked(old)
+	}
+	r.videoPubs[fromUserID] = pub
+
+	recvs := s.snapshotMediaReceiversLocked(r, fromUserID)
+	s.mu.Unlock()
+
+	go relayRTP(remote, local, stop)
+
+	s.fanoutLocalTrack(roomID, local, recvs)
+
+	slog.Info("board video published",
+		"roomId", roomID,
+		"userId", fromUserID,
+		"streamId", BoardVideoStreamID(fromUserID),
+		"receivers", len(recvs),
+	)
+}
+
+type mediaRecv struct {
+	userID string
+	pc     *webrtc.PeerConnection
+}
+
+func (s *SFU) snapshotMediaReceiversLocked(r *room, fromUserID string) []mediaRecv {
+	if r == nil {
+		return nil
+	}
+	recvs := make([]mediaRecv, 0, len(r.peers))
+	for id, p := range r.peers {
+		if id == fromUserID || p.pc == nil {
+			continue
+		}
+		recvs = append(recvs, mediaRecv{userID: id, pc: p.pc})
+	}
+	return recvs
+}
+
+func (s *SFU) fanoutLocalTrack(roomID string, local *webrtc.TrackLocalStaticRTP, recvs []mediaRecv) {
+	for _, rv := range recvs {
+		if _, err := rv.pc.AddTrack(local); err != nil {
+			slog.Debug("presence AddTrack", "toUserId", rv.userID, "err", err)
+			continue
+		}
+		if err := s.negotiateOffer(roomID, rv.userID); err != nil {
+			slog.Debug("presence renegotiate", "toUserId", rv.userID, "err", err)
+		}
+	}
+}
+
+func relayRTP(remote *webrtc.TrackRemote, local *webrtc.TrackLocalStaticRTP, stop <-chan struct{}) {
 	buf := make([]byte, 1500)
 	for {
 		select {
@@ -458,11 +577,21 @@ func relayHubAudio(remote *webrtc.TrackRemote, local *webrtc.TrackLocalStaticRTP
 		n, _, err := remote.Read(buf)
 		if err != nil {
 			if err != io.EOF {
-				slog.Debug("hub audio read", "err", err)
+				slog.Debug("presence rtp read", "err", err)
 			}
 			return
 		}
 		if _, err := local.Write(buf[:n]); err != nil {
+			return
+		}
+	}
+}
+
+// drainRemoteTrack consumes RTP until the track ends so ignored tracks do not stall.
+func drainRemoteTrack(remote *webrtc.TrackRemote) {
+	buf := make([]byte, 1500)
+	for {
+		if _, _, err := remote.Read(buf); err != nil {
 			return
 		}
 	}
@@ -492,6 +621,30 @@ func (s *SFU) addExistingHubAudioToPC(roomID, userID string, pc *webrtc.PeerConn
 	return nil
 }
 
+func (s *SFU) addExistingBoardVideoToPC(roomID, userID string, pc *webrtc.PeerConnection) error {
+	s.mu.Lock()
+	r := s.rooms[roomID]
+	if r == nil || r.videoPubs == nil {
+		s.mu.Unlock()
+		return nil
+	}
+	tracks := make([]*webrtc.TrackLocalStaticRTP, 0, len(r.videoPubs))
+	for pubUser, pub := range r.videoPubs {
+		if pubUser == userID || pub == nil || pub.track == nil {
+			continue
+		}
+		tracks = append(tracks, pub.track)
+	}
+	s.mu.Unlock()
+
+	for _, tr := range tracks {
+		if _, err := pc.AddTrack(tr); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *SFU) negotiateOffer(roomID, userID string) error {
 	s.mu.Lock()
 	p := s.peerLocked(roomID, userID)
@@ -500,6 +653,7 @@ func (s *SFU) negotiateOffer(roomID, userID string) error {
 		return fmt.Errorf("no peer connection")
 	}
 	if p.negotiating {
+		p.renegotiateAgain = true
 		s.mu.Unlock()
 		return nil
 	}
@@ -563,6 +717,29 @@ func (s *SFU) stopHubAudioPubLocked(pub *hubAudioPub) {
 	}
 }
 
+func (s *SFU) unpublishBoardVideoLocked(r *room, userID string) {
+	if r == nil || r.videoPubs == nil {
+		return
+	}
+	pub := r.videoPubs[userID]
+	if pub == nil {
+		return
+	}
+	s.stopBoardVideoPubLocked(pub)
+	delete(r.videoPubs, userID)
+}
+
+func (s *SFU) stopBoardVideoPubLocked(pub *boardVideoPub) {
+	if pub == nil {
+		return
+	}
+	select {
+	case <-pub.stop:
+	default:
+		close(pub.stop)
+	}
+}
+
 // allowPose returns true if this peer may fan out another pose (MaxPoseHz).
 func (s *SFU) allowPose(roomID, userID string) bool {
 	s.mu.Lock()
@@ -609,6 +786,7 @@ func (s *SFU) closePeerLocked(p *peer) {
 		return
 	}
 	p.negotiating = false
+	p.renegotiateAgain = false
 	if p.dc != nil {
 		_ = p.dc.Close()
 		p.dc = nil

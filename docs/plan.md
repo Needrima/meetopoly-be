@@ -1433,16 +1433,30 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 
 ---
 
-### Phase 16 — Later (explicitly deferred)
+### Phase 16 — Board video + deferred extras
 
-Only when the user asks:
+**In progress — board cameras (ask before each sub-slice):**
+
+| Slice | Deliverable | Not yet |
+| --- | --- | --- |
+| **16.0** | ✅ SFU board-only video forward (`videoPubs`, stream id `video-{userId}`); hub ignores video | Mobile publish/UI |
+| **16.1** | Mobile `muteVideo` + board publish/play video tracks | Seat grid UI |
+| **16.2** | Meet-style `BoardSeatGrid` + local controls + long-press info modal | Turn ring polish |
+| **16.3** | 3m turn-clock border ring on current seat + plan/skill docs | Smoke |
+| **16.4** | Smoke checklist | — |
+
+**16.0 notes**
+
+- ✅ Shipped: `IsVideoRoom` = board only; `room.videoPubs`; `OnTrack` routes audio → existing relay, video → board relay with stream id `video-{userId}`; join gets existing video pubs; Attach/Detach/reconnect unpublish video; hub video drained+ignored; renegotiation queues while an SFU offer is in flight (audio+video). Unit tests for map alloc, detach, reconnect, renego queue.
+
+**Still deferred until asked:**
 
 - Location **admin** CRUD
 - OAuth
 - Web R3F client + Wails desktop
 - TURN, recording, moderation tools
 - More countries’ seed packs
-- **Hub/board video (cameras)** + **selective listen** (pick who you hear/see in hubs ≤16) — same media rail / roster UX; do not build listen-matrix before video
+- **Hub video (cameras)** + **selective listen** (pick who you hear/see in hubs ≤16) — do not build listen-matrix before hub video
 
 ---
 
@@ -1611,4 +1625,6 @@ Only when the user asks:
 | 2026-10-01 | **Phase 15:** Contabo deploy = **owner-run**; agent helps on request only |
 | 2026-10-01 | **Encore E.1:** `africa-1` property cities reordered by prestige within color groups (prices stay on slots) |
 | 2026-10-01 | **Encore E.2:** all other Worlds prestige reorder; CA/Oceania/SA `-r2` dupes replaced; reseed required |
+| 2026-10-01 | **Phase 16 split:** board cameras 16.0–16.4; hub video + selective listen still deferred |
+| 2026-10-01 | **16.0:** SFU board-only `videoPubs` + RTP relay (`video-{userId}`); hub ignores video; tests |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
