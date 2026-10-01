@@ -1411,14 +1411,25 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 
 | Slice | Deliverable | Not yet |
 | --- | --- | --- |
-| **E.1** | ✅ `africa-1` prestige reorder within color groups | Other worlds |
-| **E.2+** | Other worlds one-at-a-time after user OK on africa-1 | Dupes in CA/Oceania/SA |
+| **E.1** | ✅ `africa-1` prestige reorder within color groups | — |
+| **E.2** | ✅ All other worlds prestige reorder + CA/Oceania/SA dupe fixes | — |
 
 **E.1 notes**
 
 - ✅ Shipped (2026-10-01): swap city **identity** fields among slots in the same color group (name, slug, hubId, assets, copy, country, map, svgcities, …). Economy numbers stay with `boardIndex`.
 - Rank (least → most prestigious within group): brown Antananarivo→Accra; lightBlue Asmara→Benghazi→Cairo; pink Dakar→Casablanca→Cape Town; orange Fez→Kigali→Lagos; red Lalibela→Maputo→Marrakesh; yellow Meroë→Maseru→Nairobi; green Timbuktu→Ouagadougou→Port Louis; darkBlue Yamoussoukro→Tunis. Airports/utilities unchanged.
-- Re-seed Mongo (`locations.json`) after pull so hubs/slugs match.
+
+**E.2 notes**
+
+- ✅ Shipped (2026-10-01): same within-group identity swap for asia-1/2, central-america-1, europe-1…5, middle-east-1, north-america-1, oceania-1, south-america-1.
+- **Duplicate `-r2` cities replaced** (slot kept; new identity):
+  - **central-america-1:** Kingston, Bridgetown, Santo Domingo, Managua, Belize City, Port of Spain, Oranjestad, Panama City
+  - **oceania-1:** Darwin, Christchurch, Adelaide, Gold Coast, Brisbane, Auckland, Cairns, Port Moresby
+  - **south-america-1:** Rosario + Maracaibo on lightBlue; Buenos Aires + Caracas moved to darkBlue; Asunción + Salvador on green
+- europe-4 lightBlue: Nicosia→Nuremberg→Odessa (no Paphos typo/mis-slot).
+- Validation: every world 40 spaces / 22 properties; unique name/slug/hubId/boardCode within world; price/rent/houseCost stay on slots.
+- Cross-world same display names (different places): Granada (CA vs EU), Córdoba (EU vs SA), Panama City (CA capital vs NA pack). Intentional.
+- Re-seed Mongo after pull: `go run ./cmd/seed-locations -file seeds/locations.json`
 
 ---
 
@@ -1599,4 +1610,5 @@ Only when the user asks:
 | 2026-10-01 | **14.4:** Phase 14 smoke OK; **Phase 14 / M5 DONE** |
 | 2026-10-01 | **Phase 15:** Contabo deploy = **owner-run**; agent helps on request only |
 | 2026-10-01 | **Encore E.1:** `africa-1` property cities reordered by prestige within color groups (prices stay on slots) |
+| 2026-10-01 | **Encore E.2:** all other Worlds prestige reorder; CA/Oceania/SA `-r2` dupes replaced; reseed required |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
