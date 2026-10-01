@@ -1391,7 +1391,9 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 
 **Goal:** Deploy binary to Contabo; Redis on VPS; MongoDB Atlas; Google SMTP prod creds; TLS reverse proxy.
 
-**Ask before:** systemd unit contents, nginx vs Caddy, TURN (coturn).
+**Owner-run (locked 2026-10-01):** Phase 15 deploy is **handled by the project owner**. Agent does **not** drive Contabo/Atlas/SMTP/TLS unless the user asks for help (checklist, systemd/Caddy snippets, debugging).
+
+**Ask before (when helping):** systemd unit contents, nginx vs Caddy, TURN (coturn).
 
 **Also consider here (if multi-instance):** Redis **hot presence** keys (Phase 7 ships memory-only).
 
@@ -1400,6 +1402,23 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 - [ ] Mobile points at prod API
 - [ ] Signup email works in prod
 - [ ] One full M1 game on prod infra
+
+---
+
+### Encore — Location prestige reorder (post-M5)
+
+**Goal:** Within each World’s color groups, place cities by relative prestige (not A–Z), keeping board indexes / prices / rents / houseCost fixed. Airports & utilities unchanged. Duplicate city names in other packs → fix when that world is touched.
+
+| Slice | Deliverable | Not yet |
+| --- | --- | --- |
+| **E.1** | ✅ `africa-1` prestige reorder within color groups | Other worlds |
+| **E.2+** | Other worlds one-at-a-time after user OK on africa-1 | Dupes in CA/Oceania/SA |
+
+**E.1 notes**
+
+- ✅ Shipped (2026-10-01): swap city **identity** fields among slots in the same color group (name, slug, hubId, assets, copy, country, map, svgcities, …). Economy numbers stay with `boardIndex`.
+- Rank (least → most prestigious within group): brown Antananarivo→Accra; lightBlue Asmara→Benghazi→Cairo; pink Dakar→Casablanca→Cape Town; orange Fez→Kigali→Lagos; red Lalibela→Maputo→Marrakesh; yellow Meroë→Maseru→Nairobi; green Timbuktu→Ouagadougou→Port Louis; darkBlue Yamoussoukro→Tunis. Airports/utilities unchanged.
+- Re-seed Mongo (`locations.json`) after pull so hubs/slugs match.
 
 ---
 
@@ -1578,4 +1597,6 @@ Only when the user asks:
 | 2026-10-01 | **14.2:** board Pay\|Bankruptcy + 2:00 debt-pay banner; hub Open board; debt/bankruptcy toasts; resign wipe copy |
 | 2026-10-01 | **14.3 cancelled:** wipe → unowned only (no Bank re-auction); suppress Buy if sitting on wiped tile |
 | 2026-10-01 | **14.4:** Phase 14 smoke OK; **Phase 14 / M5 DONE** |
+| 2026-10-01 | **Phase 15:** Contabo deploy = **owner-run**; agent helps on request only |
+| 2026-10-01 | **Encore E.1:** `africa-1` property cities reordered by prestige within color groups (prices stay on slots) |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
