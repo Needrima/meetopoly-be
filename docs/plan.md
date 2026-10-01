@@ -1341,7 +1341,7 @@ Smoke → **13.4** ✅ (manual playtest 2026-09-29/30). **Phase 13 DONE.** House
 | --- | --- | --- |
 | **14.0** | ✅ Negative-cash debt model + `owedTo`; shortfall → pay what you can then cash `−(remainder)`; sell/mortgage during debt settles creditor; End OK / Roll blocked while negative; declare-bankrupt + auto-bankrupt APIs; resign/timeout/disconnect use Bank wipe (deeds unowned, GOOJF deck bottom, Bank pays remaining owed); pause turn clock during debt-pay; OpenAPI 0.28 + unit tests | Jail path, UI, re-auction |
 | **14.1** | ✅ Jail 3-fail broke → leave Jail, cash `−` fine (`kind: jail`), move with failed roll + landing resolve; next-turn Pay \| Bankruptcy (same gate as 14.0) | Fancy UI |
-| **14.2** | Board modal Pay \| Bankruptcy; **2:00** pay timer; red negative cash; live cash for all; toasts; hub Open board; wire Declare bankrupt | Re-auction |
+| **14.2** | ✅ Board modal Pay \| Bankruptcy; **2:00** pay timer; red negative cash; live cash for all; toasts; hub Open board; wire Declare bankrupt | Re-auction |
 | **14.3** | Bank re-auction of deeds returned on wipe (reuse Phase 13 auction; one-at-a-time) | Smoke |
 | **14.4** | Smoke checklist → close M5 | — |
 
@@ -1357,9 +1357,8 @@ Smoke → **13.4** ✅ (manual playtest 2026-09-29/30). **Phase 13 DONE.** House
 
 **14.2 notes**
 
-- Board-only overlay; non-dismissible until Pay chosen or Bankruptcy.
-- Pay starts 2:00; pause turn clock; toast others “{player} is paying debt”.
-- Cash color red while &lt; 0; counts up live for all clients (WS state).
+- ✅ Shipped (2026-10-01): board `DebtOverlay` — non-dismissible Pay \| Bankruptcy on next turn (`awaiting_roll`); Pay → `POST …/debt-pay/start` + compact 2:00 banner (sell/mortgage usable); Bankruptcy → `POST …/bankrupt`; hub auto Open board for debtor; toasts for debt-pay start + wipe (declare / auto); resign copy updated for Bank wipe; red negative cash already from 14.0 polish.
+- Re-auction wiped deeds → **14.3**.
 
 **14.3 notes**
 
@@ -1575,5 +1574,5 @@ Only when the user asks:
 | 2026-09-30 | **13.4:** Phase 13 smoke OK (manual); **Phase 13 DONE** (house-shortage auction deferred)                                                                                              |
 | 2026-09-30 | **Phase 14 split:** 14.0–14.4 negative-cash debt; Pay 2:00 (sell/mortgage, no trade) \| Bankruptcy; Bank wipe + creditor cash (no asset transfer); jail **14.1**; UI **14.2**; re-auction **14.3**; ask before each slice |
 | 2026-10-01 | **14.0:** negative cash + `owedTo`/`fromUserId`; End OK / Roll blocked; sell/mortgage settle creditor; `POST …/bankrupt` + `…/debt-pay/start` (2m); resign wipe to Bank; OpenAPI 0.28; UI → **14.2** |
-| 2026-10-01 | **14.1:** jail 3-fail broke → charge fine (negative OK), leave + move with roll; `pendingPayment.kind=jail`; no soft-lock; UI → **14.2** |
+| 2026-10-01 | **14.2:** board Pay\|Bankruptcy + 2:00 debt-pay banner; hub Open board; debt/bankruptcy toasts; resign wipe copy |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

@@ -227,14 +227,21 @@ func (s *service) maybeHandleDebtOnTurnStartLocked(g *gamerepo.Game) {
 }
 
 // afterRaiseCheckDebtLocked clears debt-pay when settled; auto-bankrupts if still broke with no assets.
+// Also resumes the turn clock if debt was cleared without an open debt-pay window
+// (turn-start pause from maybeHandleDebtOnTurnStartLocked).
 func (s *service) afterRaiseCheckDebtLocked(g *gamerepo.Game, playerIdx int) {
 	if playerIdx < 0 || playerIdx >= len(g.Players) {
 		return
 	}
 	if g.Players[playerIdx].Cash >= 0 {
-		if g.DebtPay != nil && g.DebtPay.UserID == g.Players[playerIdx].UserID {
+		hadDebtPay := g.DebtPay != nil && g.DebtPay.UserID == g.Players[playerIdx].UserID
+		if hadDebtPay {
 			s.clearDebtPayLocked(g)
-			if currentPlayerIndex(g) == playerIdx && g.Auction == nil && g.Trade == nil {
+		}
+		if currentPlayerIndex(g) == playerIdx && g.Auction == nil && g.Trade == nil {
+			// Resume after debt-pay settle, or after raise that cleared debt while
+			// the turn clock was paused at the Pay|Bankruptcy gate (no DebtPay yet).
+			if hadDebtPay || g.TurnStartedAt.IsZero() {
 				s.startCurrentBankLocked(g)
 			}
 		}

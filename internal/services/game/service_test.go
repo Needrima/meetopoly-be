@@ -2710,6 +2710,46 @@ func TestDebtPayStartAndSettle(t *testing.T) {
 	if view.PendingPayment != nil {
 		t.Fatal("pending should clear")
 	}
+	if view.TurnStartedAt == "" {
+		t.Fatal("turn clock should resume after debt settle")
+	}
+}
+
+func TestRaiseClearsDebtWithoutDebtPayResumesClock(t *testing.T) {
+	// Next-turn gate pauses the clock before Pay; sell/mortgage must still resume it.
+	repo := newMemRepo()
+	svc := New(repo, brownBuildSpaces(), Config{})
+	seedTwoPlayer(t, repo)
+	seedBrownMonopoly(t, repo, "a", 1, 1)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].Cash = -20
+	g.PendingPayment = &gamerepo.PendingPayment{
+		Kind: "rent", Amount: 20, FromUserID: "a", ToUserID: "b", BoardIndex: 5, SpaceName: "Debt",
+	}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+	g.TurnStartedAt = time.Time{} // paused at Pay|Bankruptcy gate
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.SellBuilding(context.Background(), "g1", "a", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Players[0].Cash < 0 {
+		t.Fatalf("cash=%d want cleared", view.Players[0].Cash)
+	}
+	if view.PendingPayment != nil {
+		t.Fatal("pending should clear")
+	}
+	if view.DebtPay != nil {
+		t.Fatal("debtPay should stay nil")
+	}
+	if view.TurnStartedAt == "" {
+		t.Fatal("turn clock should resume after clearing debt at the gate")
+	}
+	if !view.CanRoll {
+		t.Fatal("roll should unlock after debt cleared")
+	}
 }
 
 func TestDebtPayAutoBankruptWhenNoAssets(t *testing.T) {
