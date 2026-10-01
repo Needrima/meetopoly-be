@@ -1441,7 +1441,7 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 | --- | --- | --- |
 | **16.0** | ✅ SFU board-only video forward (`videoPubs`, stream id `video-{userId}`); hub ignores video | Mobile publish/UI |
 | **16.1** | ✅ Mobile `muteVideo` + board publish/play video tracks (`localVideoStream` / `remoteVideoByUserId`) | Seat grid UI |
-| **16.2** | Meet-style `BoardSeatGrid` + local controls + long-press info modal | Turn ring polish |
+| **16.2** | ✅ Meet-style `BoardSeatGrid` + local controls + long-press info modal | Turn ring polish |
 | **16.3** | 3m turn-clock border ring on current seat + plan/skill docs | Smoke |
 | **16.4** | Smoke checklist | — |
 
@@ -1452,6 +1452,10 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 **16.1 notes**
 
 - ✅ Shipped: SecureStore `muteVideo` + `useMuteVideo`; Settings “Camera off”; board `getUserMedia` audio+front camera; hub stays `video: false`; remote video mapped by `video-{userId}` → `remoteVideoByUserId`; `localVideoStream` for preview; mute applies `track.enabled` (no renegotiation); peer-left clears remote video; wait for mic+video prefs before board presence connect.
+
+**16.2 notes**
+
+- ✅ Shipped: `BoardSeatGrid` / `BoardSeatTile` / `PlayerInfoModal`; replace panel text roster; keep turn line; grid cols 2/3/2/2/3 for 2–6; pin-color border + hub chip when in hub; local-only mic / flip / cam; cam-off → black + `AvatarPod`; long-press info modal; remove joystick `MuteMicButton`; `flipCamera` via `replaceTrack`; board wires presence streams.
 
 **Still deferred until asked:**
 
@@ -1632,4 +1636,5 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 | 2026-10-01 | **Phase 16 split:** board cameras 16.0–16.4; hub video + selective listen still deferred |
 | 2026-10-01 | **16.0:** SFU board-only `videoPubs` + RTP relay (`video-{userId}`); hub ignores video; tests |
 | 2026-10-01 | **16.1:** `muteVideo` + Settings; board publish/play camera; hub audio-only; stream maps on presence result |
+| 2026-10-01 | **16.2:** Meet seat grid + local mic/cam/flip + long-press info modal; remove joystick mute |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
