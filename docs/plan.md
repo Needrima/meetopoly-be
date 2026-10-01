@@ -1440,7 +1440,7 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 | Slice | Deliverable | Not yet |
 | --- | --- | --- |
 | **16.0** | ✅ SFU board-only video forward (`videoPubs`, stream id `video-{userId}`); hub ignores video | Mobile publish/UI |
-| **16.1** | Mobile `muteVideo` + board publish/play video tracks | Seat grid UI |
+| **16.1** | ✅ Mobile `muteVideo` + board publish/play video tracks (`localVideoStream` / `remoteVideoByUserId`) | Seat grid UI |
 | **16.2** | Meet-style `BoardSeatGrid` + local controls + long-press info modal | Turn ring polish |
 | **16.3** | 3m turn-clock border ring on current seat + plan/skill docs | Smoke |
 | **16.4** | Smoke checklist | — |
@@ -1448,6 +1448,10 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 **16.0 notes**
 
 - ✅ Shipped: `IsVideoRoom` = board only; `room.videoPubs`; `OnTrack` routes audio → existing relay, video → board relay with stream id `video-{userId}`; join gets existing video pubs; Attach/Detach/reconnect unpublish video; hub video drained+ignored; renegotiation queues while an SFU offer is in flight (audio+video). Unit tests for map alloc, detach, reconnect, renego queue.
+
+**16.1 notes**
+
+- ✅ Shipped: SecureStore `muteVideo` + `useMuteVideo`; Settings “Camera off”; board `getUserMedia` audio+front camera; hub stays `video: false`; remote video mapped by `video-{userId}` → `remoteVideoByUserId`; `localVideoStream` for preview; mute applies `track.enabled` (no renegotiation); peer-left clears remote video; wait for mic+video prefs before board presence connect.
 
 **Still deferred until asked:**
 
@@ -1627,4 +1631,5 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 | 2026-10-01 | **Encore E.2:** all other Worlds prestige reorder; CA/Oceania/SA `-r2` dupes replaced; reseed required |
 | 2026-10-01 | **Phase 16 split:** board cameras 16.0–16.4; hub video + selective listen still deferred |
 | 2026-10-01 | **16.0:** SFU board-only `videoPubs` + RTP relay (`video-{userId}`); hub ignores video; tests |
+| 2026-10-01 | **16.1:** `muteVideo` + Settings; board publish/play camera; hub audio-only; stream maps on presence result |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
