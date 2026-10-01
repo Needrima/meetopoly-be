@@ -485,6 +485,9 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 	if offer := openBuyOffer(g, s.loadSpaces(ctx, g.WorldID)); offer != nil {
 		return nil, ErrMustResolveBuy
 	}
+	// Wipe-underfoot / post-auction suppress must not stick into the next move
+	// (e.g. doubles after a deed vanishes under your pin).
+	g.SuppressBuyOffer = false
 	if g.Players[playerIdx].InJail {
 		return s.rollFromJailLocked(ctx, g, gameID, userID, playerIdx)
 	}
@@ -1953,6 +1956,8 @@ func (s *service) enrichCountries(ctx context.Context, v *View) {
 // Phase 13.0: EndTurn blocked while this is non-nil until Buy or StartAuction;
 // if cash < list price, resolveLanding auto-starts an auction instead.
 // After an auction settles/voids this turn, SuppressBuyOffer hides the offer so End can proceed.
+// Phase 14: wipe returns deeds unowned without re-auction; SuppressBuyOffer also blocks
+// Buy|Auction when ownership disappears under a pin that already landed (paid rent).
 func openBuyOffer(g *gamerepo.Game, spaces []Space) *BuyOfferView {
 	if g == nil || g.Status != gamerepo.StatusActive || g.SuppressBuyOffer || g.Auction != nil {
 		return nil

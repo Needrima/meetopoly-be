@@ -2907,3 +2907,159 @@ func TestTurnStartInsolventAutoBankrupts(t *testing.T) {
 		t.Fatalf("lastBankruptcy=%+v", view.LastBankruptcy)
 	}
 }
+
+func TestWipeReturnsDeedsUnownedWithoutAuction(t *testing.T) {
+	// 14.3 cancelled: wipe → unowned; no Bank re-auction queue.
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "p1", Name: "P1", Kind: "property", Price: 60, ColorGroup: "brown", HouseCost: 50},
+		{BoardIndex: 3, Slug: "p2", Name: "P2", Kind: "property", Price: 60, ColorGroup: "brown", HouseCost: 50},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+	bank := gamerepo.TimeBankDuration.Milliseconds()
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players = append(g.Players, gamerepo.Player{
+		UserID: "c", Username: "C", SeatIndex: 2, TurnOrder: 2, Cash: 2000,
+		BoardIndex: 0, PinColor: "#00f", TimeRemainingMs: bank,
+	})
+	g.Players[0].Cash = -40
+	g.Deeds = []gamerepo.Deed{
+		{BoardIndex: 1, OwnerUserID: "a", Houses: 1, Mortgaged: false},
+		{BoardIndex: 3, OwnerUserID: "a", Houses: 0, Mortgaged: true},
+	}
+	g.PendingPayment = &gamerepo.PendingPayment{
+		Kind: "rent", Amount: 40, FromUserID: "a", ToUserID: "b",
+	}
+	g.CurrentTurn = 0
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.Bankrupt(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Auction != nil {
+		t.Fatal("wipe must not start a bank auction")
+	}
+	if len(view.Deeds) != 0 {
+		t.Fatalf("deeds=%d want 0 (unowned)", len(view.Deeds))
+	}
+	if view.Status != gamerepo.StatusActive {
+		t.Fatalf("status=%s want active", view.Status)
+	}
+	if view.BuyOffer != nil {
+		t.Fatal("no buyOffer from wipe alone")
+	}
+}
+
+func TestWipeUnderSittingLanderSuppressesBuyOffer(t *testing.T) {
+	// B landed on A's deed (paid rent). A bankrupts while B is still current on that tile.
+	// B must End/Roll away — no Buy|Auction for ownership that vanished underfoot.
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60, ColorGroup: "brown", HouseCost: 50, Rents: []int{2, 10, 30, 90, 160, 250}},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+	bank := gamerepo.TimeBankDuration.Milliseconds()
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players = append(g.Players, gamerepo.Player{
+		UserID: "c", Username: "C", SeatIndex: 2, TurnOrder: 2, Cash: 2000,
+		BoardIndex: 0, PinColor: "#00f", TimeRemainingMs: bank,
+	})
+	g.Players[0].Cash = -25 // A in debt, not current
+	g.Players[1].Cash = 1950
+	g.Players[1].BoardIndex = 1
+	g.Deeds = []gamerepo.Deed{{BoardIndex: 1, OwnerUserID: "a", Mortgaged: true}}
+	g.CurrentTurn = 1 // B's turn
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	g.LastRoll = &gamerepo.LastRoll{
+		UserID: "b", Username: "B", Die1: 1, Die2: 2, Total: 3,
+		FromIndex: 0, ToIndex: 1,
+	}
+	g.PendingPayment = &gamerepo.PendingPayment{
+		Kind: "rent", Amount: 25, FromUserID: "a", ToUserID: "b",
+	}
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.Bankrupt(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Auction != nil {
+		t.Fatal("no auction on wipe")
+	}
+	if len(view.Deeds) != 0 {
+		t.Fatalf("deed should be unowned, got %d", len(view.Deeds))
+	}
+	if view.BuyOffer != nil {
+		t.Fatal("sitting lander must not get Buy|Auction after wipe")
+	}
+	if view.CurrentUserID != "b" {
+		t.Fatalf("current=%s want b", view.CurrentUserID)
+	}
+	if !view.CanEndTurn {
+		t.Fatal("B should still End after wipe underfoot")
+	}
+	if view.CanBuy || view.CanStartAuction {
+		t.Fatal("Buy/Auction flags must stay off")
+	}
+}
+
+func TestWipeSuppressClearsOnNextRoll(t *testing.T) {
+	// Doubles lander on wiped deed: suppress blocks Buy now, but next roll must
+	// be allowed to open Buy|Auction on a fresh unowned landing.
+	repo := newMemRepo()
+	spaces := memSpaces{
+		{BoardIndex: 1, Slug: "p1", Name: "P1", Kind: "property", Price: 60, ColorGroup: "brown", HouseCost: 50},
+		{BoardIndex: 5, Slug: "p2", Name: "P2", Kind: "property", Price: 100, ColorGroup: "lightblue", HouseCost: 50},
+	}
+	svc := New(repo, spaces, Config{})
+	seedTwoPlayer(t, repo)
+	bank := gamerepo.TimeBankDuration.Milliseconds()
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players = append(g.Players, gamerepo.Player{
+		UserID: "c", Username: "C", SeatIndex: 2, TurnOrder: 2, Cash: 2000,
+		BoardIndex: 0, PinColor: "#00f", TimeRemainingMs: bank,
+	})
+	g.Players[0].Cash = -10
+	g.Players[1].Cash = 2000
+	g.Players[1].BoardIndex = 1
+	g.Deeds = []gamerepo.Deed{{BoardIndex: 1, OwnerUserID: "a"}}
+	g.CurrentTurn = 1
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll // doubles continue
+	g.LastRoll = &gamerepo.LastRoll{
+		UserID: "b", Username: "B", Die1: 3, Die2: 3, Total: 6, IsDoubles: true,
+		FromIndex: 0, ToIndex: 1,
+	}
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.Bankrupt(context.Background(), "g1", "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.BuyOffer != nil {
+		t.Fatal("should suppress buy on wiped tile")
+	}
+	if !view.CanRoll {
+		t.Fatal("doubles continue — roll must stay available while suppressed")
+	}
+
+	g, _ = repo.FindByID(context.Background(), "g1")
+	if !g.SuppressBuyOffer {
+		t.Fatal("expected SuppressBuyOffer after wipe underfoot")
+	}
+
+	// Force a roll onto unowned index 5 (override dice by moving then checking openBuyOffer path via Roll is hard —
+	// assert Roll clears suppress, then simulate landing on unowned).
+	view, err = svc.Roll(context.Background(), "g1", "b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	g, _ = repo.FindByID(context.Background(), "g1")
+	if g.SuppressBuyOffer {
+		t.Fatal("Roll must clear SuppressBuyOffer so a new landing can Buy|Auction")
+	}
+	_ = view
+}

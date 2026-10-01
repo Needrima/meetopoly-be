@@ -1222,7 +1222,7 @@ Smoke → **12.5** ✅ (manual playtest 2026-09-28/29). **Phase 12 DONE.**
 
 ### Phase 13 — Rules M4 (trading + auctions)
 
-**Official alignment:** Players may trade deeds, cash, and Get Out of Jail Free cards. **When a player lands on unowned property and does not buy at list price, the Bank auctions it immediately** — all players may bid (including the one who declined). House-shortage auctions **deferred** (not required for M4 exit). Bankruptcy-to-bank re-auction → **Phase 14**.
+**Official alignment:** Players may trade deeds, cash, and Get Out of Jail Free cards. **When a player lands on unowned property and does not buy at list price, the Bank auctions it immediately** — all players may bid (including the one who declined). House-shortage auctions **deferred** (not required for M4 exit). Bankruptcy wipe → deeds unowned until next landing (no wipe re-auction; Phase 14).
 
 **Hub → board (locked with 8.3):** Auction, trade, and raise-funds UIs live **on the board only**. When an auction starts, clients still in a hub get a strong notify and **prefer auto Open board** (keep `hubId` like 8.3). Do not rebuild auction/trade clients inside the hub sheet.
 
@@ -1325,9 +1325,9 @@ Smoke → **13.4** ✅ (manual playtest 2026-09-29/30). **Phase 13 DONE.** House
   - **Bankruptcy** always available in modal → eliminate **that player only** (table continues; last active wins).
   - **2:00 expires** still &lt; 0 → **auto-bankrupt**.
   - **Auto-bankrupt (assets):** `cash < 0` and no buildings left and no unmortgaged deeds — no trade required.
-- **Eliminate wipe (always → Bank):** clear houses; deeds → **unowned**; GOOJF → **bottom** of its deck; no player receives assets. If still owed a player, **Bank (infinite) credits** them the remaining unpaid amount.
+- **Eliminate wipe (always → Bank):** clear houses; deeds → **unowned** (as if never bought; mortgage cleared); GOOJF → **bottom** of its deck; no player receives assets. If still owed a player, **Bank (infinite) credits** them the remaining unpaid amount.
 - **Resign / turn-timeout / disconnect eliminate:** same Bank wipe (classic quit ≈ bankrupt to Bank).
-- Bank re-auction of returned deeds → **14.3** (14.0 leaves deeds unowned).
+- **No Bank re-auction on wipe** (14.3 cancelled): returned deeds stay open until a future **landing** → normal Buy \| Auction. A pin already sitting on a wiped tile does **not** get Buy \| Auction; they End / Roll away.
 - Hub → board: debt Pay UI is **board-only** (toast + prefer Open board), same as auction/trade.
 
 **Also from jail (locked with 12.4b deferral → 14.1):**
@@ -1335,15 +1335,15 @@ Smoke → **13.4** ✅ (manual playtest 2026-09-29/30). **Phase 13 DONE.** House
 - After **3** failed doubles from Jail while cash &lt; 100 (and no GOOJF): force leave with MeetCoin **negative** by the unpaid 100 fine (Bank `owedTo`) — do **not** soft-lock forever as in **12.1** interim.
 - On the next turn: Pay | Bankruptcy gate before Roll (same as other debt).
 
-**Exit criteria:** Negative-cash debt + settle-on-raise; Pay/Bankruptcy gate + 2:00; player elimination with Bank wipe + creditor cash top-up; jail forced-debt path; bank re-auction of returned deeds (**14.3**).
+**Exit criteria:** Negative-cash debt + settle-on-raise; Pay/Bankruptcy gate + 2:00; player elimination with Bank wipe + creditor cash top-up; jail forced-debt path; wiped deeds unowned until next landing (no wipe re-auction).
 
 | Slice | Deliverable | Not yet |
 | --- | --- | --- |
-| **14.0** | ✅ Negative-cash debt model + `owedTo`; shortfall → pay what you can then cash `−(remainder)`; sell/mortgage during debt settles creditor; End OK / Roll blocked while negative; declare-bankrupt + auto-bankrupt APIs; resign/timeout/disconnect use Bank wipe (deeds unowned, GOOJF deck bottom, Bank pays remaining owed); pause turn clock during debt-pay; OpenAPI 0.28 + unit tests | Jail path, UI, re-auction |
+| **14.0** | ✅ Negative-cash debt model + `owedTo`; shortfall → pay what you can then cash `−(remainder)`; sell/mortgage during debt settles creditor; End OK / Roll blocked while negative; declare-bankrupt + auto-bankrupt APIs; resign/timeout/disconnect use Bank wipe (deeds unowned, GOOJF deck bottom, Bank pays remaining owed); pause turn clock during debt-pay; OpenAPI 0.28 + unit tests | Jail path, UI |
 | **14.1** | ✅ Jail 3-fail broke → leave Jail, cash `−` fine (`kind: jail`), move with failed roll + landing resolve; next-turn Pay \| Bankruptcy (same gate as 14.0) | Fancy UI |
-| **14.2** | ✅ Board modal Pay \| Bankruptcy; **2:00** pay timer; red negative cash; live cash for all; toasts; hub Open board; wire Declare bankrupt | Re-auction |
-| **14.3** | Bank re-auction of deeds returned on wipe (reuse Phase 13 auction; one-at-a-time) | Smoke |
-| **14.4** | Smoke checklist → close M5 | — |
+| **14.2** | ✅ Board modal Pay \| Bankruptcy; **2:00** pay timer; red negative cash; live cash for all; toasts; hub Open board; wire Declare bankrupt | — |
+| **14.3** | ✅ **Cancelled** — no Bank re-auction on wipe; deeds stay unowned until landed on; sitting pin suppresses Buy \| Auction (regression tests) | — |
+| **14.4** | ✅ Smoke checklist → close M5 | — |
 
 **14.0 notes**
 
@@ -1358,13 +1358,12 @@ Smoke → **13.4** ✅ (manual playtest 2026-09-29/30). **Phase 13 DONE.** House
 **14.2 notes**
 
 - ✅ Shipped (2026-10-01): board `DebtOverlay` — non-dismissible Pay \| Bankruptcy on next turn (`awaiting_roll`); Pay → `POST …/debt-pay/start` + compact 2:00 banner (sell/mortgage usable); Bankruptcy → `POST …/bankrupt`; hub auto Open board for debtor; toasts for debt-pay start + wipe (declare / auto); resign copy updated for Bank wipe; red negative cash already from 14.0 polish.
-- Re-auction wiped deeds → **14.3**.
 
 **14.3 notes**
 
-- After Bank wipe, queue auction each returned deed (Phase 13 engine); order TBD at slice start (ask if ambiguous).
+- ✅ **Cancelled / locked (2026-10-01):** user chose no wipe re-auction. Wipe returns deeds to Bank as unowned (clean; mortgage/houses gone). Buy \| Auction only on a **future landing**. If another player is already sitting on a wiped tile, suppress Buy \| Auction so they End / Roll away. `SuppressBuyOffer` clears on the next `Roll` so doubles are not soft-locked. Regression: `TestWipeReturnsDeedsUnownedWithoutAuction`, `TestWipeUnderSittingLanderSuppressesBuyOffer`, `TestWipeSuppressClearsOnNextRoll`.
 
-**14.4 — smoke checklist (Phase 14 / M5 close)**
+**14.4 — smoke checklist (Phase 14 / M5 close)** ✅
 
 **A. Debt + raise (14.0–14.2)**
 
@@ -1377,11 +1376,13 @@ Smoke → **13.4** ✅ (manual playtest 2026-09-29/30). **Phase 13 DONE.** House
 1. Jail 3-fail broke → negative fine; next-turn gate works.
 2. Resign / timeout → same Bank wipe (no frozen deeds).
 
-**C. Re-auction (14.3)**
+**C. Unowned after wipe (14.3 cancelled)**
 
-1. Wiped deeds auction via existing auction flow.
+1. Wiped deed stays unowned; no auction starts.
+2. Pin already on wiped tile → no Buy \| Auction; Roll/End away.
+3. Later land on that tile → normal Buy \| Auction.
 
-Smoke → **14.4**. Ask before each sub-slice.
+Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 
 ---
 
@@ -1575,4 +1576,6 @@ Only when the user asks:
 | 2026-09-30 | **Phase 14 split:** 14.0–14.4 negative-cash debt; Pay 2:00 (sell/mortgage, no trade) \| Bankruptcy; Bank wipe + creditor cash (no asset transfer); jail **14.1**; UI **14.2**; re-auction **14.3**; ask before each slice |
 | 2026-10-01 | **14.0:** negative cash + `owedTo`/`fromUserId`; End OK / Roll blocked; sell/mortgage settle creditor; `POST …/bankrupt` + `…/debt-pay/start` (2m); resign wipe to Bank; OpenAPI 0.28; UI → **14.2** |
 | 2026-10-01 | **14.2:** board Pay\|Bankruptcy + 2:00 debt-pay banner; hub Open board; debt/bankruptcy toasts; resign wipe copy |
+| 2026-10-01 | **14.3 cancelled:** wipe → unowned only (no Bank re-auction); suppress Buy if sitting on wiped tile |
+| 2026-10-01 | **14.4:** Phase 14 smoke OK; **Phase 14 / M5 DONE** |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

@@ -412,9 +412,10 @@ func applyRaiseTowardDebtLocked(g *gamerepo.Game, payerIdx, raised int) {
 }
 
 // wipePlayerAssetsToBankLocked clears houses/deeds/GOOJF to Bank/decks and Bank-pays remaining debt.
-func wipePlayerAssetsToBankLocked(g *gamerepo.Game, playerIdx int) (owedToUserID string, bankPaid int) {
+// Returned board indexes were owned by the wiped player (now unowned — no immediate re-auction).
+func wipePlayerAssetsToBankLocked(g *gamerepo.Game, playerIdx int) (owedToUserID string, bankPaid int, wipedBoardIndexes []int) {
 	if g == nil || playerIdx < 0 || playerIdx >= len(g.Players) {
-		return "", 0
+		return "", 0, nil
 	}
 	p := &g.Players[playerIdx]
 
@@ -447,12 +448,40 @@ func wipePlayerAssetsToBankLocked(g *gamerepo.Game, playerIdx int) (owedToUserID
 	kept := make([]gamerepo.Deed, 0, len(g.Deeds))
 	for _, d := range g.Deeds {
 		if d.OwnerUserID == p.UserID {
+			wipedBoardIndexes = append(wipedBoardIndexes, d.BoardIndex)
 			continue
 		}
 		kept = append(kept, d)
 	}
 	g.Deeds = kept
-	return owedToUserID, bankPaid
+	return owedToUserID, bankPaid, wipedBoardIndexes
+}
+
+// suppressBuyIfSittingOnWipedLocked blocks Buy|Auction when wipe makes the
+// current player's occupied tile unowned under their feet (they already landed
+// while it was owned — e.g. paid rent). They End/Roll away; a future landing
+// can offer Buy|Auction.
+func suppressBuyIfSittingOnWipedLocked(g *gamerepo.Game, wiped []int) {
+	if g == nil || len(wiped) == 0 {
+		return
+	}
+	idx := currentPlayerIndex(g)
+	if idx < 0 || g.Players[idx].Resigned {
+		return
+	}
+	if g.LastRoll == nil || g.LastRoll.UserID != g.Players[idx].UserID {
+		return
+	}
+	bi := g.Players[idx].BoardIndex
+	if g.LastRoll.ToIndex != bi {
+		return
+	}
+	for _, w := range wiped {
+		if w == bi {
+			g.SuppressBuyOffer = true
+			return
+		}
+	}
 }
 
 // eliminatePlayerLocked marks resigned, wipes assets to Bank, advances turn if needed (Phase 14.0).
@@ -479,7 +508,7 @@ func (s *service) eliminatePlayerLocked(g *gamerepo.Game, playerIdx int, reason 
 		s.pauseCurrentBankLocked(g)
 	}
 
-	owedTo, bankPaid := wipePlayerAssetsToBankLocked(g, playerIdx)
+	owedTo, bankPaid, wiped := wipePlayerAssetsToBankLocked(g, playerIdx)
 	g.Players[playerIdx].Resigned = true
 	g.Players[playerIdx].HubID = ""
 	g.Players[playerIdx].HubRevision++
@@ -512,11 +541,20 @@ func (s *service) eliminatePlayerLocked(g *gamerepo.Game, playerIdx int, reason 
 		g.Trade = nil
 		return
 	}
+
+	// Phase 14.3 cancelled: no Bank re-auction queue. Deeds stay unowned until
+	// a future landing. If someone is already sitting on a wiped tile (paid rent
+	// this turn), suppress Buy|Auction so they can End / Roll away.
+	suppressBuyIfSittingOnWipedLocked(g, wiped)
+
 	if wasCurrent {
 		advanceToNextActive(g)
 		g.DoublesStreak = 0
 		g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
 		g.SuppressBuyOffer = false
+		// Re-apply after advance: next player may also be sitting on wiped land
+		// with a stale matching lastRoll (rare); suppress if needed.
+		suppressBuyIfSittingOnWipedLocked(g, wiped)
 		if g.Auction == nil {
 			s.startFreshTurnClockLocked(g)
 			s.maybeHandleDebtOnTurnStartLocked(g)
