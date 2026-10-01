@@ -922,9 +922,23 @@ func TestJailFailedAttemptsThenForcedPay(t *testing.T) {
 	}
 }
 
-func TestJailThirdFailBrokeRequiresPay(t *testing.T) {
+func TestJailThirdFailBrokeLeavesWithDebt(t *testing.T) {
 	repo := newMemRepo()
-	svc := New(repo, nil, Config{})
+	spaces := memSpaces{
+		{BoardIndex: 11, Slug: "x", Name: "X", Kind: "property", Price: 100, Rents: []int{0}, ColorGroup: "brown"},
+		{BoardIndex: 12, Slug: "y", Name: "Y", Kind: "property", Price: 100, Rents: []int{0}, ColorGroup: "brown"},
+		{BoardIndex: 13, Slug: "z", Name: "Z", Kind: "property", Price: 100, Rents: []int{0}, ColorGroup: "brown"},
+		{BoardIndex: 14, Slug: "w", Name: "W", Kind: "property", Price: 100, Rents: []int{0}, ColorGroup: "brown"},
+		{BoardIndex: 15, Slug: "v", Name: "V", Kind: "property", Price: 100, Rents: []int{0}, ColorGroup: "brown"},
+		{BoardIndex: 16, Slug: "u", Name: "U", Kind: "property", Price: 100, Rents: []int{0}, ColorGroup: "brown"},
+		{BoardIndex: 17, Slug: "t", Name: "T", Kind: "property", Price: 100, Rents: []int{0}, ColorGroup: "brown"},
+		{BoardIndex: 18, Slug: "s", Name: "S", Kind: "property", Price: 100, Rents: []int{0}, ColorGroup: "brown"},
+		{BoardIndex: 19, Slug: "r", Name: "R", Kind: "property", Price: 100, Rents: []int{0}, ColorGroup: "brown"},
+		{BoardIndex: 20, Slug: "q", Name: "Q", Kind: "property", Price: 100, Rents: []int{0}, ColorGroup: "brown"},
+		{BoardIndex: 21, Slug: "p", Name: "P", Kind: "property", Price: 100, Rents: []int{0}, ColorGroup: "brown"},
+		{BoardIndex: 22, Slug: "o", Name: "O", Kind: "property", Price: 100, Rents: []int{0}, ColorGroup: "brown"},
+	}
+	svc := New(repo, spaces, Config{})
 	seedTwoPlayer(t, repo)
 
 	got := false
@@ -936,6 +950,7 @@ func TestJailThirdFailBrokeRequiresPay(t *testing.T) {
 		g.Players[0].Cash = 50
 		g.TurnPhase = gamerepo.TurnPhaseAwaitingRoll
 		g.CurrentTurn = 0
+		g.PendingPayment = nil
 		_ = repo.Update(context.Background(), g)
 
 		view, err := svc.Roll(context.Background(), "g1", "a")
@@ -946,21 +961,28 @@ func TestJailThirdFailBrokeRequiresPay(t *testing.T) {
 			continue
 		}
 		got = true
-		if !view.Players[0].InJail || view.Players[0].JailTurns != 3 {
-			t.Fatalf("inJail=%v turns=%d", view.Players[0].InJail, view.Players[0].JailTurns)
+		// Phase 14.1 — leave jail, cash 50-100 = -50, move with dice.
+		if view.Players[0].InJail {
+			t.Fatal("third fail broke should leave jail")
 		}
-		if view.Players[0].Cash != 50 {
-			t.Fatalf("cash should be unchanged, got %d", view.Players[0].Cash)
+		if view.Players[0].Cash != -50 {
+			t.Fatalf("cash=%d want -50", view.Players[0].Cash)
+		}
+		want := (gamerepo.JailBoardIndex + view.LastRoll.Total) % 40
+		if view.Players[0].BoardIndex != want {
+			t.Fatalf("board=%d want %d", view.Players[0].BoardIndex, want)
+		}
+		if view.PendingPayment == nil || view.PendingPayment.Amount != 50 || view.PendingPayment.Kind != "jail" {
+			t.Fatalf("pending=%+v want jail amount 50", view.PendingPayment)
 		}
 		if view.CanRoll {
-			t.Fatal("CanRoll false until pay after 3 fails")
+			t.Fatal("CanRoll should be false while in debt")
 		}
-		_, err = svc.Roll(context.Background(), "g1", "a")
-		if !errors.Is(err, ErrMustLeaveJail) && !errors.Is(err, ErrMustEndTurn) {
-			// awaiting_end so must end first
-			if view.TurnPhase == gamerepo.TurnPhaseAwaitingEnd && !errors.Is(err, ErrMustEndTurn) {
-				t.Fatalf("err=%v", err)
-			}
+		if !view.CanEndTurn {
+			t.Fatal("CanEndTurn should be true while in debt on landing turn")
+		}
+		if !view.CanBankrupt {
+			t.Fatal("CanBankrupt expected while negative")
 		}
 		break
 	}

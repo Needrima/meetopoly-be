@@ -558,7 +558,7 @@ func (s *service) Roll(ctx context.Context, gameID, userID string) (*View, error
 	return view, nil
 }
 
-// rollFromJailLocked — doubles get out free and move; else jailTurns++; on 3rd fail pay fine + move when affordable.
+// rollFromJailLocked — doubles get out free and move; else jailTurns++; on 3rd fail charge fine (may go negative) + leave + move (Phase 14.1).
 func (s *service) rollFromJailLocked(
 	ctx context.Context, g *gamerepo.Game, gameID, userID string, playerIdx int,
 ) (*View, error) {
@@ -596,46 +596,26 @@ func (s *service) rollFromJailLocked(
 		g.Players[playerIdx].JailTurns++
 		attempt := g.Players[playerIdx].JailTurns
 		if attempt >= gamerepo.MaxJailAttempts {
-			if g.Players[playerIdx].Cash < gamerepo.JailFine {
-				// Stay in jail until PayJailFine / UseJailCard; dice shown, no move.
-				g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
-				g.LastRoll = &gamerepo.LastRoll{
-					UserID:        userID,
-					Username:      g.Players[playerIdx].Username,
-					Die1:          die1,
-					Die2:          die2,
-					Total:         total,
-					FromIndex:     from,
-					ToIndex:       from,
-					PassedGo:      false,
-					PassGoAmount:  0,
-					IsDoubles:     false,
-					DoublesStreak: 0,
-					ThirdDoubles:  false,
-				}
-			} else {
-				if err := payJailFineFull(g, playerIdx); err != nil {
-					return nil, err
-				}
-				leaveJail(&g.Players[playerIdx])
-				to, passedGo, passAmt := applyBoardMove(g, playerIdx, from, total)
-				g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
-				g.LastRoll = &gamerepo.LastRoll{
-					UserID:        userID,
-					Username:      g.Players[playerIdx].Username,
-					Die1:          die1,
-					Die2:          die2,
-					Total:         total,
-					FromIndex:     from,
-					ToIndex:       to,
-					PassedGo:      passedGo,
-					PassGoAmount:  passAmt,
-					IsDoubles:     false,
-					DoublesStreak: 0,
-					ThirdDoubles:  false,
-				}
-				s.resolveLandingLocked(ctx, g, playerIdx, total)
+			// Phase 14.1 — always leave + move after 3 fails; fine may drive cash negative.
+			chargeJailFineLocked(g, playerIdx)
+			leaveJail(&g.Players[playerIdx])
+			to, passedGo, passAmt := applyBoardMove(g, playerIdx, from, total)
+			g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+			g.LastRoll = &gamerepo.LastRoll{
+				UserID:        userID,
+				Username:      g.Players[playerIdx].Username,
+				Die1:          die1,
+				Die2:          die2,
+				Total:         total,
+				FromIndex:     from,
+				ToIndex:       to,
+				PassedGo:      passedGo,
+				PassGoAmount:  passAmt,
+				IsDoubles:     false,
+				DoublesStreak: 0,
+				ThirdDoubles:  false,
 			}
+			s.resolveLandingLocked(ctx, g, playerIdx, total)
 		} else {
 			g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
 			g.LastRoll = &gamerepo.LastRoll{
@@ -2256,13 +2236,8 @@ func (s *service) resolveLandingLocked(ctx context.Context, g *gamerepo.Game, pa
 func (s *service) resolveLandingWithOpts(
 	ctx context.Context, g *gamerepo.Game, payerIdx, diceTotal int, opts landingOpts,
 ) {
-	// Clear prior debt metadata only for this payer (another player may still be negative).
-	if g.PendingPayment != nil {
-		from := g.PendingPayment.FromUserID
-		if from == "" || (payerIdx >= 0 && payerIdx < len(g.Players) && from == g.Players[payerIdx].UserID) {
-			g.PendingPayment = nil
-		}
-	}
+	// Do not clear pendingPayment upfront — Phase 14.1 may charge Jail fine then move
+	// while debt is still open; a no-op land must keep that debt.
 	spaces := s.loadSpaces(ctx, g.WorldID)
 	boardIndex := g.Players[payerIdx].BoardIndex
 	sp := spaceAt(spaces, boardIndex)
@@ -2350,6 +2325,28 @@ func leaveJail(p *gamerepo.Player) {
 	p.JailTurns = 0
 }
 
+// chargeJailFineLocked applies JailFine to Bank. Cash may go negative (Phase 14.1).
+// LastPayment.kind stays jail_fine; outstanding debt uses pendingPayment.kind = jail.
+func chargeJailFineLocked(g *gamerepo.Game, playerIdx int) {
+	if playerIdx < 0 || playerIdx >= len(g.Players) {
+		return
+	}
+	amount := gamerepo.JailFine
+	pay := amount
+	if g.Players[playerIdx].Cash < amount {
+		if g.Players[playerIdx].Cash > 0 {
+			pay = g.Players[playerIdx].Cash
+		} else {
+			pay = 0
+		}
+	}
+	boardIndex := g.Players[playerIdx].BoardIndex
+	applyPaymentShortfallLocked(g, playerIdx, amount, pay, "", "jail", "Jail", boardIndex)
+	if g.LastPayment != nil {
+		g.LastPayment.Kind = "jail_fine"
+	}
+}
+
 func payJailFineFull(g *gamerepo.Game, playerIdx int) error {
 	if playerIdx < 0 || playerIdx >= len(g.Players) {
 		return ErrNotPlayer
@@ -2357,18 +2354,7 @@ func payJailFineFull(g *gamerepo.Game, playerIdx int) error {
 	if g.Players[playerIdx].Cash < gamerepo.JailFine {
 		return ErrCannotAfford
 	}
-	g.Players[playerIdx].Cash -= gamerepo.JailFine
-	g.LastPayment = &gamerepo.LastPayment{
-		Kind:         "jail_fine",
-		FromUserID:   g.Players[playerIdx].UserID,
-		FromUsername: g.Players[playerIdx].Username,
-		ToUserID:     "",
-		ToUsername:   "Bank",
-		Amount:       gamerepo.JailFine,
-		BoardIndex:   g.Players[playerIdx].BoardIndex,
-		SpaceName:    "Jail",
-		PaidInFull:   true,
-	}
+	chargeJailFineLocked(g, playerIdx)
 	return nil
 }
 
