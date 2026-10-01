@@ -1726,7 +1726,8 @@ func (s *service) ensureBanksLocked(g *gamerepo.Game) {
 			g.Players[i].TimeRemainingMs = bankMs
 		}
 	}
-	if g.Status == gamerepo.StatusActive && g.TurnStartedAt.IsZero() && g.Auction == nil && g.Trade == nil && g.DebtPay == nil && !currentPlayerInDebt(g) {
+	if g.Status == gamerepo.StatusActive && g.TurnStartedAt.IsZero() && g.Auction == nil && g.Trade == nil && g.DebtPay == nil &&
+		!(currentPlayerInDebt(g) && g.TurnPhase == gamerepo.TurnPhaseAwaitingRoll) {
 		g.TurnStartedAt = time.Now().UTC()
 	}
 }
@@ -1758,8 +1759,9 @@ func (s *service) startCurrentBankLocked(g *gamerepo.Game) {
 		s.clearBankClockLocked(g)
 		return
 	}
-	// Keep paused while current player is in debt awaiting Pay | Bankruptcy.
-	if currentPlayerInDebt(g) {
+	// Keep paused only for the next-turn Pay|Bankruptcy gate (awaiting_roll + debt).
+	// Landing-turn debt (awaiting_end) must keep draining toward End.
+	if currentPlayerInDebt(g) && g.TurnPhase == gamerepo.TurnPhaseAwaitingRoll {
 		s.clearBankClockLocked(g)
 		return
 	}
@@ -1788,8 +1790,12 @@ func (s *service) syncTimeBankLocked(ctx context.Context, g *gamerepo.Game) (boo
 	if g.Status != gamerepo.StatusActive {
 		return false, nil
 	}
-	// Turn clock paused during auction / open trade / debt-pay / negative-cash gate.
-	if g.Auction != nil || g.Trade != nil || g.DebtPay != nil || currentPlayerInDebt(g) {
+	// Turn clock paused during auction / open trade / debt-pay window /
+	// next-turn Pay|Bankruptcy gate. Landing-turn debt (awaiting_end) still drains
+	// so End cannot be stalled forever.
+	debtGate := g.DebtPay != nil ||
+		(currentPlayerInDebt(g) && g.TurnPhase == gamerepo.TurnPhaseAwaitingRoll)
+	if g.Auction != nil || g.Trade != nil || debtGate {
 		return false, nil
 	}
 

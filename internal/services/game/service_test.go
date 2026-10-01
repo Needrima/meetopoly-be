@@ -2752,6 +2752,42 @@ func TestRaiseClearsDebtWithoutDebtPayResumesClock(t *testing.T) {
 	}
 }
 
+func TestLandingDebtStillDrainsTurnClock(t *testing.T) {
+	// Negative cash on awaiting_end must not freeze the personal turn clock.
+	repo := newMemRepo()
+	svc := New(repo, memSpaces{}, Config{})
+	seedTwoPlayer(t, repo)
+
+	g, _ := repo.FindByID(context.Background(), "g1")
+	g.Players[0].Cash = -50
+	g.PendingPayment = &gamerepo.PendingPayment{
+		Kind: "rent", Amount: 50, FromUserID: "a", ToUserID: "b", BoardIndex: 5, SpaceName: "Debt",
+	}
+	g.TurnPhase = gamerepo.TurnPhaseAwaitingEnd
+	g.TurnStartedAt = time.Now().UTC().Add(-2 * time.Second)
+	before := g.Players[0].TimeRemainingMs
+	_ = repo.Update(context.Background(), g)
+
+	view, err := svc.Get(context.Background(), "g1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !view.CanEndTurn {
+		t.Fatal("landing debt should still allow End")
+	}
+	if view.TurnStartedAt == "" {
+		t.Fatal("landing debt must keep the turn clock running")
+	}
+	// sync on Get should leave bank draining (TurnStartedAt still set).
+	g2, _ := repo.FindByID(context.Background(), "g1")
+	if g2.TurnStartedAt.IsZero() {
+		t.Fatal("TurnStartedAt cleared — landing debt incorrectly paused the clock")
+	}
+	if g2.Players[0].TimeRemainingMs > before {
+		t.Fatalf("bank grew unexpectedly: before=%d after=%d", before, g2.Players[0].TimeRemainingMs)
+	}
+}
+
 func TestDebtPayAutoBankruptWhenNoAssets(t *testing.T) {
 	repo := newMemRepo()
 	svc := New(repo, memSpaces{}, Config{})
