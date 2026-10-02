@@ -321,7 +321,8 @@ func (s *SFU) HandleOffer(roomID, userID string, sdp string) error {
 			)
 		})
 		dc.OnMessage(func(msg webrtc.DataChannelMessage) {
-			if !s.allowPose(roomID, fromUser) {
+			// Pose is rate-limited; videoMuted / videoOrientation must always fan out.
+			if !IsVideoControlDC(PeekPresenceDCType(msg.Data)) && !s.allowPose(roomID, fromUser) {
 				return
 			}
 			stamped, err := StampPresenceDC(fromUser, fromName, msg.Data)

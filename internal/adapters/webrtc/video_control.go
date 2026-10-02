@@ -34,17 +34,27 @@ type dcTypePeek struct {
 	Type string `json:"type"`
 }
 
+// PeekPresenceDCType returns the JSON "type" field, or "" if missing/invalid.
+func PeekPresenceDCType(raw []byte) string {
+	var peek dcTypePeek
+	if err := json.Unmarshal(raw, &peek); err != nil {
+		return ""
+	}
+	return peek.Type
+}
+
+// IsVideoControlDC reports types that must not be pose rate-limited.
+func IsVideoControlDC(msgType string) bool {
+	return msgType == VideoMutedMessageType || msgType == VideoOrientationMessageType
+}
+
 // StampPresenceDC routes a presence DataChannel payload: pose → StampPose,
 // videoMuted / videoOrientation → stamped control JSON. Unknown types are rejected.
 func StampPresenceDC(userID, username string, raw []byte) ([]byte, error) {
 	if len(raw) == 0 {
 		return nil, fmt.Errorf("dc empty")
 	}
-	var peek dcTypePeek
-	if err := json.Unmarshal(raw, &peek); err != nil {
-		return nil, fmt.Errorf("dc json: %w", err)
-	}
-	switch peek.Type {
+	switch PeekPresenceDCType(raw) {
 	case PoseMessageType, "":
 		return StampPose(userID, username, raw)
 	case VideoMutedMessageType:

@@ -863,12 +863,12 @@ Manual (landscape device / simulator; BE running; 2 clients preferred):
 
 **Reference screenshots → later phases (do not build in 9.3)**
 
-| Ref                                          | Action                                                                   | Phase                     |
-| -------------------------------------------- | ------------------------------------------------------------------------ | ------------------------- |
-| CHANCE / CHEST card modals                   | Card draw UI                                                             | **12**                    |
-| JUST VISITING                                | Jail visit notify                                                        | **12**                    |
-| AUCTION bid/fold/slider                      | Bank auction                                                             | **13**                    |
-| BUILD / SELL / MORTGAGE / REDEEM / TRADE bar | Economy CTAs in board panel; Roll/End/Hub dock icons                     | **11.4a** dock; **11.4b+** bar (+ trade **13**) |
+| Ref                                          | Action                                               | Phase                                           |
+| -------------------------------------------- | ---------------------------------------------------- | ----------------------------------------------- |
+| CHANCE / CHEST card modals                   | Card draw UI                                         | **12**                                          |
+| JUST VISITING                                | Jail visit notify                                    | **12**                                          |
+| AUCTION bid/fold/slider                      | Bank auction                                         | **13**                                          |
+| BUILD / SELL / MORTGAGE / REDEEM / TRADE bar | Economy CTAs in board panel; Roll/End/Hub dock icons | **11.4a** dock; **11.4b+** bar (+ trade **13**) |
 
 **9.4 notes**
 
@@ -1027,7 +1027,7 @@ Manual (2 clients preferred; BE running; landscape):
 | **11.4a** | ✅ Dock icons wired (dice/end/hub); opacity disabled; text Roll/End/Enter removed                                                                                                                     | Economy CTA bar, markers              |
 | **11.4b** | ✅ Economy CTA bar + mode → how-to sheet → highlight → tap → API; TRADE stub                                                                                                                          | House/hotel/M markers                 |
 | **11.4c** | ✅ House / hotel / M markers on tiles                                                                                                                                                                 | Hub rebuild UI                        |
-| **11.5**  | ✅ Smoke checklist for M2 path documented (+ `go test ./internal/services/game/` green)                                                                                | Jail/cards (12), auction (13)         |
+| **11.5**  | ✅ Smoke checklist for M2 path documented (+ `go test ./internal/services/game/` green)                                                                                                               | Jail/cards (12), auction (13)         |
 
 **11.5 — smoke checklist (Phase 11 / M2 close)**
 
@@ -1101,57 +1101,57 @@ Manual (2 clients preferred; BE running; landscape). Backend gate: `cd meetopoly
 
 **Sub-slices**
 
-| Slice    | Done when                                                                                                                                                         | Avoid                    |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| **12.0** | ✅ Player jail fields; land **Go to Jail** + **third doubles** → Jail; land Jail = Just Visiting; OpenAPI 0.20 + mobile types                                    | Exit APIs, card decks, UI |
-| **12.1** | ✅ Jail exit: pay **100** MeetCoin (`POST .../pay-jail-fine`), GOOJF (`POST .../use-jail-card`), roll doubles (free + move, no re-roll), or fail 3 then forced pay+move (if broke stay until pay); OpenAPI 0.21 | Card decks, fancy UI |
-| **12.2** | ✅ Chance + Chest catalog; shuffle at start; draw on land; persist decks; `lastCard`; GOOJF held; other effects stubbed → 12.3; OpenAPI 0.22 | Full effect resolve, UI |
-| **12.3** | ✅ Card effects (tables below): cash, move by index, Jail, repairs, nearest RR/utility; apply on draw (lock **A**); OpenAPI 0.23 | Trade of GOOJF (→ 13); card modal UI |
-| **12.4** | ✅ Card reveal (all seated) + move pause; Just Visiting modal; hub toasts; jail pin layout; jail options **v1** (next-turn only) | Jail modal UX polish → **12.4b** |
-| **12.4b** | ✅ Jail options modal: avatar + **Pay** / **Roll a Double** / **Use card**; dock Roll gating while modal open | Negative cash / bankruptcy → **14** |
-| **12.5** | ✅ Smoke checklist (manual playtest; M3 jail + cards closed)                                                                                                      | Auction/trade → **13**   |
+| Slice     | Done when                                                                                                                                                                                                       | Avoid                                |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| **12.0**  | ✅ Player jail fields; land **Go to Jail** + **third doubles** → Jail; land Jail = Just Visiting; OpenAPI 0.20 + mobile types                                                                                   | Exit APIs, card decks, UI            |
+| **12.1**  | ✅ Jail exit: pay **100** MeetCoin (`POST .../pay-jail-fine`), GOOJF (`POST .../use-jail-card`), roll doubles (free + move, no re-roll), or fail 3 then forced pay+move (if broke stay until pay); OpenAPI 0.21 | Card decks, fancy UI                 |
+| **12.2**  | ✅ Chance + Chest catalog; shuffle at start; draw on land; persist decks; `lastCard`; GOOJF held; other effects stubbed → 12.3; OpenAPI 0.22                                                                    | Full effect resolve, UI              |
+| **12.3**  | ✅ Card effects (tables below): cash, move by index, Jail, repairs, nearest RR/utility; apply on draw (lock **A**); OpenAPI 0.23                                                                                | Trade of GOOJF (→ 13); card modal UI |
+| **12.4**  | ✅ Card reveal (all seated) + move pause; Just Visiting modal; hub toasts; jail pin layout; jail options **v1** (next-turn only)                                                                                | Jail modal UX polish → **12.4b**     |
+| **12.4b** | ✅ Jail options modal: avatar + **Pay** / **Roll a Double** / **Use card**; dock Roll gating while modal open                                                                                                   | Negative cash / bankruptcy → **14**  |
+| **12.5**  | ✅ Smoke checklist (manual playtest; M3 jail + cards closed)                                                                                                                                                    | Auction/trade → **13**               |
 
 **Chance deck (16 cards — locked; destinations = `boardIndex`)**
 
-| # | Card id / title | Logic |
-|---:|---|---|
-| 1 | Advance to Boardwalk | Move to **39** |
-| 2 | Advance to GO | Move to **0**, collect $200 |
-| 3 | Advance to Illinois Avenue | Move to **24**; collect $200 if passing GO |
-| 4 | Advance to St. Charles Place | Move to **11**; collect $200 if passing GO |
-| 5 | Advance to nearest Railroad | Next of **5 / 15 / 25 / 35**; double rent if owned |
-| 6 | Advance to nearest Railroad | Same — **2 copies** |
-| 7 | Advance to nearest Utility | Next of **12 / 28**; rent **10×** dice if owned |
-| 8 | Bank pays you dividend | +$50 |
-| 9 | Get Out of Jail Free | Retain card |
-| 10 | Go Back 3 Spaces | Position − 3 |
-| 11 | Go to Jail | Move to **10**; do not pass GO |
-| 12 | Make general repairs | Pay $25/house, $100/hotel |
-| 13 | Speeding fine | −$15 |
-| 14 | Take a trip to Reading Railroad | Move to **15** (left-side airport); collect $200 if passing GO |
-| 15 | Elected Chairman of the Board | Pay each other player $50 |
-| 16 | Building loan matures | +$150 |
+|   # | Card id / title                 | Logic                                                          |
+| --: | ------------------------------- | -------------------------------------------------------------- |
+|   1 | Advance to Boardwalk            | Move to **39**                                                 |
+|   2 | Advance to GO                   | Move to **0**, collect $200                                    |
+|   3 | Advance to Illinois Avenue      | Move to **24**; collect $200 if passing GO                     |
+|   4 | Advance to St. Charles Place    | Move to **11**; collect $200 if passing GO                     |
+|   5 | Advance to nearest Railroad     | Next of **5 / 15 / 25 / 35**; double rent if owned             |
+|   6 | Advance to nearest Railroad     | Same — **2 copies**                                            |
+|   7 | Advance to nearest Utility      | Next of **12 / 28**; rent **10×** dice if owned                |
+|   8 | Bank pays you dividend          | +$50                                                           |
+|   9 | Get Out of Jail Free            | Retain card                                                    |
+|  10 | Go Back 3 Spaces                | Position − 3                                                   |
+|  11 | Go to Jail                      | Move to **10**; do not pass GO                                 |
+|  12 | Make general repairs            | Pay $25/house, $100/hotel                                      |
+|  13 | Speeding fine                   | −$15                                                           |
+|  14 | Take a trip to Reading Railroad | Move to **15** (left-side airport); collect $200 if passing GO |
+|  15 | Elected Chairman of the Board   | Pay each other player $50                                      |
+|  16 | Building loan matures           | +$150                                                          |
 
 **Community Chest deck (16 cards — locked)**
 
-| # | Card id / title | Logic |
-|---:|---|---|
-| 1 | Advance to GO | Move to **0**, collect $200 |
-| 2 | Bank error in your favor | +$200 |
-| 3 | Doctor's fee | −$50 |
-| 4 | From sale of stock | +$50 |
-| 5 | Get Out of Jail Free | Retain card |
-| 6 | Go to Jail | Move to **10**; do not pass GO |
-| 7 | Holiday fund matures | +$100 |
-| 8 | Income tax refund | +$20 |
-| 9 | It's your birthday | Collect $10 from each other player |
-| 10 | Life insurance matures | +$100 |
-| 11 | Hospital fees | −$100 |
-| 12 | School fees | −$50 |
-| 13 | Consultancy fee | +$25 |
-| 14 | Street repairs | Pay $40/house, $115/hotel |
-| 15 | Second prize in beauty contest | +$10 |
-| 16 | Inheritance | +$100 |
+|   # | Card id / title                | Logic                              |
+| --: | ------------------------------ | ---------------------------------- |
+|   1 | Advance to GO                  | Move to **0**, collect $200        |
+|   2 | Bank error in your favor       | +$200                              |
+|   3 | Doctor's fee                   | −$50                               |
+|   4 | From sale of stock             | +$50                               |
+|   5 | Get Out of Jail Free           | Retain card                        |
+|   6 | Go to Jail                     | Move to **10**; do not pass GO     |
+|   7 | Holiday fund matures           | +$100                              |
+|   8 | Income tax refund              | +$20                               |
+|   9 | It's your birthday             | Collect $10 from each other player |
+|  10 | Life insurance matures         | +$100                              |
+|  11 | Hospital fees                  | −$100                              |
+|  12 | School fees                    | −$50                               |
+|  13 | Consultancy fee                | +$25                               |
+|  14 | Street repairs                 | Pay $40/house, $115/hotel          |
+|  15 | Second prize in beauty contest | +$10                               |
+|  16 | Inheritance                    | +$100                              |
 
 Amounts = MeetCoin 1:1 with classic dollars. UI may show the world tile **name** for an index; rules always use the index.
 
@@ -1252,13 +1252,13 @@ Also **pause everyone’s** personal banks (do not reset) for the **whole auctio
 
 **Sub-slices**
 
-| Slice    | Done when                                                                                                                                                         | Avoid                         |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| **13.0** | ✅ Auction schema + APIs: auto-start if broke / `POST .../start-auction`; bid + fold; 30s timer; auto-bid/fold; settle/void; pause all banks; remove must-buy-only; OpenAPI 0.25 + unit tests | Fancy UI, trade               |
-| **13.1** | ✅ Board auction modal (deed + feed + keypad + BID/FOLD); Buy\|Auction; dock peek; hub Open board; toasts + winner bought @ auction price | Trade                         |
-| **13.2** | ✅ Trade schema + APIs (propose / accept / decline; deeds + cash + GOOJF); 60s reply; pause turn clock; **3m turn clock** + 2-strike forfeit; panel current-only green→red | Fancy trade UI → **13.3** |
-| **13.3** | ✅ Trade board UI + wire TRADE CTA; hub notify / Open board                                                                                                          | House shortage                |
-| **13.4** | ✅ Smoke checklist (manual playtest; M4 auction + trade closed)                                                                                                       | House shortage (deferred)     |
+| Slice    | Done when                                                                                                                                                                                     | Avoid                     |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| **13.0** | ✅ Auction schema + APIs: auto-start if broke / `POST .../start-auction`; bid + fold; 30s timer; auto-bid/fold; settle/void; pause all banks; remove must-buy-only; OpenAPI 0.25 + unit tests | Fancy UI, trade           |
+| **13.1** | ✅ Board auction modal (deed + feed + keypad + BID/FOLD); Buy\|Auction; dock peek; hub Open board; toasts + winner bought @ auction price                                                     | Trade                     |
+| **13.2** | ✅ Trade schema + APIs (propose / accept / decline; deeds + cash + GOOJF); 60s reply; pause turn clock; **3m turn clock** + 2-strike forfeit; panel current-only green→red                    | Fancy trade UI → **13.3** |
+| **13.3** | ✅ Trade board UI + wire TRADE CTA; hub notify / Open board                                                                                                                                   | House shortage            |
+| **13.4** | ✅ Smoke checklist (manual playtest; M4 auction + trade closed)                                                                                                                               | House shortage (deferred) |
 
 **13.0 notes**
 
@@ -1337,13 +1337,13 @@ Smoke → **13.4** ✅ (manual playtest 2026-09-29/30). **Phase 13 DONE.** House
 
 **Exit criteria:** Negative-cash debt + settle-on-raise; Pay/Bankruptcy gate + 2:00; player elimination with Bank wipe + creditor cash top-up; jail forced-debt path; wiped deeds unowned until next landing (no wipe re-auction).
 
-| Slice | Deliverable | Not yet |
-| --- | --- | --- |
+| Slice    | Deliverable                                                                                                                                                                                                                                                                                                                                                                               | Not yet       |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | **14.0** | ✅ Negative-cash debt model + `owedTo`; shortfall → pay what you can then cash `−(remainder)`; sell/mortgage during debt settles creditor; End OK / Roll blocked while negative; declare-bankrupt + auto-bankrupt APIs; resign/timeout/disconnect use Bank wipe (deeds unowned, GOOJF deck bottom, Bank pays remaining owed); pause turn clock during debt-pay; OpenAPI 0.28 + unit tests | Jail path, UI |
-| **14.1** | ✅ Jail 3-fail broke → leave Jail, cash `−` fine (`kind: jail`), move with failed roll + landing resolve; next-turn Pay \| Bankruptcy (same gate as 14.0) | Fancy UI |
-| **14.2** | ✅ Board modal Pay \| Bankruptcy; **2:00** pay timer; red negative cash; live cash for all; toasts; hub Open board; wire Declare bankrupt | — |
-| **14.3** | ✅ **Cancelled** — no Bank re-auction on wipe; deeds stay unowned until landed on; sitting pin suppresses Buy \| Auction (regression tests) | — |
-| **14.4** | ✅ Smoke checklist → close M5 | — |
+| **14.1** | ✅ Jail 3-fail broke → leave Jail, cash `−` fine (`kind: jail`), move with failed roll + landing resolve; next-turn Pay \| Bankruptcy (same gate as 14.0)                                                                                                                                                                                                                                 | Fancy UI      |
+| **14.2** | ✅ Board modal Pay \| Bankruptcy; **2:00** pay timer; red negative cash; live cash for all; toasts; hub Open board; wire Declare bankrupt                                                                                                                                                                                                                                                 | —             |
+| **14.3** | ✅ **Cancelled** — no Bank re-auction on wipe; deeds stay unowned until landed on; sitting pin suppresses Buy \| Auction (regression tests)                                                                                                                                                                                                                                               | —             |
+| **14.4** | ✅ Smoke checklist → close M5                                                                                                                                                                                                                                                                                                                                                             | —             |
 
 **14.0 notes**
 
@@ -1386,7 +1386,6 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 
 ---
 
-
 ### Phase 15 — Production hardening (Contabo)
 
 **Goal:** Deploy binary to Contabo; Redis on VPS; MongoDB Atlas; Google SMTP prod creds; TLS reverse proxy.
@@ -1409,10 +1408,10 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 
 **Goal:** Within each World’s color groups, place cities by relative prestige (not A–Z), keeping board indexes / prices / rents / houseCost fixed. Airports & utilities unchanged. Duplicate city names in other packs → fix when that world is touched.
 
-| Slice | Deliverable | Not yet |
-| --- | --- | --- |
-| **E.1** | ✅ `africa-1` prestige reorder within color groups | — |
-| **E.2** | ✅ All other worlds prestige reorder + CA/Oceania/SA dupe fixes | — |
+| Slice   | Deliverable                                                     | Not yet |
+| ------- | --------------------------------------------------------------- | ------- |
+| **E.1** | ✅ `africa-1` prestige reorder within color groups              | —       |
+| **E.2** | ✅ All other worlds prestige reorder + CA/Oceania/SA dupe fixes | —       |
 
 **E.1 notes**
 
@@ -1437,13 +1436,13 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 
 **In progress — board cameras (ask before each sub-slice):**
 
-| Slice | Deliverable | Not yet |
-| --- | --- | --- |
-| **16.0** | ✅ SFU board-only video forward (`videoPubs`, stream id `video-{userId}`); hub ignores video | Mobile publish/UI |
-| **16.1** | ✅ Mobile `muteVideo` + board publish/play video tracks (`localVideoStream` / `remoteVideoByUserId`) | Seat grid UI |
-| **16.2** | ✅ Meet-style `BoardSeatGrid` + local controls + long-press info modal | Turn ring polish |
-| **16.3** | 3m turn-clock border ring on current seat + plan/skill docs | Smoke |
-| **16.4** | Smoke checklist | — |
+| Slice    | Deliverable                                                                                          | Not yet           |
+| -------- | ---------------------------------------------------------------------------------------------------- | ----------------- |
+| **16.0** | ✅ SFU board-only video forward (`videoPubs`, stream id `video-{userId}`); hub ignores video         | Mobile publish/UI |
+| **16.1** | ✅ Mobile `muteVideo` + board publish/play video tracks (`localVideoStream` / `remoteVideoByUserId`) | Seat grid UI      |
+| **16.2** | ✅ Meet-style `BoardSeatGrid` + local controls + long-press info modal                               | Turn ring polish  |
+| **16.3** | 3m turn-clock border ring on current seat + plan/skill docs                                          | Smoke             |
+| **16.4** | Smoke checklist                                                                                      | —                 |
 
 **16.0 notes**
 
@@ -1456,7 +1455,8 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 **16.2 notes**
 
 - ✅ Shipped: `BoardSeatGrid` / `BoardSeatTile` / `PlayerInfoModal`; replace panel text roster; keep turn line; grid cols 2/3/2/2/3 for 2–6; pin-color border + hub chip when in hub; local-only mic / flip / cam; cam-off → black + `AvatarPod`; long-press info modal; remove joystick `MuteMicButton`; `flipCamera` via `replaceTrack`; board wires presence streams.
-- ✅ SFU `StampPresenceDC` fans out `videoMuted` + `videoOrientation` (pose-only `StampPose` was dropping them → remotes froze on cam-off / missed iOS upright). Mobile: rotate wrapper `View` around `RTCView` (native transform ignored on iOS).
+- ✅ SFU `StampPresenceDC` fans out `videoMuted` + `videoOrientation`; video control bypasses pose Hz rate-limit.
+- ✅ **iOS→Android upright:** Android `SurfaceViewRenderer` ignores CSS rotate. Local module `meetopoly-board-cam` registers WebRTC `VideoFrameProcessor` (`meetopolyCamRot`, +90° `frame.rotation`). Remotes use metadata; no remote CSS. **Requires iOS native rebuild** (`npx expo prebuild` + run ios). If upright wrong way, flip `MEETOPOLY_CAM_ROT_ADD` in `MeetopolyCamRotProcessor.m`.
 
 **Still deferred until asked:**
 
@@ -1602,41 +1602,41 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 | 2026-09-27 | **11.2:** `POST /games/{id}/sell-building`; half `houseCost`; even-sell; allowed + auto-apply during pendingPayment; OpenAPI 0.18                                                                                                         |
 | 2026-09-27 | **11.3:** `POST` mortgage + redeem (½ price / +10%); 0 rent when mortgaged; sell buildings first; OpenAPI 0.19                                                                                                                            |
 | 2026-09-28 | **11.4a:** dock dice/end/hub wired (opacity 0.35 disabled); HUD Roll/End/Enter text removed; economy bar → 11.4b                                                                                                                          |
-| 2026-09-28 | **Must-buy interim:** `canEndTurn` false + `ErrMustBuy` while `buyOffer` open; board buy modal non-dismissible; drop “Or End turn to skip” (auction → 13)                                                                                   |
+| 2026-09-28 | **Must-buy interim:** `canEndTurn` false + `ErrMustBuy` while `buyOffer` open; board buy modal non-dismissible; drop “Or End turn to skip” (auction → 13)                                                                                 |
 | 2026-09-28 | **11.4b:** economy CTA bar above dock; mode + how-to sheet; eligible highlight + tap → build/sell/mortgage/redeem; TRADE stub; markers → 11.4c                                                                                            |
-| 2026-09-28 | **11.4c:** house (1–4) / hotel (5) / M markers on color-band edge from `game.deeds`                                                                                                                     |
-| 2026-09-28 | **11.5:** M2 smoke checklist (dock/must-buy/economy/markers/raise-funds); `go test ./internal/services/game/` green; Phase 11 DONE (auction shortage → 13)                                              |
-| 2026-09-28 | **Phase 12 split:** 12.0–12.5 jail + Chance/Chest; jail fine **100** MeetCoin; classic card table locked for 12.2–12.3; ask before each slice                                                         |
-| 2026-09-28 | **12.0:** `inJail` / `jailTurns` / `getOutOfJailFree`; Go to Jail + third doubles → Jail; Just Visiting; OpenAPI 0.20; exit → 12.1                                                                  |
-| 2026-09-28 | **12.1:** pay-jail-fine (100) + use-jail-card; roll-from-jail doubles / 3-fail forced pay; `canPayJailFine` / `canUseJailCard`; OpenAPI 0.21; UI → 12.4                                              |
-| 2026-09-28 | **12.2:** Chance/Chest catalog by boardIndex; shuffle + draw on land; persist decks; `lastCard`; GOOJF held; effects → 12.3; OpenAPI 0.22                                                         |
-| 2026-09-28 | **12.3:** apply card effects on draw (lock A); move/cash/jail/repairs/nearest RR×2 / util 10×; `lastPayment.kind=card`; OpenAPI 0.23; modal → 12.4                                              |
-| 2026-09-28 | **12.4:** board card modal (all seated) + Just Visiting modal; jail sheet (pay/card) + exit toasts; hub toasts; jail pin center vs visiting edges; smoke → 12.5                              |
-| 2026-09-28 | **Jail UX plan lock:** **12.4b** = avatar + Pay / Roll a Double / Use card + dock Roll gating; negative cash after 3 fails + bankruptcy gate → **Phase 14**; keep 12.1 soft-lock until then |
-| 2026-09-28 | **12.4b:** jail modal avatar + Pay / Roll a Double / Use card; dock Roll off while modal open; Use card disabled at 0 GOOJF; smoke → 12.5                                                              |
-| 2026-09-28 | **12.4c:** `lastCard.cashDelta` (signed MeetCoin) for cash / pay-each / birthday / repairs; card modal + toast show +/- amount; OpenAPI 0.24 |
-| 2026-09-28 | **12.4d:** Chance/Chest — drawer modal only; others toast (name + card text + cashDelta); jail failed-doubles toast after roll |
-| 2026-09-28 | **12.4e:** Pass-GO salary deferred until after Chance/Chest reveal + pin resume (card → move → salary); OpenAPI unchanged |
-| 2026-09-29 | **12.5:** Phase 12 smoke OK (manual); **Phase 12 DONE**                                                                                                                                  |
-| 2026-09-29 | **Phase 13 split:** 13.0–13.4 auction then trade; house-shortage deferred; auction locks (30s, turn-based, high sits out, keypad, banks paused); ask before each slice                  |
-| 2026-09-29 | **13.0:** bank auction APIs + 30s timer + auto-bid/fold + settle/void + bank pause; OpenAPI 0.25; must-buy → buy\|auction; UI → 13.1                                                                 |
-| 2026-09-29 | **13.1:** AuctionOverlay + Buy\|Auction + dock peek + hub auto Open board; settle toast + winner bought @ auction price; trade → 13.2                                                              |
-| 2026-09-29 | **13.1 polish:** auction bid = native TextInput (not custom keypad); turn timer **60s**; layout fix so controls stay under deed/feed                                                                |
-| 2026-09-29 | **13.1 polish:** auction overlay (and hub Open board) wait for dice/pin idle like buy — no modal over mid-walk auto-auction                                                                        |
-| 2026-09-29 | **13.2:** trade propose/accept/decline APIs + 60s reply; **3m turn clock** + 2-strike forfeit; OpenAPI 0.26; panel current-only green→red; trade UI → 13.3                                         |
-| 2026-09-29 | **13.3:** TradeOverlay compose + accept/decline + mortgage choice; TRADE CTA; hub Open board on trade; party-only modal; `lastTrade` toasts (OpenAPI 0.27); smoke → 13.4                                                                               |
-| 2026-09-30 | **13.4:** Phase 13 smoke OK (manual); **Phase 13 DONE** (house-shortage auction deferred)                                                                                              |
-| 2026-09-30 | **Phase 14 split:** 14.0–14.4 negative-cash debt; Pay 2:00 (sell/mortgage, no trade) \| Bankruptcy; Bank wipe + creditor cash (no asset transfer); jail **14.1**; UI **14.2**; re-auction **14.3**; ask before each slice |
-| 2026-10-01 | **14.0:** negative cash + `owedTo`/`fromUserId`; End OK / Roll blocked; sell/mortgage settle creditor; `POST …/bankrupt` + `…/debt-pay/start` (2m); resign wipe to Bank; OpenAPI 0.28; UI → **14.2** |
-| 2026-10-01 | **14.2:** board Pay\|Bankruptcy + 2:00 debt-pay banner; hub Open board; debt/bankruptcy toasts; resign wipe copy |
-| 2026-10-01 | **14.3 cancelled:** wipe → unowned only (no Bank re-auction); suppress Buy if sitting on wiped tile |
-| 2026-10-01 | **14.4:** Phase 14 smoke OK; **Phase 14 / M5 DONE** |
-| 2026-10-01 | **Phase 15:** Contabo deploy = **owner-run**; agent helps on request only |
-| 2026-10-01 | **Encore E.1:** `africa-1` property cities reordered by prestige within color groups (prices stay on slots) |
-| 2026-10-01 | **Encore E.2:** all other Worlds prestige reorder; CA/Oceania/SA `-r2` dupes replaced; reseed required |
-| 2026-10-01 | **Phase 16 split:** board cameras 16.0–16.4; hub video + selective listen still deferred |
-| 2026-10-01 | **16.0:** SFU board-only `videoPubs` + RTP relay (`video-{userId}`); hub ignores video; tests |
-| 2026-10-01 | **16.1:** `muteVideo` + Settings; board publish/play camera; hub audio-only; stream maps on presence result |
-| 2026-10-01 | **16.2:** Meet seat grid + local mic/cam/flip + long-press info modal; remove joystick mute |
-| 2026-10-01 | **16.2 fix:** SFU relay `videoMuted`/`videoOrientation`; RTCView rotate via wrapper View |
+| 2026-09-28 | **11.4c:** house (1–4) / hotel (5) / M markers on color-band edge from `game.deeds`                                                                                                                                                       |
+| 2026-09-28 | **11.5:** M2 smoke checklist (dock/must-buy/economy/markers/raise-funds); `go test ./internal/services/game/` green; Phase 11 DONE (auction shortage → 13)                                                                                |
+| 2026-09-28 | **Phase 12 split:** 12.0–12.5 jail + Chance/Chest; jail fine **100** MeetCoin; classic card table locked for 12.2–12.3; ask before each slice                                                                                             |
+| 2026-09-28 | **12.0:** `inJail` / `jailTurns` / `getOutOfJailFree`; Go to Jail + third doubles → Jail; Just Visiting; OpenAPI 0.20; exit → 12.1                                                                                                        |
+| 2026-09-28 | **12.1:** pay-jail-fine (100) + use-jail-card; roll-from-jail doubles / 3-fail forced pay; `canPayJailFine` / `canUseJailCard`; OpenAPI 0.21; UI → 12.4                                                                                   |
+| 2026-09-28 | **12.2:** Chance/Chest catalog by boardIndex; shuffle + draw on land; persist decks; `lastCard`; GOOJF held; effects → 12.3; OpenAPI 0.22                                                                                                 |
+| 2026-09-28 | **12.3:** apply card effects on draw (lock A); move/cash/jail/repairs/nearest RR×2 / util 10×; `lastPayment.kind=card`; OpenAPI 0.23; modal → 12.4                                                                                        |
+| 2026-09-28 | **12.4:** board card modal (all seated) + Just Visiting modal; jail sheet (pay/card) + exit toasts; hub toasts; jail pin center vs visiting edges; smoke → 12.5                                                                           |
+| 2026-09-28 | **Jail UX plan lock:** **12.4b** = avatar + Pay / Roll a Double / Use card + dock Roll gating; negative cash after 3 fails + bankruptcy gate → **Phase 14**; keep 12.1 soft-lock until then                                               |
+| 2026-09-28 | **12.4b:** jail modal avatar + Pay / Roll a Double / Use card; dock Roll off while modal open; Use card disabled at 0 GOOJF; smoke → 12.5                                                                                                 |
+| 2026-09-28 | **12.4c:** `lastCard.cashDelta` (signed MeetCoin) for cash / pay-each / birthday / repairs; card modal + toast show +/- amount; OpenAPI 0.24                                                                                              |
+| 2026-09-28 | **12.4d:** Chance/Chest — drawer modal only; others toast (name + card text + cashDelta); jail failed-doubles toast after roll                                                                                                            |
+| 2026-09-28 | **12.4e:** Pass-GO salary deferred until after Chance/Chest reveal + pin resume (card → move → salary); OpenAPI unchanged                                                                                                                 |
+| 2026-09-29 | **12.5:** Phase 12 smoke OK (manual); **Phase 12 DONE**                                                                                                                                                                                   |
+| 2026-09-29 | **Phase 13 split:** 13.0–13.4 auction then trade; house-shortage deferred; auction locks (30s, turn-based, high sits out, keypad, banks paused); ask before each slice                                                                    |
+| 2026-09-29 | **13.0:** bank auction APIs + 30s timer + auto-bid/fold + settle/void + bank pause; OpenAPI 0.25; must-buy → buy\|auction; UI → 13.1                                                                                                      |
+| 2026-09-29 | **13.1:** AuctionOverlay + Buy\|Auction + dock peek + hub auto Open board; settle toast + winner bought @ auction price; trade → 13.2                                                                                                     |
+| 2026-09-29 | **13.1 polish:** auction bid = native TextInput (not custom keypad); turn timer **60s**; layout fix so controls stay under deed/feed                                                                                                      |
+| 2026-09-29 | **13.1 polish:** auction overlay (and hub Open board) wait for dice/pin idle like buy — no modal over mid-walk auto-auction                                                                                                               |
+| 2026-09-29 | **13.2:** trade propose/accept/decline APIs + 60s reply; **3m turn clock** + 2-strike forfeit; OpenAPI 0.26; panel current-only green→red; trade UI → 13.3                                                                                |
+| 2026-09-29 | **13.3:** TradeOverlay compose + accept/decline + mortgage choice; TRADE CTA; hub Open board on trade; party-only modal; `lastTrade` toasts (OpenAPI 0.27); smoke → 13.4                                                                  |
+| 2026-09-30 | **13.4:** Phase 13 smoke OK (manual); **Phase 13 DONE** (house-shortage auction deferred)                                                                                                                                                 |
+| 2026-09-30 | **Phase 14 split:** 14.0–14.4 negative-cash debt; Pay 2:00 (sell/mortgage, no trade) \| Bankruptcy; Bank wipe + creditor cash (no asset transfer); jail **14.1**; UI **14.2**; re-auction **14.3**; ask before each slice                 |
+| 2026-10-01 | **14.0:** negative cash + `owedTo`/`fromUserId`; End OK / Roll blocked; sell/mortgage settle creditor; `POST …/bankrupt` + `…/debt-pay/start` (2m); resign wipe to Bank; OpenAPI 0.28; UI → **14.2**                                      |
+| 2026-10-01 | **14.2:** board Pay\|Bankruptcy + 2:00 debt-pay banner; hub Open board; debt/bankruptcy toasts; resign wipe copy                                                                                                                          |
+| 2026-10-01 | **14.3 cancelled:** wipe → unowned only (no Bank re-auction); suppress Buy if sitting on wiped tile                                                                                                                                       |
+| 2026-10-01 | **14.4:** Phase 14 smoke OK; **Phase 14 / M5 DONE**                                                                                                                                                                                       |
+| 2026-10-01 | **Phase 15:** Contabo deploy = **owner-run**; agent helps on request only                                                                                                                                                                 |
+| 2026-10-01 | **Encore E.1:** `africa-1` property cities reordered by prestige within color groups (prices stay on slots)                                                                                                                               |
+| 2026-10-01 | **Encore E.2:** all other Worlds prestige reorder; CA/Oceania/SA `-r2` dupes replaced; reseed required                                                                                                                                    |
+| 2026-10-01 | **Phase 16 split:** board cameras 16.0–16.4; hub video + selective listen still deferred                                                                                                                                                  |
+| 2026-10-01 | **16.0:** SFU board-only `videoPubs` + RTP relay (`video-{userId}`); hub ignores video; tests                                                                                                                                             |
+| 2026-10-01 | **16.1:** `muteVideo` + Settings; board publish/play camera; hub audio-only; stream maps on presence result                                                                                                                               |
+| 2026-10-01 | **16.2:** Meet seat grid + local mic/cam/flip + long-press info modal; remove joystick mute                                                                                                                                               |
+| 2026-10-01 | **16.2 fix:** SFU relay `videoMuted`/`videoOrientation`; RTCView rotate via wrapper View                                                                                                                                                  |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

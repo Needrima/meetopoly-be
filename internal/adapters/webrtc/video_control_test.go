@@ -71,3 +71,15 @@ func TestStampPresenceDCRejectsUnknownAndBad(t *testing.T) {
 		t.Fatal("expected size error")
 	}
 }
+
+func TestIsVideoControlDC(t *testing.T) {
+	if !IsVideoControlDC(VideoMutedMessageType) || !IsVideoControlDC(VideoOrientationMessageType) {
+		t.Fatal("expected video control types")
+	}
+	if IsVideoControlDC(PoseMessageType) || IsVideoControlDC("chat") || IsVideoControlDC("") {
+		t.Fatal("pose/unknown must not be treated as video control")
+	}
+	if PeekPresenceDCType([]byte(`{"type":"videoOrientation","rotationDeg":90}`)) != VideoOrientationMessageType {
+		t.Fatal("peek orientation")
+	}
+}
