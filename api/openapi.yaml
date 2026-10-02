@@ -2179,7 +2179,7 @@ components:
           type: string
           description: Hex accent `#RRGGBB` matching the player's avatar/joystick color
           pattern: "^#[0-9A-Fa-f]{6}$"
-          example: "#ED1B24"
+          example: "#6B3FA0"
     BuildRequest:
       type: object
       additionalProperties: false

@@ -360,14 +360,14 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 | **4.5** | ✅ Local avatar (pod + 1-letter) + joystick BR + edge/deck hard + pin soft; pin on GO    | Enter, net      |
 | **4.6** | ✅ Walk-near Enter (nearest glow) + Details `InfoModal` + hub placeholder + BoardSession | SFU             |
 | **4.7** | ✅ **DEV** multi-pin fan on GO (distinct colors; soft collide all); local pin from 4.5   | Full game rules |
-| **4.8** | ✅ Menu home + board ⋯ (Leave / logout; health+locations `__DEV__`); block board back    | Lobby, WS, RTC  |
+| **4.8** | ✅ Menu home + board ⋯ drawer (Leave / Health / Locations; no logout); block board back | Lobby, WS, RTC  |
 | **4.9** | ✅ Polish: attribution, Reanimated avatar, side-length, chrome; Phase 4 exit criteria    | New features    |
 
 **4.8 detail (locked)**
 
-- **Home** (`/(app)/index`): branded menu — **Play**, **Settings** (stub OK), **About Meetopoly** (stub OK), **Log out**. Health API card and “View locations” move behind **⋯** or `__DEV__` only (not primary CTAs).
+- **Home** (`/(app)/index`): branded menu — **Play**, **Settings** (stub OK), **About Meetopoly** (stub OK), **Log out**. Health / Locations are reachable from the board **⋯** drawer.
 - **Play** → `/(app)/board` (direct; no World picker / lobby yet).
-- **Board panel top:** **⋯** menu — **Leave** (→ menu home), **Log out**; in `__DEV__`: **Health**, **Locations** list.
+- **Board panel top:** **⋯** opens a **right drawer** (X top-left) — **Leave board**, **Health**, **Locations**. Log out stays on menu home only.
 - Remove on-board **Back** Pressable. `BackHandler` + `gestureEnabled: false` (or equivalent) so hardware/swipe back cannot leave the board; hub **Leave** stays explicit.
 - Settings / About: placeholder screens or short modals are enough for 4.8.
 
@@ -1440,8 +1440,8 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 | -------- | ---------------------------------------------------------------------------------------------------- | ----------------- |
 | **16.0** | ✅ SFU board-only video forward (`videoPubs`, stream id `video-{userId}`); hub ignores video         | Mobile publish/UI |
 | **16.1** | ✅ Mobile `muteVideo` + board publish/play video tracks (`localVideoStream` / `remoteVideoByUserId`) | Seat grid UI      |
-| **16.2** | ✅ Meet-style `BoardSeatGrid` + local controls + long-press info modal                               | Turn ring polish  |
-| **16.3** | 3m turn-clock border ring on current seat + plan/skill docs                                          | Smoke             |
+| **16.2** | ✅ Meet-style `BoardSeatGrid` + local controls + player-info overlay                               | Turn ring polish  |
+| **16.3** | ✅ 3m turn-clock border ring on current seat + plan/skill docs                                     | Smoke             |
 | **16.4** | Smoke checklist                                                                                      | —                 |
 
 **16.0 notes**
@@ -1457,6 +1457,10 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 - ✅ Shipped: `BoardSeatGrid` / `BoardSeatTile` / `PlayerInfoModal`; replace panel text roster; keep turn line; grid cols 2/3/2/2/3 for 2–6; pin-color border + hub chip when in hub; local-only mic / flip / cam; cam-off → black + `AvatarPod`; long-press info modal; remove joystick `MuteMicButton`; `flipCamera` via `replaceTrack`; board wires presence streams.
 - ✅ SFU `StampPresenceDC` fans out `videoMuted` + `videoOrientation`; video control bypasses pose Hz rate-limit.
 - ✅ **iOS→Android upright:** Android `SurfaceViewRenderer` ignores CSS rotate. Local module `meetopoly-board-cam` registers WebRTC `VideoFrameProcessor` (`meetopolyCamRot`, +90° `frame.rotation`). Remotes use metadata; no remote CSS. **Requires iOS native rebuild** (`npx expo prebuild` + run ios). If upright wrong way, flip `MEETOPOLY_CAM_ROT_ADD` in `MeetopolyCamRotProcessor.m`.
+
+**16.3 notes**
+
+- ✅ Shipped: `SeatTurnClockRing` — Reanimated SVG stroke depletes top-left → clockwise over 3:00; pin/avatar color normally; **danger red** at ≤1:00; freezes when clock paused. Avatar/pin palette swaps Monopoly red for **violet** (`#6B3FA0`); existing `#ED1B24` pins left as-is. Player info = tap + absolute overlay.
 
 **Still deferred until asked:**
 
@@ -1639,4 +1643,6 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 | 2026-10-01 | **16.1:** `muteVideo` + Settings; board publish/play camera; hub audio-only; stream maps on presence result                                                                                                                               |
 | 2026-10-01 | **16.2:** Meet seat grid + local mic/cam/flip + long-press info modal; remove joystick mute                                                                                                                                               |
 | 2026-10-01 | **16.2 fix:** SFU relay `videoMuted`/`videoOrientation`; RTCView rotate via wrapper View                                                                                                                                                  |
+| 2026-10-02 | **16.3:** Reanimated depleting pin-color seat ring (danger ≤1:00); avatar/pin palette red→violet; player-info tap overlay                                                                                                                  |
+| 2026-10-02 | **Board ⋯:** right drawer (X close); Leave / Health / Locations always; remove board Log out                                                                                                                                              |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

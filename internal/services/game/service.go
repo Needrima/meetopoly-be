@@ -274,7 +274,7 @@ type Config struct {
 }
 
 var pinPalette = []string{
-	"#ED1B24",
+	"#6B3FA0",
 	"#0072BB",
 	"#1FB25A",
 	"#F7941D",

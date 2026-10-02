@@ -339,7 +339,7 @@ func emptySeat(index int) tablerepo.Seat {
 
 // seatPalette — distinct accents for up to 6 players (matches game pin palette).
 var seatPalette = []string{
-	"#ED1B24",
+	"#6B3FA0",
 	"#0072BB",
 	"#1FB25A",
 	"#F7941D",
