@@ -696,7 +696,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 
 | Slice   | Done when                                                                                                                                                        | Avoid                                      |
 | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| **8.0** | Hub presence **signaling + room lifecycle**: Enter leaves **board** presence and joins `hub:{hubId}`; Leave hub rejoins **board** presence; **game WS stays up** | Hub poses, turn sheet, voice, polish scene |
+| **8.0** | Hub presence **signaling + room lifecycle**: Enter joins `hub:{hubId}`; Leave leaves hub; **board SFU stays up** (pose-only hub; game WS stays up) | Hub poses, turn sheet, voice, polish scene |
 | **8.1** | Hub DataChannel poses (reuse locked **pose** shape; hub-local 0..1); remotes drawn + interpolated in the hub scene                                               | Turn notify, voice, board “in hub” chrome  |
 | **8.2** | Server/game knows `hubId` when entered; peers still on the **board** see that player as in-hub (frozen last board pose and/or clear “in hub” affordance)         | Turn sheet, voice                          |
 | **8.3** | **Turn notify** while in hub + compact sheet: time bank + Roll / basic actions + **Open board**; pin updates on roll while avatar stays in hub                   | Voice (→ 10); auctions/trades              |
@@ -706,7 +706,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 
 - Reuse Pion SFU + auth family as board presence; route e.g. `GET /ws/presence/hub/{hubId}?token=` (exact path in OpenAPI when implementing).
 - `hubId` from location seeds / existing `hub:{world}:{slug}` convention; `HubRoomID` already stubbed in 7.4.
-- Enter: tear down **board** peer cleanly → attach hub peer (no game resign). Leave: reverse.
+- Enter: attach hub peer for poses (**board SFU stays alive** — cameras + table voice). Leave: detach hub only.
 - Upgrade hub placeholder only as needed to prove join/leave + roster toasts (full art later).
 - Game WS + pins remain authoritative and connected the whole time.
 
@@ -975,24 +975,21 @@ Manual (2 clients preferred; BE running; landscape):
 
 **10.4 notes**
 
-- SFU: `IsVoiceRoom` = hub + board; board rooms allocate `audioPubs` and forward mic like hub.
-- Mobile: `useBoardPresence` publishes/plays audio + `muteMic`; speaker via same `hubAudioRoute`.
-- Board panel: shared `MuteMicButton` above joystick. Hub handoff still disables board presence (one voice room).
+- SFU: `IsVoiceRoom` = **board only** (hubs later became pose-only — see changelog 2026-10-02).
+- Mobile: `useBoardPresence` publishes/plays audio + `muteMic`; speaker via `hubAudioRoute`.
+- Board panel: shared `MuteMicButton` / seat mic. Hub no longer tears down board presence.
 
 **10.4 — smoke checklist (board voice)**
 
-1. **Two on board** — Both unmuted → hear each other; mute CTA above joystick.
-2. **Mute** — Board mute ↔ Settings / hub mute SoT.
-3. **Hub handoff** — Enter hub leaves board SFU; return board restores board voice.
+1. **Two on board** — Both unmuted → hear each other; mute CTA above joystick / seat.
+2. **Mute** — Board mute ↔ Settings SoT.
+3. **Hub handoff** — Enter hub **keeps** board SFU (cameras + table voice); hub is pose-only.
 4. **Leave** — Leaving board presence stops board audio.
 
 **Exit criteria**
 
-- [x] Hear others in hub; leave hub stops hub audio (after 10.0–10.3)
-- [x] **10.0:** hub SFU audio forward + board pose-only
-- [x] **10.1:** hub mic publish + mute pref
-- [x] **10.2:** hub remote playback + renegotiation
-- [x] **10.3:** hub mute UI + smoke
+- [x] Hear others in hub; leave hub stops hub audio (after 10.0–10.3) — **superseded:** hub voice removed; table voice continues in hub UI
+- [x] **10.0–10.3:** historical hub voice path (removed 2026-10-02 — hub pose-only)
 - [x] **10.4:** board/table voice + mute CTA
 
 **Deferred (not Phase 10):** With hubs up to **16**, selective listen (“choose who I hear”) ships with **video / camera tiles** — same roster UX. Locked under **Phase 16** (ask before). Until then: everyone-audio + global `muteMic` only.
@@ -1646,4 +1643,5 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 | 2026-10-02 | **16.3:** Reanimated depleting pin-color seat ring (danger ≤1:00); avatar/pin palette red→violet; player-info tap overlay                                                                                                                  |
 | 2026-10-02 | **Board ⋯:** right drawer (X close); Leave / Health / Locations always; remove board Log out                                                                                                                                              |
 | 2026-10-02 | **Seeds:** railroad airports get real `countryCode` (was `XX`); reseed required                                                                                                                                                          |
+| 2026-10-02 | **Hub pose-only:** board SFU stays up in hub (like Locations); hub PC = DataChannel poses; no hub mic/speaker; `IsVoiceRoom` = board only; HubMediaRail Presence (no mute)                                                                  |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

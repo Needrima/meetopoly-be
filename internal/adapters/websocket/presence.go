@@ -350,7 +350,7 @@ func (c *presenceClient) readPump() {
 				c.sendError("offer failed")
 			}
 		case "answer":
-			// Phase 10.0 — client answer to SFU renegotiation offer (hub audio).
+			// Client answer to SFU renegotiation offer (board audio/video).
 			if msg.SDP == "" {
 				c.sendError("missing sdp")
 				continue

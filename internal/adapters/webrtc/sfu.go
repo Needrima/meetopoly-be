@@ -55,7 +55,7 @@ type SFU struct {
 type room struct {
 	id    string
 	peers map[string]*peer // userID → peer
-	// audioPubs: voice rooms (hub + board) published mic relays (Phase 10). Key = publisher userID.
+	// audioPubs: board voice rooms published mic relays (Phase 10.4). Key = publisher userID.
 	audioPubs map[string]*hubAudioPub
 	// videoPubs: board rooms only (Phase 16.0). Key = publisher userID. Stream id = video-{userId}.
 	videoPubs map[string]*boardVideoPub
@@ -106,13 +106,14 @@ func IsBoardRoom(roomID string) bool {
 	return strings.HasPrefix(roomID, "board:")
 }
 
-// IsVoiceRoom reports rooms that forward mic audio (hub + board, Phase 10).
+// IsVoiceRoom reports rooms that forward mic audio (board only).
+// Hubs are pose DataChannel only — table voice stays on the board SFU.
 func IsVoiceRoom(roomID string) bool {
-	return IsHubRoom(roomID) || IsBoardRoom(roomID)
+	return IsBoardRoom(roomID)
 }
 
 // IsVideoRoom reports rooms that forward camera video (board only, Phase 16.0).
-// Hubs stay audio-only.
+// Hubs stay pose-only (no A/V).
 func IsVideoRoom(roomID string) bool {
 	return IsBoardRoom(roomID)
 }
@@ -437,7 +438,15 @@ func (s *SFU) peerLocked(roomID, userID string) *peer {
 func (s *SFU) onMediaTrack(roomID, fromUserID string, remote *webrtc.TrackRemote) {
 	switch remote.Kind() {
 	case webrtc.RTPCodecTypeAudio:
-		s.onHubAudioTrack(roomID, fromUserID, remote)
+		if !IsVoiceRoom(roomID) {
+			slog.Debug("presence ignoring audio on non-voice room",
+				"roomId", roomID,
+				"userId", fromUserID,
+			)
+			go drainRemoteTrack(remote)
+			return
+		}
+		s.onVoiceAudioTrack(roomID, fromUserID, remote)
 	case webrtc.RTPCodecTypeVideo:
 		if !IsVideoRoom(roomID) {
 			slog.Debug("presence ignoring video on non-video room",
@@ -457,14 +466,14 @@ func (s *SFU) onMediaTrack(roomID, fromUserID string, remote *webrtc.TrackRemote
 	}
 }
 
-func (s *SFU) onHubAudioTrack(roomID, fromUserID string, remote *webrtc.TrackRemote) {
+func (s *SFU) onVoiceAudioTrack(roomID, fromUserID string, remote *webrtc.TrackRemote) {
 	local, err := webrtc.NewTrackLocalStaticRTP(
 		remote.Codec().RTPCodecCapability,
 		"audio",
-		"hub-"+fromUserID,
+		"voice-"+fromUserID,
 	)
 	if err != nil {
-		slog.Warn("hub local track", "roomId", roomID, "userId", fromUserID, "err", err)
+		slog.Warn("voice local track", "roomId", roomID, "userId", fromUserID, "err", err)
 		return
 	}
 
@@ -489,7 +498,7 @@ func (s *SFU) onHubAudioTrack(roomID, fromUserID string, remote *webrtc.TrackRem
 
 	s.fanoutLocalTrack(roomID, local, recvs)
 
-	slog.Info("hub audio published",
+	slog.Info("board audio published",
 		"roomId", roomID,
 		"userId", fromUserID,
 		"receivers", len(recvs),

@@ -147,8 +147,11 @@ func TestIsHubRoom(t *testing.T) {
 	if !IsBoardRoom(BoardRoomID("g1")) {
 		t.Fatal("expected board")
 	}
-	if !IsVoiceRoom(HubRoomID("africa-1:lagos")) || !IsVoiceRoom(BoardRoomID("g1")) {
-		t.Fatal("hub and board are voice rooms")
+	if IsVoiceRoom(HubRoomID("africa-1:lagos")) {
+		t.Fatal("hub must not be a voice room")
+	}
+	if !IsVoiceRoom(BoardRoomID("g1")) {
+		t.Fatal("board must be a voice room")
 	}
 	if IsVideoRoom(HubRoomID("africa-1:lagos")) {
 		t.Fatal("hub must not be a video room")
@@ -175,8 +178,8 @@ func TestVoiceRoomsGetAudioPubsMap(t *testing.T) {
 	hr := sfu.rooms[hub]
 	br := sfu.rooms[board]
 	sfu.mu.Unlock()
-	if hr == nil || hr.audioPubs == nil {
-		t.Fatal("hub room must allocate audioPubs")
+	if hr == nil || hr.audioPubs != nil {
+		t.Fatal("hub room must not allocate audioPubs (pose-only)")
 	}
 	if br == nil || br.audioPubs == nil {
 		t.Fatal("board room must allocate audioPubs (Phase 10.4)")
@@ -188,7 +191,7 @@ func TestVoiceRoomsGetAudioPubsMap(t *testing.T) {
 		t.Fatal("board room must allocate videoPubs (Phase 16.0)")
 	}
 	if sfu.HubAudioPublisherCount(hub) != 0 {
-		t.Fatal("no pubs yet")
+		t.Fatal("hub audio count must be 0 without map")
 	}
 	if sfu.HubAudioPublisherCount(board) != 0 {
 		t.Fatal("no pubs yet")
@@ -201,25 +204,25 @@ func TestVoiceRoomsGetAudioPubsMap(t *testing.T) {
 	}
 }
 
-func TestDetachClearsHubAudioPubSlot(t *testing.T) {
+func TestDetachClearsBoardAudioPubSlot(t *testing.T) {
 	sfu := NewSFU()
-	hub := HubRoomID("africa-1:accra")
+	board := BoardRoomID("game-audio-detach")
 	sig := &memSignal{}
-	if err := sfu.Attach(hub, "u1", "Ada", "", sig); err != nil {
+	if err := sfu.Attach(board, "u1", "Ada", "", sig); err != nil {
 		t.Fatal(err)
 	}
 	sfu.mu.Lock()
-	r := sfu.rooms[hub]
+	r := sfu.rooms[board]
 	stop := make(chan struct{})
 	r.audioPubs["u1"] = &hubAudioPub{fromUserID: "u1", stop: stop}
 	sfu.mu.Unlock()
-	if sfu.HubAudioPublisherCount(hub) != 1 {
+	if sfu.HubAudioPublisherCount(board) != 1 {
 		t.Fatal("expected one pub")
 	}
-	if _, ok := sfu.Detach(hub, "u1", sig); !ok {
+	if _, ok := sfu.Detach(board, "u1", sig); !ok {
 		t.Fatal("detach")
 	}
-	if sfu.HubAudioPublisherCount(hub) != 0 {
+	if sfu.HubAudioPublisherCount(board) != 0 {
 		t.Fatal("pub must clear on detach")
 	}
 	select {
