@@ -49,8 +49,9 @@ func IsVideoControlDC(msgType string) bool {
 }
 
 // StampPresenceDC routes a presence DataChannel payload: pose → StampPose,
-// videoMuted / videoOrientation → stamped control JSON. Unknown types are rejected.
-func StampPresenceDC(userID, username string, raw []byte) ([]byte, error) {
+// videoMuted / videoOrientation → stamped control JSON, hubChat → StampHubChat
+// (hub rooms only). Unknown types are rejected.
+func StampPresenceDC(userID, username string, raw []byte, hubRoom bool) ([]byte, error) {
 	if len(raw) == 0 {
 		return nil, fmt.Errorf("dc empty")
 	}
@@ -61,6 +62,11 @@ func StampPresenceDC(userID, username string, raw []byte) ([]byte, error) {
 		return StampVideoMuted(userID, raw)
 	case VideoOrientationMessageType:
 		return StampVideoOrientation(userID, raw)
+	case HubChatMessageType:
+		if !hubRoom {
+			return nil, fmt.Errorf("hubChat room")
+		}
+		return StampHubChat(userID, username, raw)
 	default:
 		return nil, fmt.Errorf("dc type")
 	}

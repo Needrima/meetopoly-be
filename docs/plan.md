@@ -1470,6 +1470,29 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 
 ---
 
+### Phase 17 — Hub social (chat + roster)
+
+**In progress — ask before each sub-slice:**
+
+| Slice    | Deliverable                                                              | Not yet        |
+| -------- | ------------------------------------------------------------------------ | -------------- |
+| **17.0** | ✅ SFU `hubChat` DC stamp/forward (hub-only; ephemeral; rate-limited)   | Mobile UI      |
+| **17.1** | ✅ Left-rail FlashList chat + composer; Live/timer on right; clear leave | Roster grid    |
+| **17.2** | Right-rail 3-col people grid                                             | Smoke          |
+| **17.3** | Smoke checklist                                                          | —              |
+
+**17.0 notes**
+
+- ✅ Shipped: type `hubChat` (`userId`/`username`/`text`/`t` server-stamped); hub rooms only; board rejects; ≤280 runes / ≤512 bytes; ~3 msg/s per peer (`allowHubChat`); bypasses pose Hz; `StampPresenceDC(..., hubRoom)`; unit tests. No Mongo / history.
+
+**17.1 notes**
+
+- ✅ Shipped: `lib/hubChat.ts` + `HubChatRail` (FlashList inverted + composer); `useHubPresence` `enableHubChat` / `chatMessages` / `sendChat` (optimistic local — SFU does not echo); clear buffer on leave/hub change; Live/timer moved into `HubRoster` `statusSlot`. 2-col roster unchanged until **17.2**.
+
+**Still deferred:** Phase 18 spectator-after-eliminate; hub cameras; selective listen.
+
+---
+
 ## 5. Cross-cutting concerns
 
 ### 5.1 Testing
@@ -1644,4 +1667,7 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 | 2026-10-02 | **Board ⋯:** right drawer (X close); Leave / Health / Locations always; remove board Log out                                                                                                                                              |
 | 2026-10-02 | **Seeds:** railroad airports get real `countryCode` (was `XX`); reseed required                                                                                                                                                          |
 | 2026-10-02 | **Hub pose-only:** board SFU stays up in hub (like Locations); hub PC = DataChannel poses; no hub mic/speaker; `IsVoiceRoom` = board only; HubMediaRail Presence (no mute)                                                                  |
+| 2026-10-02 | **Phase 17 split:** hub social chat + roster (17.0–17.3); spectator-after-eliminate → Phase 18                                                                                                                                            |
+| 2026-10-02 | **17.0:** SFU `hubChat` stamp/forward hub-only; rate limit 3/s; tests                                                                                                                                                                    |
+| 2026-10-02 | **17.1:** hub left Chat FlashList + DC send/recv; Live/timer on right roster; clear chat on leave                                                                                                                                         |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

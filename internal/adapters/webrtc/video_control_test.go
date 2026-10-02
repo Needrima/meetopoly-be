@@ -7,7 +7,7 @@ import (
 )
 
 func TestStampPresenceDCRoutesPose(t *testing.T) {
-	out, err := StampPresenceDC("u1", "Ada", []byte(`{"type":"pose","userId":"spoof","x":0.2,"y":0.8}`))
+	out, err := StampPresenceDC("u1", "Ada", []byte(`{"type":"pose","userId":"spoof","x":0.2,"y":0.8}`), false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -21,7 +21,7 @@ func TestStampPresenceDCRoutesPose(t *testing.T) {
 }
 
 func TestStampPresenceDCVideoMuted(t *testing.T) {
-	out, err := StampPresenceDC("u2", "Bob", []byte(`{"type":"videoMuted","userId":"spoof","muted":true}`))
+	out, err := StampPresenceDC("u2", "Bob", []byte(`{"type":"videoMuted","userId":"spoof","muted":true}`), false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +33,7 @@ func TestStampPresenceDCVideoMuted(t *testing.T) {
 		t.Fatalf("%+v", msg)
 	}
 
-	out2, err := StampPresenceDC("u2", "Bob", []byte(`{"type":"videoMuted","muted":false}`))
+	out2, err := StampPresenceDC("u2", "Bob", []byte(`{"type":"videoMuted","muted":false}`), true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func TestStampPresenceDCVideoMuted(t *testing.T) {
 }
 
 func TestStampPresenceDCVideoOrientation(t *testing.T) {
-	out, err := StampPresenceDC("u3", "Cara", []byte(`{"type":"videoOrientation","userId":"x","rotationDeg":90}`))
+	out, err := StampPresenceDC("u3", "Cara", []byte(`{"type":"videoOrientation","userId":"x","rotationDeg":90}`), false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,14 +60,14 @@ func TestStampPresenceDCVideoOrientation(t *testing.T) {
 }
 
 func TestStampPresenceDCRejectsUnknownAndBad(t *testing.T) {
-	if _, err := StampPresenceDC("u", "A", []byte(`{"type":"chat"}`)); err == nil {
-		t.Fatal("expected type error")
+	if _, err := StampPresenceDC("u", "A", []byte(`{"type":"chat"}`), true); err == nil {
+		t.Fatal("expected type error for legacy chat")
 	}
-	if _, err := StampPresenceDC("u", "A", []byte(`{"type":"videoOrientation","rotationDeg":"nope"}`)); err == nil {
+	if _, err := StampPresenceDC("u", "A", []byte(`{"type":"videoOrientation","rotationDeg":"nope"}`), false); err == nil {
 		t.Fatal("expected json error")
 	}
 	big := []byte(`{"type":"videoMuted","muted":true,"pad":"` + strings.Repeat("x", MaxVideoControlBytes) + `"}`)
-	if _, err := StampPresenceDC("u", "A", big); err == nil {
+	if _, err := StampPresenceDC("u", "A", big, false); err == nil {
 		t.Fatal("expected size error")
 	}
 }
@@ -76,8 +76,8 @@ func TestIsVideoControlDC(t *testing.T) {
 	if !IsVideoControlDC(VideoMutedMessageType) || !IsVideoControlDC(VideoOrientationMessageType) {
 		t.Fatal("expected video control types")
 	}
-	if IsVideoControlDC(PoseMessageType) || IsVideoControlDC("chat") || IsVideoControlDC("") {
-		t.Fatal("pose/unknown must not be treated as video control")
+	if IsVideoControlDC(PoseMessageType) || IsVideoControlDC("chat") || IsVideoControlDC("") || IsVideoControlDC(HubChatMessageType) {
+		t.Fatal("pose/unknown/hubChat must not be treated as video control")
 	}
 	if PeekPresenceDCType([]byte(`{"type":"videoOrientation","rotationDeg":90}`)) != VideoOrientationMessageType {
 		t.Fatal("peek orientation")

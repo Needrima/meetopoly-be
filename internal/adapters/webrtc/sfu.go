@@ -81,6 +81,7 @@ type peer struct {
 	dc          *webrtc.DataChannel
 	signal      SignalWriter
 	lastPoseAt  time.Time
+	lastChatAt  time.Time
 	negotiating bool
 	// renegotiateAgain: another AddTrack arrived while an SFU offer was in flight (Phase 16.0 audio+video).
 	renegotiateAgain bool
@@ -322,11 +323,22 @@ func (s *SFU) HandleOffer(roomID, userID string, sdp string) error {
 			)
 		})
 		dc.OnMessage(func(msg webrtc.DataChannelMessage) {
-			// Pose is rate-limited; videoMuted / videoOrientation must always fan out.
-			if !IsVideoControlDC(PeekPresenceDCType(msg.Data)) && !s.allowPose(roomID, fromUser) {
-				return
+			msgType := PeekPresenceDCType(msg.Data)
+			hubRoom := IsHubRoom(roomID)
+			// Pose is rate-limited; video control + hub chat use their own gates.
+			switch {
+			case IsHubChatDC(msgType):
+				if !hubRoom || !s.allowHubChat(roomID, fromUser) {
+					return
+				}
+			case IsVideoControlDC(msgType):
+				// always allow
+			default:
+				if !s.allowPose(roomID, fromUser) {
+					return
+				}
 			}
-			stamped, err := StampPresenceDC(fromUser, fromName, msg.Data)
+			stamped, err := StampPresenceDC(fromUser, fromName, msg.Data, hubRoom)
 			if err != nil {
 				return
 			}
@@ -763,6 +775,22 @@ func (s *SFU) allowPose(roomID, userID string) bool {
 		return false
 	}
 	p.lastPoseAt = now
+	return true
+}
+
+// allowHubChat returns true if this peer may fan out another hub chat (MaxHubChatHz).
+func (s *SFU) allowHubChat(roomID, userID string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	p := s.peerLocked(roomID, userID)
+	if p == nil {
+		return false
+	}
+	now := time.Now()
+	if !p.lastChatAt.IsZero() && now.Sub(p.lastChatAt) < hubChatMinInterval {
+		return false
+	}
+	p.lastChatAt = now
 	return true
 }
 
