@@ -347,7 +347,8 @@ func (c *presenceClient) readPump() {
 			}
 			if err := c.hub.sfu.HandleOffer(c.roomID, c.userID, msg.SDP); err != nil {
 				slog.Warn("presence offer failed", "userId", c.userID, "err", err)
-				c.sendError("offer failed")
+				// Include cause so mobile Metro can distinguish races vs SDP errors.
+				c.sendError("offer failed: " + err.Error())
 			}
 		case "answer":
 			// Client answer to SFU renegotiation offer (board audio/video).

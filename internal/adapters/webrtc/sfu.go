@@ -85,6 +85,8 @@ type peer struct {
 	negotiating bool
 	// renegotiateAgain: another AddTrack arrived while an SFU offer was in flight (Phase 16.0 audio+video).
 	renegotiateAgain bool
+	// handlingOffer: client join/rejoin HandleOffer in flight (reject concurrent offers).
+	handlingOffer bool
 }
 
 // NewSFU builds a memory SFU with Google public STUN (no TURN in Phase 7.0).
@@ -270,10 +272,25 @@ func (s *SFU) HandleOffer(roomID, userID string, sdp string) error {
 		s.mu.Unlock()
 		return fmt.Errorf("peer not attached")
 	}
+	if p.handlingOffer {
+		s.mu.Unlock()
+		return fmt.Errorf("offer already in progress")
+	}
+	p.handlingOffer = true
+	// Cancel any in-flight SFU renegotiation; this client offer replaces the PC.
+	p.negotiating = false
+	p.renegotiateAgain = false
 	signal := p.signal
 	voice := IsVoiceRoom(roomID)
 	video := IsVideoRoom(roomID)
 	s.mu.Unlock()
+	defer func() {
+		s.mu.Lock()
+		if pe := s.peerLocked(roomID, userID); pe != nil && pe.signal == signal {
+			pe.handlingOffer = false
+		}
+		s.mu.Unlock()
+	}()
 
 	cfg := webrtc.Configuration{ICEServers: s.iceServers}
 	pc, err := webrtc.NewPeerConnection(cfg)
@@ -390,16 +407,29 @@ func (s *SFU) HandleOffer(roomID, userID string, sdp string) error {
 		s.closePeerLocked(p)
 	}
 	p.pc = pc
+	// Fan-out may have set renegotiateAgain while handlingOffer blocked SFU offers.
+	again := p.renegotiateAgain
+	p.renegotiateAgain = false
+	p.negotiating = false
 	s.mu.Unlock()
 
 	local := pc.LocalDescription()
 	if local == nil {
 		return fmt.Errorf("missing local description")
 	}
-	return signal.WriteJSON(map[string]any{
+	if err := signal.WriteJSON(map[string]any{
 		"type": "answer",
 		"sdp":  local.SDP,
-	})
+	}); err != nil {
+		return err
+	}
+	if again {
+		// New pubs arrived during join — renegotiate after answer is out.
+		if err := s.negotiateOffer(roomID, userID); err != nil {
+			slog.Debug("presence post-join renegotiate", "userId", userID, "err", err)
+		}
+	}
+	return nil
 }
 
 // HandleAnswer applies a client SDP answer to an SFU-initiated renegotiation offer (hub audio / board video).
@@ -674,6 +704,12 @@ func (s *SFU) negotiateOffer(roomID, userID string) error {
 		s.mu.Unlock()
 		return fmt.Errorf("no peer connection")
 	}
+	// Client join/rejoin owns the PC — do not glare with an SFU offer.
+	if p.handlingOffer {
+		p.renegotiateAgain = true
+		s.mu.Unlock()
+		return nil
+	}
 	if p.negotiating {
 		p.renegotiateAgain = true
 		s.mu.Unlock()
@@ -687,7 +723,7 @@ func (s *SFU) negotiateOffer(roomID, userID string) error {
 	offer, err := pc.CreateOffer(nil)
 	if err != nil {
 		s.mu.Lock()
-		if pe := s.peerLocked(roomID, userID); pe != nil {
+		if pe := s.peerLocked(roomID, userID); pe != nil && pe.pc == pc {
 			pe.negotiating = false
 		}
 		s.mu.Unlock()
@@ -695,7 +731,7 @@ func (s *SFU) negotiateOffer(roomID, userID string) error {
 	}
 	if err := pc.SetLocalDescription(offer); err != nil {
 		s.mu.Lock()
-		if pe := s.peerLocked(roomID, userID); pe != nil {
+		if pe := s.peerLocked(roomID, userID); pe != nil && pe.pc == pc {
 			pe.negotiating = false
 		}
 		s.mu.Unlock()
@@ -704,12 +740,19 @@ func (s *SFU) negotiateOffer(roomID, userID string) error {
 	local := pc.LocalDescription()
 	if local == nil {
 		s.mu.Lock()
-		if pe := s.peerLocked(roomID, userID); pe != nil {
+		if pe := s.peerLocked(roomID, userID); pe != nil && pe.pc == pc {
 			pe.negotiating = false
 		}
 		s.mu.Unlock()
 		return fmt.Errorf("missing local description")
 	}
+	s.mu.Lock()
+	pe := s.peerLocked(roomID, userID)
+	if pe == nil || pe.pc != pc || pe.signal != signal {
+		s.mu.Unlock()
+		return fmt.Errorf("peer replaced during renegotiate")
+	}
+	s.mu.Unlock()
 	return signal.WriteJSON(map[string]any{
 		"type": "offer",
 		"sdp":  local.SDP,
@@ -825,6 +868,7 @@ func (s *SFU) closePeerLocked(p *peer) {
 	}
 	p.negotiating = false
 	p.renegotiateAgain = false
+	// handlingOffer cleared by HandleOffer defer when that call owns the peer.
 	if p.dc != nil {
 		_ = p.dc.Close()
 		p.dc = nil
