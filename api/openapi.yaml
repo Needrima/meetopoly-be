@@ -892,7 +892,7 @@ paths:
       summary: Buy the unowned space you landed on
       description: |
         Phase 6.4 — purchase at list price when the current player occupies an unowned
-        property / railroad / utility after landing. To decline, call `start-auction` (Phase 13.0).
+        property / airport / utility after landing. To decline, call `start-auction` (Phase 13.0).
       tags:
         - Games
       security:
@@ -2614,7 +2614,8 @@ components:
           type: string
         kind:
           type: string
-          enum: [property, railroad, utility]
+          enum: [property, airport, utility]
+          description: Buyable space kind. Air hubs use `airport`.
         price:
           type: integer
           description: List price in MeetCoin
@@ -2661,7 +2662,8 @@ components:
           type: string
         kind:
           type: string
-          enum: [property, railroad, utility]
+          enum: [property, airport, utility]
+          description: Buyable space kind. Air hubs use `airport`.
         listPrice:
           type: integer
         highBid:
@@ -3077,7 +3079,8 @@ components:
           type: string
         kind:
           type: string
-          enum: [property, railroad, utility, special]
+          enum: [property, airport, utility, special]
+          description: Location kind. Air hubs use `airport`.
         boardIndex:
           type: integer
         boardCode:

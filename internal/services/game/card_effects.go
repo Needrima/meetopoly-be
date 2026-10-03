@@ -7,12 +7,13 @@ import (
 )
 
 var (
-	railroadIndices = []int{5, 15, 25, 35}
-	utilityIndices  = []int{12, 28}
+	// Airport hubs (board indices); Chance "nearest Airport" / trip-to-airport.
+	airportIndices = []int{5, 15, 25, 35}
+	utilityIndices = []int{12, 28}
 )
 
 type landingOpts struct {
-	// rentMultiplier — Chance "nearest railroad" pays double rent (2). 0/1 = normal.
+	// rentMultiplier — Chance "nearest Airport" pays double rent (2). 0/1 = normal.
 	rentMultiplier int
 	// utilityDiceTotal — if > 0 and landing on owned utility, rent = 10 × this (Chance nearest utility).
 	utilityDiceTotal int
@@ -41,7 +42,7 @@ func (s *service) applyCardEffectLocked(ctx context.Context, g *gamerepo.Game, p
 	case CardChanceReadingRailroad:
 		s.cardAdvanceToLocked(ctx, g, playerIdx, spaces, 15, landingOpts{})
 	case CardChanceNearestRailroad:
-		dest, _ := nextIndexForward(g.Players[playerIdx].BoardIndex, railroadIndices)
+		dest, _ := nextIndexForward(g.Players[playerIdx].BoardIndex, airportIndices)
 		s.cardAdvanceToLocked(ctx, g, playerIdx, spaces, dest, landingOpts{rentMultiplier: 2})
 	case CardChanceNearestUtility:
 		dest, _ := nextIndexForward(g.Players[playerIdx].BoardIndex, utilityIndices)

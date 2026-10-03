@@ -16,7 +16,7 @@ Meetopoly is a **mobile-first**, worldwide social property game:
 - **Dual presence on the same board:**
   - **Game pin** — sits on a `boardIndex` slot (starts on GO; moves on dice).
   - **Social avatar** — walks the **whole board** (ring + center); pod + face callout (initial now, photo later).
-- **Enter hub:** walk near a property / railroad / utility → Enter prompt (not tap-only).
+- **Enter hub:** walk near a property / airport / utility → Enter prompt (not tap-only).
 - **Worlds:** board packs (`africa-1` first, **40** spaces — classic equal sides). Cities from [svgcities.com](https://svgcities.com/); more Worlds later.
 - **Tables:** **2–6** players (pins pack up to 6 on one square — prefer **2×3** grid when crowded); **45-minute per-player time bank** (drains on your turn only; bank = 0 → eliminate); extra pause rules → Phase 13; notify players in hubs with a compact turn sheet.
 - **Signed-in funnel (long-term):** menu home → **Play** → pick **World** → lobby → **Start** → board. Phase 4 Play goes **straight to board** (no lobby yet).
@@ -46,7 +46,7 @@ Meetopoly is a **mobile-first**, worldwide social property game:
 | Auth           | Email → Google SMTP verify → password → username/country; login email/password                           |
 | Board art      | Monopoly-like ring + center; SVGCities / generic icons; original chrome (not Hasbro art)                 |
 | Spaces         | **40** for `africa-1` (11 per side incl. corners; 9 between) — classic even ring                         |
-| Hub enter      | **Walk near** property / railroad / utility → Enter; specials not enterable                              |
+| Hub enter      | **Walk near** property / airport / utility → Enter; specials not enterable                               |
 | Board walk     | Avatar walks whole board; joystick in **panel bottom-right**                                             |
 | Collisions     | Hard: board outer edge + **center** Chance/Chest decks; soft: pins. Ring Chance/Chest **tiles** walkable |
 | Pins on square | Up to **6**; fan OK for ≤4; crowded → **2×3** grid oriented to tile long edge                            |
@@ -139,7 +139,7 @@ See `seeds/locations.json`. Core fields:
 
 - `worldId` — e.g. `africa-1`
 - `slug`, `name`, `countryCode`, `region`
-- `kind`: `property` | `railroad` | `utility` | `special`
+- `kind`: `property` | `airport` | `utility` | `special`
 - `boardIndex` — order on the logical track
 - `price`, `rents[]`, `colorGroup` (properties)
 - `map`: `{ x, z, scale }` — legacy / optional layout hints (v1 board uses `boardIndex`)
@@ -330,7 +330,7 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 **Enter hub (locked)**
 
-- Walk within mapped `enterRadius` of a **property | railroad | utility** → show Enter on panel.
+- Walk within mapped `enterRadius` of a **property | airport | utility** → show Enter on panel.
 - Specials (Jail, Tax, ring Chance/Chest, GO, etc.): no Enter.
 
 **Art direction**
@@ -520,7 +520,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 
 **6.4 notes**
 
-- After landing on unowned `property` / `railroad` / `utility` with `price > 0`: `canBuy` + `buyOffer`.
+- After landing on unowned `property` / `airport` / `utility` with `price > 0`: `canBuy` + `buyOffer`.
 - `POST /games/{id}/buy` deducts list price, appends deed (`boardIndex` + owner).
 - **Interim (until Phase 13 auction):** ~~End turn blocked while `buyOffer` open~~ — **replaced in 13.0** by Buy \| start-auction; End blocked while buyOffer or active auction.
 - Classic US rent/price ladder by `boardIndex` in seeds (colors stay Meetopoly); buy modal lists Rent + 1–4 houses + Hotel.
@@ -1116,8 +1116,8 @@ Manual (2 clients preferred; BE running; landscape). Backend gate: `cd meetopoly
 |   2 | Advance to GO                   | Move to **0**, collect $200                                    |
 |   3 | Advance to Illinois Avenue      | Move to **24**; collect $200 if passing GO                     |
 |   4 | Advance to St. Charles Place    | Move to **11**; collect $200 if passing GO                     |
-|   5 | Advance to nearest Railroad     | Next of **5 / 15 / 25 / 35**; double rent if owned             |
-|   6 | Advance to nearest Railroad     | Same — **2 copies**                                            |
+|   5 | Advance to nearest Airport      | Next of **5 / 15 / 25 / 35**; double rent if owned             |
+|   6 | Advance to nearest Airport      | Same — **2 copies**                                            |
 |   7 | Advance to nearest Utility      | Next of **12 / 28**; rent **10×** dice if owned                |
 |   8 | Bank pays you dividend          | +$50                                                           |
 |   9 | Get Out of Jail Free            | Retain card                                                    |
@@ -1125,7 +1125,7 @@ Manual (2 clients preferred; BE running; landscape). Backend gate: `cd meetopoly
 |  11 | Go to Jail                      | Move to **10**; do not pass GO                                 |
 |  12 | Make general repairs            | Pay $25/house, $100/hotel                                      |
 |  13 | Speeding fine                   | −$15                                                           |
-|  14 | Take a trip to Reading Railroad | Move to **15** (left-side airport); collect $200 if passing GO |
+|  14 | Take a trip to Airport          | Move to **15** (left-side airport); collect $200 if passing GO |
 |  15 | Elected Chairman of the Board   | Pay each other player $50                                      |
 |  16 | Building loan matures           | +$150                                                          |
 
@@ -1177,7 +1177,7 @@ Amounts = MeetCoin 1:1 with classic dollars. UI may show the world tile **name**
 
 - **Lock A:** server applies card effects in the same state update as the draw; client shows reveal modal 3s / `__DEV__` 5s in **12.4**, then animates the already-applied cash/move.
 - Destinations by `boardIndex` (39 / 0 / 24 / 11 / **15** trip-RR / nearest RR 5·15·25·35 / nearest util 12·28 / jail 10).
-- Nearest railroad → **2×** rent if owned; nearest utility → **10×** new dice roll if owned.
+- Nearest airport → **2×** rent if owned; nearest utility → **10×** new dice roll if owned.
 - Go back 3 → resolve landing on the new tile (tax/rent/another card OK).
 - Card payments use `lastPayment.kind = card`; shortfall → `pendingPayment` (raise funds).
 - Card reveal + jail action sheet UI → **12.4**.
@@ -1478,7 +1478,7 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 | -------- | ------------------------------------------------------------------------ | -------------- |
 | **17.0** | ✅ SFU `hubChat` DC stamp/forward (hub-only; ephemeral; rate-limited)   | Mobile UI      |
 | **17.1** | ✅ Left-rail FlashList chat + composer; Live/timer on right; clear leave | Roster grid    |
-| **17.2** | Right-rail 3-col people grid                                             | Smoke          |
+| **17.2** | ✅ Right-rail 3-col people grid (AvatarPod + name · country)            | Smoke          |
 | **17.3** | Smoke checklist                                                          | —              |
 
 **17.0 notes**
@@ -1487,7 +1487,11 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 
 **17.1 notes**
 
-- ✅ Shipped: `lib/hubChat.ts` + `HubChatRail` (FlashList inverted + composer); `useHubPresence` `enableHubChat` / `chatMessages` / `sendChat` (optimistic local — SFU does not echo); clear buffer on leave/hub change; Live/timer moved into `HubRoster` `statusSlot`. 2-col roster unchanged until **17.2**.
+- ✅ Shipped: `lib/hubChat.ts` + `HubChatRail` (FlashList inverted + composer); `useHubPresence` `enableHubChat` / `chatMessages` / `sendChat` (optimistic local — SFU does not echo); clear buffer on leave/hub change; Live/timer moved into `HubRoster` `statusSlot`.
+
+**17.2 notes**
+
+- ✅ Shipped: `HubRoster` 3-col grid (≤16); `AvatarPod` center; `You · CC` / `Name · CC` bottom-right; header In hub + Live/timer + Leave unchanged. No hub cameras / selective listen.
 
 **Still deferred:** Phase 18 spectator-after-eliminate; hub cameras; selective listen.
 
@@ -1670,4 +1674,5 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 | 2026-10-02 | **Phase 17 split:** hub social chat + roster (17.0–17.3); spectator-after-eliminate → Phase 18                                                                                                                                            |
 | 2026-10-02 | **17.0:** SFU `hubChat` stamp/forward hub-only; rate limit 3/s; tests                                                                                                                                                                    |
 | 2026-10-02 | **17.1:** hub left Chat FlashList + DC send/recv; Live/timer on right roster; clear chat on leave                                                                                                                                         |
+| 2026-10-02 | **17.2:** hub right rail 3-col people grid (AvatarPod + name · country)                                                                                                                                                                  |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

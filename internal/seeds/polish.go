@@ -126,7 +126,7 @@ func PolishAirportsIcons(docs []LocationDoc) ([]LocationDoc, PolishResult, error
 		}
 
 		world := out[i].WorldID
-		if out[i].Kind != "railroad" {
+		if out[i].Kind != "airport" {
 			continue
 		}
 		worldAirports, ok := airports[world]
@@ -155,7 +155,7 @@ func PolishAirportsIcons(docs []LocationDoc) ([]LocationDoc, PolishResult, error
 
 	result := PolishResult{AirportsByWorld: map[string][]string{}}
 	for _, loc := range out {
-		if loc.Kind != "railroad" {
+		if loc.Kind != "airport" {
 			continue
 		}
 		line := fmt.Sprintf("%-8s %-4s %s", loc.Slug, loc.BoardCode, loc.Name)
@@ -190,7 +190,7 @@ func assignPropertyBoardCodes(docs []LocationDoc) error {
 			if st == "chance" || st == "community_chest" {
 				continue
 			}
-			if docs[i].Kind == "railroad" || docs[i].Kind == "property" {
+			if docs[i].Kind == "airport" || docs[i].Kind == "property" {
 				continue
 			}
 			if docs[i].BoardCode != "" {
@@ -253,7 +253,7 @@ func assignAnonymousRailCodes(docs []LocationDoc) {
 				continue
 			}
 			// Reserve known airport IATA + all non-anonymous codes.
-			if d.Kind == "railroad" && worldAirports != nil {
+			if d.Kind == "airport" && worldAirports != nil {
 				if _, named := worldAirports[d.Slug]; named {
 					if d.BoardCode != "" {
 						used[d.BoardCode] = struct{}{}
@@ -261,7 +261,7 @@ func assignAnonymousRailCodes(docs []LocationDoc) {
 					continue
 				}
 			}
-			if d.Kind == "railroad" {
+			if d.Kind == "airport" {
 				continue // assign below
 			}
 			if d.BoardCode != "" {
@@ -270,7 +270,7 @@ func assignAnonymousRailCodes(docs []LocationDoc) {
 		}
 		for _, i := range idxs {
 			d := &docs[i]
-			if d.Kind != "railroad" {
+			if d.Kind != "airport" {
 				continue
 			}
 			if worldAirports != nil {
@@ -414,7 +414,7 @@ func boardCodeDupOK(group []LocationDoc) bool {
 		if st != "community_chest" {
 			allChest = false
 		}
-		if d.Kind != "property" && d.Kind != "railroad" {
+		if d.Kind != "property" && d.Kind != "airport" {
 			onlyPropAndRail = false
 		}
 	}
@@ -429,7 +429,7 @@ func boardCodeDupOK(group []LocationDoc) bool {
 		if d.Kind == "property" {
 			hasProp = true
 		}
-		if d.Kind == "railroad" {
+		if d.Kind == "airport" {
 			hasRail = true
 		}
 	}
@@ -440,7 +440,7 @@ func boardCodeDupOK(group []LocationDoc) bool {
 		switch d.Kind {
 		case "property":
 			propCount++
-		case "railroad":
+		case "airport":
 			railCount++
 		}
 	}

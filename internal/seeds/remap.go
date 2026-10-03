@@ -17,7 +17,7 @@ var classicSlots = [40]struct {
 	2:  {"special", "community_chest"},
 	3:  {"property", ""},
 	4:  {"special", "tax"},
-	5:  {"railroad", ""},
+	5:  {"airport", ""},
 	6:  {"property", ""},
 	7:  {"special", "chance"},
 	8:  {"property", ""},
@@ -27,7 +27,7 @@ var classicSlots = [40]struct {
 	12: {"utility", ""},
 	13: {"property", ""},
 	14: {"property", ""},
-	15: {"railroad", ""},
+	15: {"airport", ""},
 	16: {"property", ""},
 	17: {"special", "community_chest"},
 	18: {"property", ""},
@@ -37,7 +37,7 @@ var classicSlots = [40]struct {
 	22: {"special", "chance"},
 	23: {"property", ""},
 	24: {"property", ""},
-	25: {"railroad", ""},
+	25: {"airport", ""},
 	26: {"property", ""},
 	27: {"property", ""},
 	28: {"utility", ""},
@@ -47,7 +47,7 @@ var classicSlots = [40]struct {
 	32: {"property", ""},
 	33: {"special", "community_chest"},
 	34: {"property", ""},
-	35: {"railroad", ""},
+	35: {"airport", ""},
 	36: {"special", "chance"},
 	37: {"property", ""},
 	38: {"special", "tax"},
@@ -108,7 +108,7 @@ func remapWorld(worldID string, docs, africaDonor []LocationDoc) ([]LocationDoc,
 		))
 	}
 
-	railsExisting := filterKind(docs, "railroad")
+	railsExisting := filterKind(docs, "airport")
 	sort.Slice(railsExisting, func(i, j int) bool {
 		return railsExisting[i].BoardIndex < railsExisting[j].BoardIndex
 	})
@@ -193,7 +193,7 @@ func remapWorld(worldID string, docs, africaDonor []LocationDoc) ([]LocationDoc,
 		case slot.kind == "property":
 			doc = props[propI]
 			propI++
-		case slot.kind == "railroad":
+		case slot.kind == "airport":
 			doc = rails[railI]
 			railI++
 		case slot.kind == "utility":
@@ -306,7 +306,7 @@ func ensureRail(docs []LocationDoc, world string, n int, donorPool []LocationDoc
 		template = Clone(donorPool[idx])
 	} else {
 		template = LocationDoc{
-			Kind:        "railroad",
+			Kind:        "airport",
 			Price:       200,
 			Map:         MapPose{Scale: 1},
 			EnterRadius: 1.5,
@@ -315,7 +315,7 @@ func ensureRail(docs []LocationDoc, world string, n int, donorPool []LocationDoc
 	}
 	template.WorldID = world
 	template.Slug = slug
-	template.Kind = "railroad"
+	template.Kind = "airport"
 	if template.Name == "" {
 		template.Name = fmt.Sprintf("Air Hub %d", n)
 	}

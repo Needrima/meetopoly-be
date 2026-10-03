@@ -66,7 +66,7 @@ var cardCatalog = map[string]CardDef{
 	CardChanceAdvanceGO:        {ID: CardChanceAdvanceGO, Deck: DeckChance, Title: "Advance to GO", EffectKind: "move_to"},
 	CardChanceAdvanceIllinois:  {ID: CardChanceAdvanceIllinois, Deck: DeckChance, Title: "Advance to Illinois Avenue", EffectKind: "move_to"},
 	CardChanceAdvanceStCharles: {ID: CardChanceAdvanceStCharles, Deck: DeckChance, Title: "Advance to St. Charles Place", EffectKind: "move_to"},
-	CardChanceNearestRailroad:  {ID: CardChanceNearestRailroad, Deck: DeckChance, Title: "Advance to nearest Railroad", EffectKind: "nearest_railroad"},
+	CardChanceNearestRailroad:  {ID: CardChanceNearestRailroad, Deck: DeckChance, Title: "Advance to nearest Airport", EffectKind: "nearest_airport"},
 	CardChanceNearestUtility:   {ID: CardChanceNearestUtility, Deck: DeckChance, Title: "Advance to nearest Utility", EffectKind: "nearest_utility"},
 	CardChanceDividend:         {ID: CardChanceDividend, Deck: DeckChance, Title: "Bank pays you dividend", EffectKind: "cash"},
 	CardChanceGetOutOfJail:     {ID: CardChanceGetOutOfJail, Deck: DeckChance, Title: "Get Out of Jail Free", EffectKind: "goojf"},
@@ -74,7 +74,7 @@ var cardCatalog = map[string]CardDef{
 	CardChanceGoToJail:         {ID: CardChanceGoToJail, Deck: DeckChance, Title: "Go to Jail", EffectKind: "jail"},
 	CardChanceGeneralRepairs:   {ID: CardChanceGeneralRepairs, Deck: DeckChance, Title: "Make general repairs", EffectKind: "repairs"},
 	CardChanceSpeedingFine:     {ID: CardChanceSpeedingFine, Deck: DeckChance, Title: "Speeding fine", EffectKind: "cash"},
-	CardChanceReadingRailroad:  {ID: CardChanceReadingRailroad, Deck: DeckChance, Title: "Take a trip to Reading Railroad", EffectKind: "move_to"},
+	CardChanceReadingRailroad:  {ID: CardChanceReadingRailroad, Deck: DeckChance, Title: "Take a trip to Airport", EffectKind: "move_to"},
 	CardChanceChairman:         {ID: CardChanceChairman, Deck: DeckChance, Title: "Elected Chairman of the Board", EffectKind: "pay_each"},
 	CardChanceBuildingLoan:     {ID: CardChanceBuildingLoan, Deck: DeckChance, Title: "Building loan matures", EffectKind: "cash"},
 

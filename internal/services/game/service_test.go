@@ -418,7 +418,7 @@ func TestChanceChestCatalogSizes(t *testing.T) {
 		}
 	}
 	if rr != 2 {
-		t.Fatalf("nearest railroad copies=%d want 2", rr)
+		t.Fatalf("nearest airport copies=%d want 2", rr)
 	}
 }
 
@@ -646,7 +646,7 @@ func TestCardTripAirportGoesToIndex15NoPassGoFromChance7(t *testing.T) {
 	spaces := memSpaces{
 		{BoardIndex: 0, Slug: "go", Name: "GO", Kind: "special", SpecialType: "go"},
 		{BoardIndex: 7, Slug: "chance", Name: "Chance", Kind: "special", SpecialType: "chance"},
-		{BoardIndex: 15, Slug: "cdg", Name: "Charles de Gaulle Airport", Kind: "railroad", Price: 200, Rents: []int{25}},
+		{BoardIndex: 15, Slug: "cdg", Name: "Charles de Gaulle Airport", Kind: "airport", Price: 200, Rents: []int{25}},
 	}
 	svc := New(repo, spaces, Config{}).(*service)
 	seedTwoPlayer(t, repo)
@@ -677,7 +677,7 @@ func TestCardTripAirportWrapsPastGOFromLateChance(t *testing.T) {
 	spaces := memSpaces{
 		{BoardIndex: 0, Slug: "go", Name: "GO", Kind: "special", SpecialType: "go"},
 		{BoardIndex: 36, Slug: "chance", Name: "Chance", Kind: "special", SpecialType: "chance"},
-		{BoardIndex: 15, Slug: "air", Name: "Left Airport", Kind: "railroad"},
+		{BoardIndex: 15, Slug: "air", Name: "Left Airport", Kind: "airport"},
 	}
 	svc := New(repo, spaces, Config{}).(*service)
 	seedTwoPlayer(t, repo)
@@ -704,7 +704,7 @@ func TestCardNearestRailroadDoubleRent(t *testing.T) {
 	repo := newMemRepo()
 	spaces := memSpaces{
 		{BoardIndex: 7, Slug: "chance", Name: "Chance", Kind: "special", SpecialType: "chance"},
-		{BoardIndex: 15, Slug: "rr", Name: "Air", Kind: "railroad", Price: 200, Rents: []int{25, 50, 100, 200}},
+		{BoardIndex: 15, Slug: "rr", Name: "Air", Kind: "airport", Price: 200, Rents: []int{25, 50, 100, 200}},
 	}
 	svc := New(repo, spaces, Config{}).(*service)
 	seedTwoPlayer(t, repo)
@@ -721,7 +721,7 @@ func TestCardNearestRailroadDoubleRent(t *testing.T) {
 	if g.Players[0].BoardIndex != 15 {
 		t.Fatalf("board=%d want 15", g.Players[0].BoardIndex)
 	}
-	// Base railroad rent 25 × 2 = 50
+	// Base airport rent 25 × 2 = 50
 	if g.Players[0].Cash != 1950 || g.Players[1].Cash != 2050 {
 		t.Fatalf("cash a=%d b=%d", g.Players[0].Cash, g.Players[1].Cash)
 	}
@@ -791,11 +791,11 @@ func TestCardRepairsAndBirthday(t *testing.T) {
 }
 
 func TestNextIndexForward(t *testing.T) {
-	d, wrap := nextIndexForward(7, railroadIndices)
+	d, wrap := nextIndexForward(7, airportIndices)
 	if d != 15 || wrap {
 		t.Fatalf("got %d wrap=%v", d, wrap)
 	}
-	d, wrap = nextIndexForward(35, railroadIndices)
+	d, wrap = nextIndexForward(35, airportIndices)
 	if d != 5 || !wrap {
 		t.Fatalf("got %d wrap=%v", d, wrap)
 	}
@@ -1214,7 +1214,7 @@ func TestBuyUnownedProperty(t *testing.T) {
 	repo := newMemRepo()
 	spaces := memSpaces{
 		{BoardIndex: 1, Slug: "lagos", Name: "Lagos", Kind: "property", Price: 60},
-		{BoardIndex: 5, Slug: "air-1", Name: "Air Hub", Kind: "railroad", Price: 200},
+		{BoardIndex: 5, Slug: "air-1", Name: "Air Hub", Kind: "airport", Price: 200},
 	}
 	svc := New(repo, spaces, Config{})
 	seedTwoPlayer(t, repo)
@@ -1842,7 +1842,7 @@ func TestRentZeroWhenMortgaged(t *testing.T) {
 func TestMortgageRailroad(t *testing.T) {
 	repo := newMemRepo()
 	spaces := memSpaces{
-		{BoardIndex: 5, Slug: "air", Name: "Air", Kind: "railroad", Price: 200, Rents: []int{25, 50, 100, 200}},
+		{BoardIndex: 5, Slug: "air", Name: "Air", Kind: "airport", Price: 200, Rents: []int{25, 50, 100, 200}},
 	}
 	svc := New(repo, spaces, Config{})
 	seedTwoPlayer(t, repo)
@@ -1994,8 +1994,8 @@ func TestCannotAffordRentGoesNegativeAllowsEnd(t *testing.T) {
 
 func TestRailroadAndUtilityRent(t *testing.T) {
 	spaces := memSpaces{
-		{BoardIndex: 5, Slug: "a1", Name: "Air1", Kind: "railroad", Price: 200, Rents: []int{25, 50, 100, 200}},
-		{BoardIndex: 15, Slug: "a2", Name: "Air2", Kind: "railroad", Price: 200, Rents: []int{25, 50, 100, 200}},
+		{BoardIndex: 5, Slug: "a1", Name: "Air1", Kind: "airport", Price: 200, Rents: []int{25, 50, 100, 200}},
+		{BoardIndex: 15, Slug: "a2", Name: "Air2", Kind: "airport", Price: 200, Rents: []int{25, 50, 100, 200}},
 		{BoardIndex: 12, Slug: "elc", Name: "Power", Kind: "utility", Price: 150, UtilityMultiplier: []int{4, 10}},
 		{BoardIndex: 28, Slug: "wtr", Name: "Water", Kind: "utility", Price: 150, UtilityMultiplier: []int{4, 10}},
 	}

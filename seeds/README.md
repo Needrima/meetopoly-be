@@ -26,7 +26,7 @@ Every `worldId` is a **classic 40-space** Monopoly ring:
 | Chance | `7`, `22`, `36` (tile label **CHA**) |
 | Community Chest | `2`, `17`, `33` (tile label **CHE**) |
 | Income / Luxury tax | `4`, `38` |
-| Air (railroad) | `5`, `15`, `25`, `35` |
+| Air (airport) | `5`, `15`, `25`, `35` |
 | Power / Water | `12`, `28` |
 | Properties | 22 city slots |
 
@@ -54,7 +54,7 @@ City icons: [svgcities.com](https://svgcities.com/) / [anto1/city-icons](https:/
 ### Fields
 
 - `worldId` — board pack
-- `kind`: `property` (city) \| `railroad` \| `utility` \| `special`
+- `kind`: `property` (city) \| `airport` \| `utility` \| `special`
 - `boardIndex` — logical track order (game pin)
 - `boardCode` — short tile label (cities unique among properties; CHA/CHE shared; city may match airport IATA)
 - `map.x` / `map.z` — overworld placement
@@ -65,7 +65,7 @@ City icons: [svgcities.com](https://svgcities.com/) / [anto1/city-icons](https:/
 
 - **Cities (runtime):** `meetopoly-mobile/city-icons/icons/*.svg` (SVGCities, CC BY 4.0)
 - **Airports / utilities / specials:** `meetopoly-mobile/city-icons/generic/`
-- `kind` stays `railroad` / `utility` for rules; display is Air hubs + Power/Water
+- Air hubs use `kind: airport`; utilities stay `utility`
 - Specials: jail + go-to-jail → Tabler `prison`; tax → Tabler `tax`; free parking display **Layover**
 
 See `docs/plan.md` Phases 3–4 and skill `product.md` Worlds table.

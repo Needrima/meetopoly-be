@@ -87,7 +87,7 @@ func (c *locationSpaceCatalog) ListSpaces(ctx context.Context, worldID string) (
 
 func isBuyableKind(kind string) bool {
 	switch kind {
-	case "property", "railroad", "utility":
+	case "property", "airport", "utility":
 		return true
 	default:
 		return false
@@ -330,8 +330,8 @@ func rentDueForLanding(
 			idx = len(sp.Rents) - 1
 		}
 		return sp.Rents[idx], ownerID, "rent", spaceName
-	case "railroad":
-		n := countOwnedKind(spaces, deeds, ownerID, "railroad")
+	case "airport":
+		n := countOwnedKind(spaces, deeds, ownerID, "airport")
 		table := sp.Rents
 		if len(table) == 0 {
 			table = []int{25, 50, 100, 200}
