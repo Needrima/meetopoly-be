@@ -100,7 +100,7 @@ func (m *memRepo) ListUnstartedCreatedBefore(_ context.Context, before time.Time
 		if t.Status != tablerepo.StatusLobby || t.GameID != "" {
 			continue
 		}
-		if !t.CreatedAt.Before(before) {
+		if t.CreatedAt.After(before) {
 			continue
 		}
 		cp := *t
@@ -593,6 +593,87 @@ func TestSweepExpiredRemovesOccupiedLobbyKeepsFreshAndInGame(t *testing.T) {
 	}
 	if _, err := repo.FindByID(context.Background(), inGame.ID); err != nil {
 		t.Fatal("in_game should remain")
+	}
+}
+
+func TestJoinSoloResetsLobbyTTL(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, Config{LobbyTTL: 15 * time.Minute}).(*service)
+
+	stale := newEmptyTable("africa-1")
+	stale.CreatedAt = time.Now().UTC().Add(-10 * time.Minute)
+	stale.UpdatedAt = stale.CreatedAt
+	if err := repo.Insert(context.Background(), stale); err != nil {
+		t.Fatal(err)
+	}
+
+	view, err := svc.Join(context.Background(), "solo", "Solo", "africa-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.ID != stale.ID {
+		t.Fatalf("expected same open lobby, got %s want %s", view.ID, stale.ID)
+	}
+	exp, err := time.Parse(time.RFC3339, view.ExpiresAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if time.Until(exp) < 14*time.Minute {
+		t.Fatalf("expiresAt too soon after solo join: %v", view.ExpiresAt)
+	}
+	stored, err := repo.FindByID(context.Background(), view.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if time.Since(stored.CreatedAt) > 5*time.Second {
+		t.Fatalf("createdAt not refreshed: %v", stored.CreatedAt)
+	}
+
+	// Second player joining must not reset TTL.
+	before := stored.CreatedAt
+	if _, err := svc.Join(context.Background(), "two", "Two", "africa-1"); err != nil {
+		t.Fatal(err)
+	}
+	afterTwo, err := repo.FindByID(context.Background(), view.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !afterTwo.CreatedAt.Equal(before) {
+		t.Fatalf("createdAt changed on second join: %v → %v", before, afterTwo.CreatedAt)
+	}
+}
+
+func TestJoinByInviteCodeSoloResetsLobbyTTL(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, Config{LobbyTTL: 15 * time.Minute}).(*service)
+
+	host, err := svc.CreatePrivate(context.Background(), "host", "Host", "africa-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code := *host.InviteCode
+	if _, err := svc.Leave(context.Background(), host.ID, "host"); err != nil {
+		t.Fatal(err)
+	}
+	stored, err := repo.FindByID(context.Background(), host.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stored.CreatedAt = time.Now().UTC().Add(-10 * time.Minute)
+	if err := repo.Update(context.Background(), stored); err != nil {
+		t.Fatal(err)
+	}
+
+	view, err := svc.JoinByInviteCode(context.Background(), "guest", "Guest", code)
+	if err != nil {
+		t.Fatal(err)
+	}
+	exp, err := time.Parse(time.RFC3339, view.ExpiresAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if time.Until(exp) < 14*time.Minute {
+		t.Fatalf("expiresAt too soon after solo invite join: %v", view.ExpiresAt)
 	}
 }
 

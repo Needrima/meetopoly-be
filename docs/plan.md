@@ -1608,6 +1608,7 @@ Menu → Play → hub (3 CTAs)
 
 - ✅ Lobby shows countdown from server `expiresAt`; WS `expired` / zero / Ready `not_found` → expired screen + Back to Play.
 - ✅ Join-code copy covers expired codes. Full smoke → **20.8**.
+- ✅ Solo join (public or invite) refreshes `createdAt` → fresh 15m; countdown banner isolated (no Ready jitter).
 
 **API (contract)**
 

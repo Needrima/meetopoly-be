@@ -132,6 +132,7 @@ func (s *service) Join(ctx context.Context, userID, username, worldID string) (*
 					ensureSeatColor(existing, i)
 				}
 			}
+			refreshLobbyTTLIfSolo(existing)
 			if err := s.repo.Update(ctx, existing); err != nil {
 				return nil, err
 			}
@@ -162,6 +163,7 @@ func (s *service) Join(ctx context.Context, userID, username, worldID string) (*
 		if err := seatUser(t, userID, username); err != nil {
 			return nil, err
 		}
+		refreshLobbyTTLIfSolo(t)
 		if err := s.repo.Insert(ctx, t); err != nil {
 			return nil, err
 		}
@@ -176,6 +178,7 @@ func (s *service) Join(ctx context.Context, userID, username, worldID string) (*
 		if err := seatUser(t, userID, username); err != nil {
 			return nil, err
 		}
+		refreshLobbyTTLIfSolo(t)
 		if err := s.repo.Insert(ctx, t); err != nil {
 			return nil, err
 		}
@@ -187,6 +190,7 @@ func (s *service) Join(ctx context.Context, userID, username, worldID string) (*
 	if err := seatUser(t, userID, username); err != nil {
 		return nil, err
 	}
+	refreshLobbyTTLIfSolo(t)
 	if err := s.repo.Update(ctx, t); err != nil {
 		return nil, err
 	}
@@ -279,6 +283,7 @@ func (s *service) JoinByInviteCode(ctx context.Context, userID, username, invite
 		seat.HoldEndsAt = nil
 		seat.Username = username
 		ensureSeatColor(t, seat.SeatIndex)
+		refreshLobbyTTLIfSolo(t)
 		if err := s.repo.Update(ctx, t); err != nil {
 			return nil, err
 		}
@@ -321,6 +326,7 @@ func (s *service) JoinByInviteCode(ctx context.Context, userID, username, invite
 	if err := seatUser(t, userID, username); err != nil {
 		return nil, err
 	}
+	refreshLobbyTTLIfSolo(t)
 	if err := s.repo.Update(ctx, t); err != nil {
 		return nil, err
 	}
@@ -430,6 +436,20 @@ func (s *service) isLobbyExpired(t *tablerepo.Table) bool {
 		return false
 	}
 	return !t.CreatedAt.UTC().Add(s.cfg.LobbyTTL).After(time.Now().UTC())
+}
+
+// refreshLobbyTTLIfSolo bumps createdAt when exactly one player is seated so a
+// recycled public/private lobby gets a fresh LobbyTTL window (Phase 20.6 follow-up).
+func refreshLobbyTTLIfSolo(t *tablerepo.Table) {
+	if t == nil || t.Status != tablerepo.StatusLobby || t.GameID != "" {
+		return
+	}
+	if tablerepo.OccupiedCount(t) != 1 {
+		return
+	}
+	now := time.Now().UTC()
+	t.CreatedAt = now
+	t.UpdatedAt = now
 }
 
 func (s *service) expiresAtUTC(t *tablerepo.Table) time.Time {

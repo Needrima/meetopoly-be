@@ -134,7 +134,7 @@ func (r *MongoRepository) FindOpenLobby(ctx context.Context, worldID string, cre
 func (r *MongoRepository) ListUnstartedCreatedBefore(ctx context.Context, before time.Time) ([]*Table, error) {
 	filter := bson.M{
 		"status":    StatusLobby,
-		"createdAt": bson.M{"$lt": before.UTC()},
+		"createdAt": bson.M{"$lte": before.UTC()},
 		"$or": []bson.M{
 			{"gameId": bson.M{"$exists": false}},
 			{"gameId": ""},
