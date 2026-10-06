@@ -38,6 +38,8 @@ type PeerInfo struct {
 	Username string `json:"username"`
 	// Country is ISO 3166-1 alpha-2 when known (Phase 9.0a).
 	Country string `json:"country,omitempty"`
+	// AvatarURL is the public profile photo when set (Phase 19.0).
+	AvatarURL string `json:"avatarUrl,omitempty"`
 }
 
 // ICEServerJSON is exposed to clients in the welcome message.
@@ -77,6 +79,7 @@ type peer struct {
 	userID      string
 	username    string
 	country     string
+	avatarURL   string
 	pc          *webrtc.PeerConnection
 	dc          *webrtc.DataChannel
 	signal      SignalWriter
@@ -167,7 +170,7 @@ func (s *SFU) Roster(roomID, excludeUserID string) []PeerInfo {
 		if excludeUserID != "" && id == excludeUserID {
 			continue
 		}
-		out = append(out, PeerInfo{UserID: p.userID, Username: p.username, Country: p.country})
+		out = append(out, PeerInfo{UserID: p.userID, Username: p.username, Country: p.country, AvatarURL: p.avatarURL})
 	}
 	return out
 }
@@ -198,7 +201,8 @@ func (s *SFU) BoardVideoPublisherCount(roomID string) int {
 // If the user was already attached, the previous PeerConnection is closed.
 // Hub rooms (`hub:…`) reject a new userId when the room already has MaxHubPeers.
 // country is optional ISO 3166-1 alpha-2 (Phase 9.0a).
-func (s *SFU) Attach(roomID, userID, username, country string, signal SignalWriter) error {
+// avatarURL is the optional public profile photo URL (Phase 19.0).
+func (s *SFU) Attach(roomID, userID, username, country, avatarURL string, signal SignalWriter) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -222,10 +226,11 @@ func (s *SFU) Attach(roomID, userID, username, country string, signal SignalWrit
 		return ErrHubFull
 	}
 	r.peers[userID] = &peer{
-		userID:   userID,
-		username: username,
-		country:  strings.ToUpper(strings.TrimSpace(country)),
-		signal:   signal,
+		userID:    userID,
+		username:  username,
+		country:   strings.ToUpper(strings.TrimSpace(country)),
+		avatarURL: strings.TrimSpace(avatarURL),
+		signal:    signal,
 	}
 	return nil
 }
@@ -247,7 +252,7 @@ func (s *SFU) Detach(roomID, userID string, signal SignalWriter) (info PeerInfo,
 	if signal != nil && p.signal != signal {
 		return PeerInfo{}, false
 	}
-	info = PeerInfo{UserID: p.userID, Username: p.username, Country: p.country}
+	info = PeerInfo{UserID: p.userID, Username: p.username, Country: p.country, AvatarURL: p.avatarURL}
 	s.unpublishHubAudioLocked(r, userID)
 	s.unpublishBoardVideoLocked(r, userID)
 	s.closePeerLocked(p)

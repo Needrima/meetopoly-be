@@ -27,6 +27,7 @@ type mongoDoc struct {
 	PasswordHash  string             `bson:"passwordHash,omitempty"`
 	Username      string             `bson:"username,omitempty"`
 	Country       string             `bson:"country,omitempty"`
+	AvatarURL     string             `bson:"avatarUrl,omitempty"`
 	EmailVerified bool               `bson:"emailVerified"`
 	CreatedAt     time.Time          `bson:"createdAt"`
 	UpdatedAt     time.Time          `bson:"updatedAt"`
@@ -74,6 +75,7 @@ func (r *MongoRepository) Create(ctx context.Context, u *User) error {
 		PasswordHash:  u.PasswordHash,
 		Username:      u.Username,
 		Country:       u.Country,
+		AvatarURL:     u.AvatarURL,
 		EmailVerified: u.EmailVerified,
 		CreatedAt:     u.CreatedAt,
 		UpdatedAt:     u.UpdatedAt,
@@ -149,6 +151,7 @@ func (r *MongoRepository) Update(ctx context.Context, u *User) error {
 			"passwordHash":  u.PasswordHash,
 			"username":      u.Username,
 			"country":       u.Country,
+			"avatarUrl":     u.AvatarURL,
 			"emailVerified": u.EmailVerified,
 			"updatedAt":     u.UpdatedAt,
 		},
@@ -173,6 +176,7 @@ func docToUser(doc mongoDoc) *User {
 		PasswordHash:  doc.PasswordHash,
 		Username:      doc.Username,
 		Country:       doc.Country,
+		AvatarURL:     doc.AvatarURL,
 		EmailVerified: doc.EmailVerified,
 		CreatedAt:     doc.CreatedAt,
 		UpdatedAt:     doc.UpdatedAt,

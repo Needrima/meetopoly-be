@@ -1,7 +1,6 @@
 package websocket
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -20,14 +19,15 @@ import (
 )
 
 type presenceClient struct {
-	conn     *websocket.Conn
-	gameID   string
-	roomID   string
-	userID   string
-	username string
-	country  string
-	send     chan []byte
-	hub      *PresenceHub
+	conn      *websocket.Conn
+	gameID    string
+	roomID    string
+	userID    string
+	username  string
+	country   string
+	avatarURL string
+	send      chan []byte
+	hub       *PresenceHub
 }
 
 func (c *presenceClient) WriteJSON(v any) error {
@@ -155,9 +155,19 @@ func (h *PresenceHub) HandleBoardPresence(w http.ResponseWriter, r *http.Request
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
-	country := profileCountry(r.Context(), h.users, userID)
+	country := ""
+	avatarURL := ""
+	if h.users != nil {
+		if profile, uerr := h.users.GetByID(r.Context(), userID); uerr == nil && profile != nil {
+			if profile.Username != "" {
+				username = profile.Username
+			}
+			country = strings.ToUpper(strings.TrimSpace(profile.Country))
+			avatarURL = strings.TrimSpace(profile.AvatarURL)
+		}
+	}
 
-	h.joinPresence(w, r, rtcadapter.BoardRoomID(gameID), gameID, userID, username, country)
+	h.joinPresence(w, r, rtcadapter.BoardRoomID(gameID), gameID, userID, username, country, avatarURL)
 }
 
 // HandleHubPresence upgrades to WebSocket for hub:{…} presence (Phase 8.0).
@@ -183,22 +193,24 @@ func (h *PresenceHub) HandleHubPresence(w http.ResponseWriter, r *http.Request) 
 
 	username := "Player"
 	country := ""
+	avatarURL := ""
 	if h.users != nil {
 		if profile, uerr := h.users.GetByID(r.Context(), userID); uerr == nil && profile != nil {
 			if profile.Username != "" {
 				username = profile.Username
 			}
 			country = strings.ToUpper(strings.TrimSpace(profile.Country))
+			avatarURL = strings.TrimSpace(profile.AvatarURL)
 		}
 	}
 
-	h.joinPresence(w, r, rtcadapter.HubRoomID(hubID), "", userID, username, country)
+	h.joinPresence(w, r, rtcadapter.HubRoomID(hubID), "", userID, username, country, avatarURL)
 }
 
 func (h *PresenceHub) joinPresence(
 	w http.ResponseWriter,
 	r *http.Request,
-	roomID, gameID, userID, username, country string,
+	roomID, gameID, userID, username, country, avatarURL string,
 ) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -207,14 +219,15 @@ func (h *PresenceHub) joinPresence(
 	}
 
 	c := &presenceClient{
-		conn:     conn,
-		gameID:   gameID,
-		roomID:   roomID,
-		userID:   userID,
-		username: username,
-		country:  country,
-		send:     make(chan []byte, 32),
-		hub:      h,
+		conn:      conn,
+		gameID:    gameID,
+		roomID:    roomID,
+		userID:    userID,
+		username:  username,
+		country:   country,
+		avatarURL: avatarURL,
+		send:      make(chan []byte, 32),
+		hub:       h,
 	}
 
 	alreadyPresent := false
@@ -225,7 +238,7 @@ func (h *PresenceHub) joinPresence(
 		}
 	}
 
-	if err := h.sfu.Attach(roomID, userID, username, country, c); err != nil {
+	if err := h.sfu.Attach(roomID, userID, username, country, avatarURL, c); err != nil {
 		if errors.Is(err, rtcadapter.ErrHubFull) {
 			// writePump not started yet — write the error frame directly.
 			if b, merr := json.Marshal(map[string]any{"type": "error", "message": "hub full"}); merr == nil {
@@ -250,6 +263,9 @@ func (h *PresenceHub) joinPresence(
 		"peers":      h.sfu.Roster(roomID, userID),
 		"iceServers": h.sfu.ICEServersJSON(),
 	}
+	if avatarURL != "" {
+		welcome["avatarUrl"] = avatarURL
+	}
 	if b, err := json.Marshal(welcome); err == nil {
 		select {
 		case c.send <- b:
@@ -266,22 +282,14 @@ func (h *PresenceHub) joinPresence(
 		if country != "" {
 			joined["country"] = country
 		}
+		if avatarURL != "" {
+			joined["avatarUrl"] = avatarURL
+		}
 		h.broadcast(roomID, userID, joined)
 	}
 
 	go c.writePump()
 	c.readPump()
-}
-
-func profileCountry(ctx context.Context, users usersvc.Service, userID string) string {
-	if users == nil || userID == "" {
-		return ""
-	}
-	profile, err := users.GetByID(ctx, userID)
-	if err != nil || profile == nil {
-		return ""
-	}
-	return strings.ToUpper(strings.TrimSpace(profile.Country))
 }
 
 func playerUsername(view *gamesvc.View, userID string) (string, bool) {

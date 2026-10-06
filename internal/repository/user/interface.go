@@ -12,6 +12,7 @@ type User struct {
 	PasswordHash  string
 	Username      string
 	Country       string
+	AvatarURL     string
 	EmailVerified bool
 	CreatedAt     time.Time
 	UpdatedAt     time.Time

@@ -74,6 +74,8 @@ type PlayerView struct {
 	TurnTimeouts int `json:"turnTimeouts"`
 	// Country — ISO 3166-1 alpha-2 from the user profile (Phase 9.0a); not stored on the game doc.
 	Country string `json:"country,omitempty"`
+	// AvatarURL — public profile photo from the user profile (Phase 19.0); not stored on the game doc.
+	AvatarURL string `json:"avatarUrl,omitempty"`
 	// HubID set while inside a hub (Phase 8.2); omitted when on the board.
 	HubID string `json:"hubId,omitempty"`
 	// HubRevision — bumps on leave/resign; clients send it on enter-hub to ignore stale enters (8.4).
@@ -265,6 +267,8 @@ type Service interface {
 	SetBroadcaster(b Broadcaster)
 	// SetCountryLookup enriches PlayerView.Country from user profiles (Phase 9.0a).
 	SetCountryLookup(l CountryLookup)
+	// SetAvatarLookup enriches PlayerView.AvatarURL (and live Username) from profiles (Phase 19.0).
+	SetAvatarLookup(l AvatarLookup)
 }
 
 // Config tunes game service timers (Phase 7.5 disconnect hold).
@@ -289,6 +293,7 @@ type service struct {
 	mu            sync.Mutex
 	bcast         Broadcaster
 	countries     CountryLookup
+	avatars       AvatarLookup
 	bankTimers    map[string]*time.Timer
 	auctionTimers map[string]*time.Timer
 	tradeTimers   map[string]*time.Timer
@@ -322,6 +327,11 @@ func (s *service) SetBroadcaster(b Broadcaster) {
 func (s *service) SetCountryLookup(l CountryLookup) {
 	// Boot-only; read lock-free from viewOf (may already hold s.mu).
 	s.countries = l
+}
+
+func (s *service) SetAvatarLookup(l AvatarLookup) {
+	// Boot-only; read lock-free from viewOf (may already hold s.mu).
+	s.avatars = l
 }
 
 func (s *service) broadcast(gameID string, ev Event) {
@@ -1937,6 +1947,7 @@ func (s *service) loadSpaces(ctx context.Context, worldID string) []Space {
 func (s *service) viewOf(ctx context.Context, g *gamerepo.Game) *View {
 	v := toView(g, s.loadSpaces(ctx, g.WorldID))
 	s.enrichCountries(ctx, v)
+	s.enrichAvatars(ctx, v)
 	return v
 }
 
@@ -1948,6 +1959,22 @@ func (s *service) enrichCountries(ctx context.Context, v *View) {
 	for i := range v.Players {
 		if c := strings.ToUpper(strings.TrimSpace(lookup.CountryForUser(ctx, v.Players[i].UserID))); c != "" {
 			v.Players[i].Country = c
+		}
+	}
+}
+
+func (s *service) enrichAvatars(ctx context.Context, v *View) {
+	if v == nil || s.avatars == nil {
+		return
+	}
+	lookup := s.avatars
+	for i := range v.Players {
+		uid := v.Players[i].UserID
+		if url := strings.TrimSpace(lookup.AvatarURLForUser(ctx, uid)); url != "" {
+			v.Players[i].AvatarURL = url
+		}
+		if name := strings.TrimSpace(lookup.UsernameForUser(ctx, uid)); name != "" {
+			v.Players[i].Username = name
 		}
 	}
 }

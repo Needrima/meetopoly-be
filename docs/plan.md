@@ -1497,6 +1497,30 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 
 ---
 
+## Phase 19 — Settings profile (username + avatar)
+
+**Goal:** Change username and upload/replace/remove a profile photo (Supabase Storage). Photos appear on board/hub walkers, hub roster, lobby seats, Meet seat grid, and player info modal; pin markers stay colored chips; photo circles use pin/avatar accent as border.
+
+### 19.0 — Backend + Supabase (this slice)
+
+- Env: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, `SUPABASE_STORAGE_BUCKET` (default `avatars`)
+- Mongo `users.avatarUrl`; `UserProfile.avatarUrl`
+- `PATCH /me` `{ username }` — same validation as signup; updates lobby seat username when seated
+- `POST /me/avatar` multipart `file` (JPEG/PNG/WebP ≤1 MiB) → Supabase public URL
+- `DELETE /me/avatar`
+- Presence `PeerInfo` / welcome / `peer-joined` include `avatarUrl`
+- Game `PlayerView.avatarUrl` (+ live username) and table `SeatView.avatarUrl` enriched from profile
+
+**Exit:** Fill Supabase env + create public `avatars` bucket; curl PATCH/POST/DELETE; then start **19.1** mobile UI.
+
+### 19.1 — Mobile UI (next)
+
+- Settings: username form + circular avatar (edit/trash)
+- `AvatarPod` / `BoardAvatar` optional `imageUrl`
+- Wire presence + game + lobby surfaces
+
+---
+
 ## 5. Cross-cutting concerns
 
 ### 5.1 Testing

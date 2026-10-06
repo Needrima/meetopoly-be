@@ -13,12 +13,13 @@ import (
 )
 
 type service struct {
-	repo    tablerepo.Repository
-	cfg     Config
-	bcast   Broadcaster
+	repo        tablerepo.Repository
+	cfg         Config
+	bcast       Broadcaster
 	gameStarter GameStarter
-	mu      sync.Mutex
-	holds   map[string]*time.Timer
+	avatars     AvatarLookup
+	mu          sync.Mutex
+	holds       map[string]*time.Timer
 }
 
 // New builds a table Service.
@@ -39,6 +40,47 @@ func (s *service) SetBroadcaster(b Broadcaster) {
 
 func (s *service) SetGameStarter(g GameStarter) {
 	s.gameStarter = g
+}
+
+func (s *service) SetAvatarLookup(l AvatarLookup) {
+	s.avatars = l
+}
+
+func (s *service) UpdateSeatedUsername(ctx context.Context, userID, username string) error {
+	userID = strings.TrimSpace(userID)
+	username = strings.TrimSpace(username)
+	if userID == "" || username == "" {
+		return nil
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	t, err := s.repo.FindLobbyByUser(ctx, userID)
+	if err != nil {
+		if errors.Is(err, tablerepo.ErrNotFound) {
+			return nil
+		}
+		return err
+	}
+	changed := false
+	for i := range t.Seats {
+		if t.Seats[i].UserID == userID {
+			if t.Seats[i].Username != username {
+				t.Seats[i].Username = username
+				changed = true
+			}
+		}
+	}
+	if !changed {
+		return nil
+	}
+	if err := s.repo.Update(ctx, t); err != nil {
+		return err
+	}
+	view := s.viewOf(ctx, t)
+	s.broadcast(t.ID, Event{Type: "state", Table: view})
+	return nil
 }
 
 func (s *service) Join(ctx context.Context, userID, username, worldID string) (*View, error) {
@@ -74,7 +116,7 @@ func (s *service) Join(ctx context.Context, userID, username, worldID string) (*
 			if err := s.repo.Update(ctx, existing); err != nil {
 				return nil, err
 			}
-			view := toView(existing)
+			view := s.viewOf(ctx, existing)
 			s.broadcast(existing.ID, Event{Type: "state", Table: view})
 			return view, nil
 		}
@@ -99,7 +141,7 @@ func (s *service) Join(ctx context.Context, userID, username, worldID string) (*
 		if err := s.repo.Insert(ctx, t); err != nil {
 			return nil, err
 		}
-		view := toView(t)
+		view := s.viewOf(ctx, t)
 		s.broadcast(t.ID, Event{Type: "state", Table: view})
 		return view, nil
 	}
@@ -110,7 +152,7 @@ func (s *service) Join(ctx context.Context, userID, username, worldID string) (*
 	if err := s.repo.Update(ctx, t); err != nil {
 		return nil, err
 	}
-	view := toView(t)
+	view := s.viewOf(ctx, t)
 	s.broadcast(t.ID, Event{Type: "state", Table: view})
 	return view, nil
 }
@@ -123,7 +165,7 @@ func (s *service) Get(ctx context.Context, tableID string) (*View, error) {
 		}
 		return nil, err
 	}
-	return toView(t), nil
+	return s.viewOf(ctx, t), nil
 }
 
 func (s *service) SetReady(ctx context.Context, tableID, userID string, ready bool) (*View, error) {
@@ -160,14 +202,14 @@ func (s *service) SetReady(ctx context.Context, tableID, userID string, ready bo
 		if s.gameStarter == nil {
 			return nil, ErrWrongStatus
 		}
-		viewSeats := toView(t).Seats
+		viewSeats := s.viewOf(ctx, t).Seats
 		gameID, err := s.gameStarter.StartFromTable(ctx, t.ID, t.WorldID, viewSeats)
 		if err != nil {
 			// Keep lobby + Ready flags; do not leave status stuck on starting.
 			if updErr := s.repo.Update(ctx, t); updErr != nil {
 				return nil, updErr
 			}
-			view := toView(t)
+			view := s.viewOf(ctx, t)
 			s.broadcast(t.ID, Event{Type: "state", Table: view})
 			return view, err
 		}
@@ -179,7 +221,7 @@ func (s *service) SetReady(ctx context.Context, tableID, userID string, ready bo
 	if err := s.repo.Update(ctx, t); err != nil {
 		return nil, err
 	}
-	view := toView(t)
+	view := s.viewOf(ctx, t)
 	s.broadcast(t.ID, Event{Type: "state", Table: view})
 	if started {
 		s.broadcast(t.ID, Event{Type: "started", Table: view})
@@ -211,13 +253,13 @@ func (s *service) leaveLocked(ctx context.Context, t *tablerepo.Table, userID st
 		}
 	}
 	if !cleared {
-		return toView(t), nil
+		return s.viewOf(ctx, t), nil
 	}
 	normalizeMatchmakingStatus(t)
 	if err := s.repo.Update(ctx, t); err != nil {
 		return nil, err
 	}
-	view := toView(t)
+	view := s.viewOf(ctx, t)
 	s.broadcast(t.ID, Event{Type: "state", Table: view})
 	return view, nil
 }
@@ -262,11 +304,11 @@ func (s *service) Disconnect(ctx context.Context, tableID, userID string) (*View
 		return nil, err
 	}
 	if t.Status != tablerepo.StatusLobby {
-		return toView(t), nil
+		return s.viewOf(ctx, t), nil
 	}
 	seat := findSeat(t, userID)
 	if seat == nil {
-		return toView(t), nil
+		return s.viewOf(ctx, t), nil
 	}
 	ends := time.Now().UTC().Add(s.cfg.DisconnectHold)
 	seat.Holding = true
@@ -276,7 +318,7 @@ func (s *service) Disconnect(ctx context.Context, tableID, userID string) (*View
 	if err := s.repo.Update(ctx, t); err != nil {
 		return nil, err
 	}
-	view := toView(t)
+	view := s.viewOf(ctx, t)
 	s.broadcast(t.ID, Event{Type: "state", Table: view})
 
 	s.clearHoldLocked(tableID, userID)
@@ -422,28 +464,33 @@ func everyoneReady(t *tablerepo.Table) bool {
 	return n >= tablerepo.MinSeats
 }
 
-func toView(t *tablerepo.Table) *View {
+func (s *service) viewOf(ctx context.Context, t *tablerepo.Table) *View {
 	seats := make([]SeatView, len(t.Seats))
-	for i, s := range t.Seats {
+	for i, seat := range t.Seats {
 		sv := SeatView{
-			SeatIndex: s.SeatIndex,
-			Ready:     s.Ready,
-			Holding:   s.Holding,
+			SeatIndex: seat.SeatIndex,
+			Ready:     seat.Ready,
+			Holding:   seat.Holding,
 		}
-		if s.UserID != "" {
-			uid := s.UserID
+		if seat.UserID != "" {
+			uid := seat.UserID
 			sv.UserID = &uid
+			if s.avatars != nil {
+				if url := strings.TrimSpace(s.avatars.AvatarURLForUser(ctx, seat.UserID)); url != "" {
+					sv.AvatarURL = &url
+				}
+			}
 		}
-		if s.Username != "" {
-			name := s.Username
+		if seat.Username != "" {
+			name := seat.Username
 			sv.Username = &name
 		}
-		if s.PinColor != "" {
-			c := s.PinColor
+		if seat.PinColor != "" {
+			c := seat.PinColor
 			sv.PinColor = &c
 		}
-		if s.HoldEndsAt != nil {
-			iso := s.HoldEndsAt.UTC().Format(time.RFC3339)
+		if seat.HoldEndsAt != nil {
+			iso := seat.HoldEndsAt.UTC().Format(time.RFC3339)
 			sv.HoldEndsAt = &iso
 		}
 		seats[i] = sv

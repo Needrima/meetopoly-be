@@ -21,6 +21,8 @@ type SeatView struct {
 	UserID     *string `json:"userId"`
 	Username   *string `json:"username"`
 	PinColor   *string `json:"pinColor"`
+	// AvatarURL from the user profile (Phase 19.0); not stored on the seat doc.
+	AvatarURL  *string `json:"avatarUrl,omitempty"`
 	Ready      bool    `json:"ready"`
 	Holding    bool    `json:"holding"`
 	HoldEndsAt *string `json:"holdEndsAt"`
@@ -66,4 +68,13 @@ type Service interface {
 	Disconnect(ctx context.Context, tableID, userID string) (*View, error)
 	SetBroadcaster(b Broadcaster)
 	SetGameStarter(g GameStarter)
+	// SetAvatarLookup enriches SeatView.AvatarURL from user profiles (Phase 19.0).
+	SetAvatarLookup(l AvatarLookup)
+	// UpdateSeatedUsername renames the user on their open lobby seat (if any).
+	UpdateSeatedUsername(ctx context.Context, userID, username string) error
+}
+
+// AvatarLookup resolves profile photo URLs for lobby seats (Phase 19.0).
+type AvatarLookup interface {
+	AvatarURLForUser(ctx context.Context, userID string) string
 }

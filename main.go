@@ -12,6 +12,7 @@ import (
 	"time"
 
 	httpadapter "meetopoly-be/internal/adapters/http"
+	"meetopoly-be/internal/adapters/storage/supabase"
 	wsadapter "meetopoly-be/internal/adapters/websocket"
 	"meetopoly-be/internal/platform/config"
 	mongoplatform "meetopoly-be/internal/platform/mongo"
@@ -100,19 +101,27 @@ func main() {
 		From: cfg.SMTPFrom,
 	})
 
+	supabaseStore := supabase.New(supabase.Config{
+		URL:            cfg.SupabaseURL,
+		ServiceRoleKey: cfg.SupabaseServiceRoleKey,
+		Bucket:         cfg.SupabaseStorageBucket,
+	})
 	authSvc := auth.New(users, codes, sessions, mailer, auth.Config{
 		SignupTokenTTL:      cfg.SignupTokenTTL,
 		VerificationCodeTTL: cfg.VerificationCodeTTL,
 	})
-	userSvc := usersvc.New(users)
+	userSvc := usersvc.New(users, supabaseStore)
 	locationSvc := locationsvc.New(locations)
 	gameSvc := gamesvc.New(repoGames, gamesvc.NewLocationSpaceCatalog(locations), gamesvc.Config{
 		DisconnectHold: cfg.GameDisconnectHold,
 	})
-	gameSvc.SetCountryLookup(userCountryLookup{users: userSvc})
+	profileLookup := userProfileLookup{users: userSvc}
+	gameSvc.SetCountryLookup(profileLookup)
+	gameSvc.SetAvatarLookup(profileLookup)
 	tableSvc := tablesvc.New(tables, tablesvc.Config{
 		DisconnectHold: 45 * time.Second,
 	})
+	tableSvc.SetAvatarLookup(profileLookup)
 	tableSvc.SetGameStarter(gamesvc.TableBridge{Games: gameSvc})
 	resolveUser := httpadapter.ResolveWSUser(authSvc)
 	tableWS := wsadapter.NewHub(tableSvc, resolveUser)
@@ -165,12 +174,12 @@ func main() {
 	}
 }
 
-// userCountryLookup adapts usersvc → gamesvc.CountryLookup (Phase 9.0a).
-type userCountryLookup struct {
+// userProfileLookup adapts usersvc → game/table profile enrichment (Phase 9.0a + 19.0).
+type userProfileLookup struct {
 	users usersvc.Service
 }
 
-func (u userCountryLookup) CountryForUser(ctx context.Context, userID string) string {
+func (u userProfileLookup) CountryForUser(ctx context.Context, userID string) string {
 	if u.users == nil || userID == "" {
 		return ""
 	}
@@ -179,4 +188,26 @@ func (u userCountryLookup) CountryForUser(ctx context.Context, userID string) st
 		return ""
 	}
 	return strings.ToUpper(strings.TrimSpace(profile.Country))
+}
+
+func (u userProfileLookup) AvatarURLForUser(ctx context.Context, userID string) string {
+	if u.users == nil || userID == "" {
+		return ""
+	}
+	profile, err := u.users.GetByID(ctx, userID)
+	if err != nil || profile == nil {
+		return ""
+	}
+	return strings.TrimSpace(profile.AvatarURL)
+}
+
+func (u userProfileLookup) UsernameForUser(ctx context.Context, userID string) string {
+	if u.users == nil || userID == "" {
+		return ""
+	}
+	profile, err := u.users.GetByID(ctx, userID)
+	if err != nil || profile == nil {
+		return ""
+	}
+	return strings.TrimSpace(profile.Username)
 }

@@ -385,6 +385,127 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: patchMe
+      summary: Update current user profile fields
+      description: Phase 19.0 — change username (same rules as signup profile).
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchMeRequest"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          description: Invalid username
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid session token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Username taken
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /me/avatar:
+    post:
+      operationId: uploadAvatar
+      summary: Upload profile avatar
+      description: |
+        Phase 19.0 — multipart field `file` (JPEG/PNG/WebP, max 1 MiB).
+        Stored in Supabase Storage; returns updated UserProfile with `avatarUrl`.
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          description: Invalid image
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid session token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "413":
+          description: Image too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Storage not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteAvatar
+      summary: Remove profile avatar
+      description: Phase 19.0 — clears `avatarUrl` and deletes the Storage object.
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Missing or invalid session token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Storage not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /worlds:
     get:
@@ -2124,11 +2245,24 @@ components:
           type: string
           nullable: true
           description: ISO 3166-1 alpha-2 when set
+        avatarUrl:
+          type: string
+          nullable: true
+          description: Public Supabase Storage URL when a profile photo is set (Phase 19.0)
         emailVerified:
           type: boolean
         profileComplete:
           type: boolean
           description: True when username and country are set
+    PatchMeRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - username
+      properties:
+        username:
+          type: string
+          description: Unique username (letters, digits, underscore), 3–20 chars
     WorldSummary:
       type: object
       additionalProperties: false
@@ -2263,6 +2397,10 @@ components:
           nullable: true
           description: Unique seat accent assigned on lobby join (`#RRGGBB`)
           pattern: "^#[0-9A-Fa-f]{6}$"
+        avatarUrl:
+          type: string
+          nullable: true
+          description: Public profile photo URL from the user profile (Phase 19.0)
         ready:
           type: boolean
         holding:
@@ -2353,6 +2491,11 @@ components:
           type: string
           description: |
             Phase 9.0a — ISO 3166-1 alpha-2 from the user profile (enriched on read;
+            not stored on the game document).
+        avatarUrl:
+          type: string
+          description: |
+            Phase 19.0 — public profile photo URL from the user profile (enriched on read;
             not stored on the game document).
         hubId:
           type: string

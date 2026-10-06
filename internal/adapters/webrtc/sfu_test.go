@@ -27,15 +27,15 @@ func TestHubRoomFull(t *testing.T) {
 	room := HubRoomID("africa-1:lagos")
 	for i := 0; i < MaxHubPeers; i++ {
 		id := fmt.Sprintf("u%d", i)
-		if err := sfu.Attach(room, id, id, "", &memSignal{}); err != nil {
+		if err := sfu.Attach(room, id, id, "", "", &memSignal{}); err != nil {
 			t.Fatalf("attach %d: %v", i, err)
 		}
 	}
-	if err := sfu.Attach(room, "overflow", "X", "", &memSignal{}); !errors.Is(err, ErrHubFull) {
+	if err := sfu.Attach(room, "overflow", "X", "", "", &memSignal{}); !errors.Is(err, ErrHubFull) {
 		t.Fatalf("want ErrHubFull got %v", err)
 	}
 	// Reconnect of an existing peer must still succeed.
-	if err := sfu.Attach(room, "u0", "u0", "", &memSignal{}); err != nil {
+	if err := sfu.Attach(room, "u0", "u0", "", "", &memSignal{}); err != nil {
 		t.Fatalf("reconnect: %v", err)
 	}
 }
@@ -53,7 +53,7 @@ func TestAllowPoseRateLimit(t *testing.T) {
 	sfu := NewSFU()
 	room := BoardRoomID("rate")
 	sig := &memSignal{}
-	if err := sfu.Attach(room, "u1", "Ada", "", sig); err != nil {
+	if err := sfu.Attach(room, "u1", "Ada", "", "", sig); err != nil {
 		t.Fatal(err)
 	}
 	if !sfu.allowPose(room, "u1") {
@@ -77,10 +77,10 @@ func TestAttachDetachRoster(t *testing.T) {
 	room := BoardRoomID("game-a")
 	a := &memSignal{}
 	b := &memSignal{}
-	if err := sfu.Attach(room, "u1", "Ada", "", a); err != nil {
+	if err := sfu.Attach(room, "u1", "Ada", "", "", a); err != nil {
 		t.Fatal(err)
 	}
-	if err := sfu.Attach(room, "u2", "Bob", "", b); err != nil {
+	if err := sfu.Attach(room, "u2", "Bob", "", "", b); err != nil {
 		t.Fatal(err)
 	}
 	roster := sfu.Roster(room, "u1")
@@ -108,10 +108,10 @@ func TestDetachIgnoresStaleSignal(t *testing.T) {
 	room := BoardRoomID("game-b")
 	oldSig := &memSignal{}
 	newSig := &memSignal{}
-	if err := sfu.Attach(room, "u1", "Ada", "", oldSig); err != nil {
+	if err := sfu.Attach(room, "u1", "Ada", "", "", oldSig); err != nil {
 		t.Fatal(err)
 	}
-	if err := sfu.Attach(room, "u1", "Ada", "", newSig); err != nil {
+	if err := sfu.Attach(room, "u1", "Ada", "", "", newSig); err != nil {
 		t.Fatal(err)
 	}
 	if _, ok := sfu.Detach(room, "u1", oldSig); ok {
@@ -168,10 +168,10 @@ func TestVoiceRoomsGetAudioPubsMap(t *testing.T) {
 	sfu := NewSFU()
 	hub := HubRoomID("africa-1:cairo")
 	board := BoardRoomID("game-audio")
-	if err := sfu.Attach(hub, "u1", "Ada", "", &memSignal{}); err != nil {
+	if err := sfu.Attach(hub, "u1", "Ada", "", "", &memSignal{}); err != nil {
 		t.Fatal(err)
 	}
-	if err := sfu.Attach(board, "u1", "Ada", "", &memSignal{}); err != nil {
+	if err := sfu.Attach(board, "u1", "Ada", "", "", &memSignal{}); err != nil {
 		t.Fatal(err)
 	}
 	sfu.mu.Lock()
@@ -208,7 +208,7 @@ func TestDetachClearsBoardAudioPubSlot(t *testing.T) {
 	sfu := NewSFU()
 	board := BoardRoomID("game-audio-detach")
 	sig := &memSignal{}
-	if err := sfu.Attach(board, "u1", "Ada", "", sig); err != nil {
+	if err := sfu.Attach(board, "u1", "Ada", "", "", sig); err != nil {
 		t.Fatal(err)
 	}
 	sfu.mu.Lock()
@@ -236,7 +236,7 @@ func TestDetachClearsBoardVideoPubSlot(t *testing.T) {
 	sfu := NewSFU()
 	board := BoardRoomID("game-video")
 	sig := &memSignal{}
-	if err := sfu.Attach(board, "u1", "Ada", "", sig); err != nil {
+	if err := sfu.Attach(board, "u1", "Ada", "", "", sig); err != nil {
 		t.Fatal(err)
 	}
 	sfu.mu.Lock()
@@ -265,7 +265,7 @@ func TestAttachReconnectClearsBoardVideoPub(t *testing.T) {
 	board := BoardRoomID("game-video-re")
 	oldSig := &memSignal{}
 	newSig := &memSignal{}
-	if err := sfu.Attach(board, "u1", "Ada", "", oldSig); err != nil {
+	if err := sfu.Attach(board, "u1", "Ada", "", "", oldSig); err != nil {
 		t.Fatal(err)
 	}
 	sfu.mu.Lock()
@@ -273,7 +273,7 @@ func TestAttachReconnectClearsBoardVideoPub(t *testing.T) {
 	stop := make(chan struct{})
 	r.videoPubs["u1"] = &boardVideoPub{fromUserID: "u1", stop: stop}
 	sfu.mu.Unlock()
-	if err := sfu.Attach(board, "u1", "Ada", "", newSig); err != nil {
+	if err := sfu.Attach(board, "u1", "Ada", "", "", newSig); err != nil {
 		t.Fatal(err)
 	}
 	if sfu.BoardVideoPublisherCount(board) != 0 {
@@ -290,7 +290,7 @@ func TestNegotiateOfferQueuesWhileInFlight(t *testing.T) {
 	sfu := NewSFU()
 	board := BoardRoomID("game-renego")
 	sig := &memSignal{}
-	if err := sfu.Attach(board, "u1", "Ada", "", sig); err != nil {
+	if err := sfu.Attach(board, "u1", "Ada", "", "", sig); err != nil {
 		t.Fatal(err)
 	}
 	pc, err := webrtc.NewPeerConnection(webrtc.Configuration{})

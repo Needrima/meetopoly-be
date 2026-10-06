@@ -7,3 +7,10 @@ import "context"
 type CountryLookup interface {
 	CountryForUser(ctx context.Context, userID string) string
 }
+
+// AvatarLookup resolves profile photos and live usernames for game HUD (Phase 19.0).
+// Optional — when nil, PlayerView.AvatarURL stays empty and Username stays snapshotted.
+type AvatarLookup interface {
+	AvatarURLForUser(ctx context.Context, userID string) string
+	UsernameForUser(ctx context.Context, userID string) string
+}

@@ -56,6 +56,10 @@ Server listens on `:8080` by default.
 | `SMTP_USER` | _(required for mail)_ |
 | `SMTP_PASS` | _(Gmail app password)_ |
 | `SMTP_FROM` | e.g. `Meetopoly <you@gmail.com>` |
+| `SUPABASE_URL` | e.g. `https://YOUR_PROJECT_REF.supabase.co` (Phase 19 avatars) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key — **backend only**, never ship to mobile |
+| `SUPABASE_ANON_KEY` | Anon/publishable key (optional for be-only uploads) |
+| `SUPABASE_STORAGE_BUCKET` | `avatars` (public bucket for profile photos) |
 
 Logs go to **stdout and `app.log`** via `log/slog` at **info** level (configured from `.env` for file/format only). Tail the file while debugging:
 

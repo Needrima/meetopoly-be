@@ -66,7 +66,7 @@ func TestStampPresenceDCHubChat(t *testing.T) {
 func TestAllowHubChatRate(t *testing.T) {
 	sfu := NewSFU()
 	hub := HubRoomID("africa-1:lagos")
-	if err := sfu.Attach(hub, "u1", "Ada", "", &memSignal{}); err != nil {
+	if err := sfu.Attach(hub, "u1", "Ada", "", "", &memSignal{}); err != nil {
 		t.Fatal(err)
 	}
 	if !sfu.allowHubChat(hub, "u1") {

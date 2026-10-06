@@ -59,6 +59,9 @@ func NewRouter(deps Deps) http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(requireSession(deps.Auth))
 		r.Get("/me", handleMe(deps.Users))
+		r.Patch("/me", handlePatchMe(deps.Users, deps.Tables))
+		r.Post("/me/avatar", handleUploadAvatar(deps.Users))
+		r.Delete("/me/avatar", handleDeleteAvatar(deps.Users))
 		r.Get("/worlds", handleListWorlds(deps.Locations))
 		r.Get("/locations", handleListLocations(deps.Locations))
 		r.Get("/locations/by-slug", handleGetLocationBySlug(deps.Locations))
@@ -376,6 +379,7 @@ type userProfile struct {
 	Email           string  `json:"email"`
 	Username        *string `json:"username"`
 	Country         *string `json:"country"`
+	AvatarURL       *string `json:"avatarUrl"`
 	EmailVerified   bool    `json:"emailVerified"`
 	ProfileComplete bool    `json:"profileComplete"`
 }
@@ -394,6 +398,10 @@ func toUserProfile(p *usersvc.Profile) userProfile {
 	if p.Country != "" {
 		c := p.Country
 		out.Country = &c
+	}
+	if p.AvatarURL != "" {
+		a := p.AvatarURL
+		out.AvatarURL = &a
 	}
 	return out
 }

@@ -31,6 +31,12 @@ type Config struct {
 	SMTPUser            string
 	SMTPPass            string
 	SMTPFrom            string
+
+	// Supabase Storage (Phase 19.0 avatars). Empty → avatar upload/delete unavailable.
+	SupabaseURL             string
+	SupabaseServiceRoleKey  string
+	SupabaseAnonKey         string
+	SupabaseStorageBucket   string
 }
 
 // Load reads optional `.env` via godotenv, then environment variables.
@@ -59,6 +65,11 @@ func Load() Config {
 		SMTPUser: getenv("SMTP_USER", ""),
 		SMTPPass: getenv("SMTP_PASS", ""),
 		SMTPFrom: getenv("SMTP_FROM", ""),
+
+		SupabaseURL:            getenv("SUPABASE_URL", ""),
+		SupabaseServiceRoleKey: getenv("SUPABASE_SERVICE_ROLE_KEY", ""),
+		SupabaseAnonKey:        getenv("SUPABASE_ANON_KEY", ""),
+		SupabaseStorageBucket:  getenv("SUPABASE_STORAGE_BUCKET", "meetopoly"),
 	}
 }
 
