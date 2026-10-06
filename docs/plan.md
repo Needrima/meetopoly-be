@@ -1513,12 +1513,13 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 
 **Exit:** Fill Supabase env + create public `avatars` bucket; curl PATCH/POST/DELETE; then start **19.1** mobile UI.
 
-### 19.1 — Mobile UI (next)
+### 19.1 — Mobile UI (DONE)
 
-- Settings: username form + circular avatar (edit/trash)
-- `AvatarPod` / `BoardAvatar` optional `imageUrl`
-- Wire presence + game + lobby surfaces
+- Settings: username form + circular avatar (edit/trash); `expo-image-picker` ≤1 MiB JPEG/PNG/WebP
+- `AvatarPod` / `BoardAvatar` optional `imageUrl`; accent border when photo set
+- Wired: board/hub walkers, hub roster, lobby seats, Meet seat grid, player info modal
 
+**Exit:** Rebuild native binary after `app.json` plugin change; smoke Settings upload/trash + username; confirm photos on lobby + board + hub.
 ---
 
 ## 5. Cross-cutting concerns
