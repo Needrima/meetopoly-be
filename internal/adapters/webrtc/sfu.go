@@ -17,8 +17,8 @@ const (
 	PresenceDataChannelLabel = "presence"
 	// MaxPoseHz caps stamped pose fan-out per peer (Phase 7.4). Clients send ~10 Hz.
 	MaxPoseHz = 20
-	// MaxHubPeers is the locked cap for a single hub SFU room (Phase 8.3).
-	MaxHubPeers = 16
+	// MaxHubPeers is the locked cap for a single hub SFU room (low-end mobile comfort).
+	MaxHubPeers = 10
 )
 
 var (

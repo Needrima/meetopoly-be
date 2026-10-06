@@ -684,7 +684,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 
 **Cross-table (locked):** Players from **different tables/games may meet** in the same location hub (product default: **allow**).
 
-**Hub capacity (locked):** **Max 16** peers per hub SFU room (reject join when full). Driven by mobile pose/UI comfort; raise later only if measured OK. Redis presence (Phase 15) is multi-instance sharing — not required for this cap.
+**Hub capacity (locked):** **Max 10** peers per hub SFU room (reject join when full). Driven by low-end mobile pose/UI comfort; raise later only if measured OK. Redis presence (Phase 15) is multi-instance sharing — not required for this cap.
 
 **Hub leave (locked):** Leave only via explicit **X** control. Block Android back + iOS swipe-back on the hub screen (same idea as board ⋯).
 
@@ -733,7 +733,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 - Rolling from hub moves **pin** on the board for everyone; hub avatar does not snap to the pin.
 - **Open board:** pop to board **without** `leave-hub` (keep `hubId` until explicit X Leave).
 - Hub: `gestureEnabled: false` + `useBlockHardwareBack`; Leave = X icon only.
-- SFU rejects new hub joins when room already has 16 distinct peers (reconnect of same userId still allowed).
+- SFU rejects new hub joins when room already has 10 distinct peers (reconnect of same userId still allowed).
 
 **8.4 notes**
 
@@ -763,7 +763,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 - [x] **8.0:** enter hub joins hub room and leaves board presence; leave hub rejoins board; game WS never drops for that alone
 - [x] **8.1:** two players see each other’s hub avatars move smoothly
 - [x] **8.2:** board peers see in-hub players correctly; pins still update on roll
-- [x] **8.3:** turn notify + sheet works in hub; Open board keeps hubId; X-only leave; hub cap 16
+- [x] **8.3:** turn notify + sheet works in hub; Open board keeps hubId; X-only leave; hub cap 10
 - [x] **8.4:** cross-table meet + leave/open/reconnect hardened; no false resign from hub flows
 - [ ] Voice deferred — not required for Phase 8 exit (→ **Phase 10**)
 
@@ -778,7 +778,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 - Branded cards (NativeWind + Moti)
 - Settings switches via `@expo/ui`
 - Error/empty states
-- **Hub scene:** left media stub, center branded floor, right worldwide roster (≤16) + country; board HUD country when exposed
+- **Hub scene:** left media stub, center branded floor, right worldwide roster (≤10) + country; board HUD country when exposed
 
 **Hub chrome sub-slices (9.0)**
 
@@ -787,7 +787,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 | **9.0a** | Country on presence `welcome` / `peer-joined` / roster peers; `GamePlayer.country` enriched from user profile; board HUD shows country; presence hook exposes `roster` |
 | **9.0b** | Equal 3-pane hub shell, full height, 2px middle borders, per-tile floor color                                                                                          |
 | **9.0c** | Center copy: name + code + centered `about` with height-based ellipsis; walk square = avatars only                                                                     |
-| **9.0d** | `HubRoster` (`IN HUB · n/16`, 2-col, country, X) + joystick BR                                                                                                         |
+| **9.0d** | `HubRoster` (`IN HUB · n/10`, 2-col, country, X) + joystick BR                                                                                                         |
 | **9.0e** | Plan smoke checklist                                                                                                                                                   |
 
 **9.0a notes**
@@ -811,7 +811,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 
 **9.0d notes**
 
-- `HubRoster`: `IN HUB · n/16`; **2 per row** via `space-between` (equal L/R edge padding).
+- `HubRoster`: `IN HUB · n/10`; **2 per row** via `space-between` (equal L/R edge padding).
 - Local label: `You · NG`. Remotes: `Name · NG`. X leave in header; joystick BR.
 - Rows from `presence.roster` + local seed; accents via `accentAgainstFloor`.
 
@@ -822,7 +822,7 @@ Manual (landscape device / simulator; BE running; 2 clients preferred):
 1. **Shell (9.0b)** — Enter any hub: three equal panes; rails to bottom (no grey gap); middle 2px side borders; floor = tile color (airport blue / city group / etc.).
 2. **Copy (9.0c)** — Short hub (e.g. airport): name + code + short about visible. Long hub (e.g. Benghazi/Tokyo): name + code stay on-screen; about ellipsizes with `…` (no mid-line clip, no ScrollView).
 3. **Walk** — Joystick moves avatar over heading and body text; avatars draw above copy; contrast accents do not blend into floor.
-4. **Roster (9.0d)** — `IN HUB · n/16`; two chips per row, left/right flush to panel padding; local `You · CC`, peer `Name · CC`.
+4. **Roster (9.0d)** — `IN HUB · n/10`; two chips per row, left/right flush to panel padding; local `You · CC`, peer `Name · CC`.
 5. **Country (9.0a)** — Board HUD shows country on You / others; hub roster matches profile ISO.
 6. **Presence** — Second client joins same hub: count bumps, peer appears on floor + roster; leave drops count/avatar.
 7. **Leave / Open board** — X leaves hub (clears hubId); turn/buy sheets still work; Open board keeps hubId; keep-awake on hub (screen stays awake).
@@ -1466,7 +1466,7 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 - Web R3F client + Wails desktop
 - TURN, recording, moderation tools
 - More countries’ seed packs
-- **Hub video (cameras)** + **selective listen** (pick who you hear/see in hubs ≤16) — do not build listen-matrix before hub video
+- **Hub video (cameras)** + **selective listen** (pick who you hear/see in hubs ≤10) — do not build listen-matrix before hub video
 
 ---
 
@@ -1491,7 +1491,7 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 
 **17.2 notes**
 
-- ✅ Shipped: `HubRoster` 3-col grid (≤16); `AvatarPod` center; `You · CC` / `Name · CC` bottom-right; header In hub + Live/timer + Leave unchanged. No hub cameras / selective listen.
+- ✅ Shipped: `HubRoster` 3-col grid (≤10); `AvatarPod` center; `You · CC` / `Name · CC` bottom-right; header In hub + Live/timer + Leave unchanged. No hub cameras / selective listen.
 
 **Still deferred:** Phase 18 spectator-after-eliminate; hub cameras; selective listen.
 
