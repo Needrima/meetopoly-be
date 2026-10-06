@@ -28,13 +28,15 @@ type Seat struct {
 
 // Table is a matchmaking lobby / session for one World.
 type Table struct {
-	ID        string    `bson:"_id" json:"id"`
-	WorldID   string    `bson:"worldId" json:"worldId"`
-	Status    string    `bson:"status" json:"status"`
-	Seats     []Seat    `bson:"seats" json:"seats"`
-	GameID    string    `bson:"gameId,omitempty" json:"gameId,omitempty"`
-	CreatedAt time.Time `bson:"createdAt" json:"createdAt"`
-	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
+	ID         string    `bson:"_id" json:"id"`
+	WorldID    string    `bson:"worldId" json:"worldId"`
+	Status     string    `bson:"status" json:"status"`
+	Private    bool      `bson:"private" json:"private"`
+	InviteCode string    `bson:"inviteCode,omitempty" json:"inviteCode,omitempty"`
+	Seats      []Seat    `bson:"seats" json:"seats"`
+	GameID     string    `bson:"gameId,omitempty" json:"gameId,omitempty"`
+	CreatedAt  time.Time `bson:"createdAt" json:"createdAt"`
+	UpdatedAt  time.Time `bson:"updatedAt" json:"updatedAt"`
 }
 
 // Repository persists tables.
@@ -45,4 +47,6 @@ type Repository interface {
 	FindByID(ctx context.Context, id string) (*Table, error)
 	FindOpenLobby(ctx context.Context, worldID string) (*Table, error)
 	FindLobbyByUser(ctx context.Context, userID string) (*Table, error)
+	// FindByInviteCode looks up a private lobby by normalized invite code (Phase 20).
+	FindByInviteCode(ctx context.Context, inviteCode string) (*Table, error)
 }

@@ -14,6 +14,40 @@ type joinTableRequest struct {
 	WorldID string `json:"worldId"`
 }
 
+type createTableRequest struct {
+	WorldID string `json:"worldId"`
+}
+
+func handleCreateTable(tables tablesvc.Service, users usersvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		var req createTableRequest
+		if err := decodeJSON(r, &req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_request", "Invalid JSON body")
+			return
+		}
+		profile, err := users.GetByID(r.Context(), userID)
+		if err != nil {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		username := profile.Username
+		if username == "" {
+			username = profile.Email
+		}
+		view, err := tables.CreatePrivate(r.Context(), userID, username, req.WorldID)
+		if err != nil {
+			mapTableError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
 func handleJoinTable(tables tablesvc.Service, users usersvc.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := userIDFromContext(r.Context())
@@ -36,6 +70,40 @@ func handleJoinTable(tables tablesvc.Service, users usersvc.Service) http.Handle
 			username = profile.Email
 		}
 		view, err := tables.Join(r.Context(), userID, username, req.WorldID)
+		if err != nil {
+			mapTableError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, view)
+	}
+}
+
+type joinTableByCodeRequest struct {
+	InviteCode string `json:"inviteCode"`
+}
+
+func handleJoinTableByCode(tables tablesvc.Service, users usersvc.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromContext(r.Context())
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		var req joinTableByCodeRequest
+		if err := decodeJSON(r, &req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_request", "Invalid JSON body")
+			return
+		}
+		profile, err := users.GetByID(r.Context(), userID)
+		if err != nil {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid session")
+			return
+		}
+		username := profile.Username
+		if username == "" {
+			username = profile.Email
+		}
+		view, err := tables.JoinByInviteCode(r.Context(), userID, username, req.InviteCode)
 		if err != nil {
 			mapTableError(w, err)
 			return
@@ -110,9 +178,11 @@ func mapTableError(w http.ResponseWriter, err error) {
 	case errors.Is(err, tablesvc.ErrNeedPlayers):
 		writeError(w, http.StatusBadRequest, "need_players", "Need at least 2 players to Ready")
 	case errors.Is(err, tablesvc.ErrWrongStatus):
-		writeError(w, http.StatusConflict, "wrong_status", "Table is not in lobby")
+		writeError(w, http.StatusConflict, "wrong_status", "Lobby is sealed or not joinable")
 	case errors.Is(err, tablesvc.ErrInvalidWorld):
 		writeError(w, http.StatusBadRequest, "invalid_world", "worldId is required")
+	case errors.Is(err, tablesvc.ErrInvalidInviteCode):
+		writeError(w, http.StatusBadRequest, "invalid_invite_code", "Invite code is invalid")
 	default:
 		writeError(w, http.StatusInternalServerError, "internal_error", "Something went wrong")
 	}

@@ -61,7 +61,7 @@ func (m *memRepo) FindOpenLobby(_ context.Context, worldID string) (*tablerepo.T
 	defer m.mu.Unlock()
 	var best *tablerepo.Table
 	for _, t := range m.tables {
-		if t.WorldID != worldID || t.Status != tablerepo.StatusLobby {
+		if t.WorldID != worldID || t.Status != tablerepo.StatusLobby || t.Private {
 			continue
 		}
 		if tablerepo.OccupiedCount(t) >= tablerepo.MaxSeats {
@@ -107,6 +107,19 @@ func (m *memRepo) FindLobbyByUser(_ context.Context, userID string) (*tablerepo.
 		return nil, tablerepo.ErrNotFound
 	}
 	return best, nil
+}
+
+func (m *memRepo) FindByInviteCode(_ context.Context, inviteCode string) (*tablerepo.Table, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, t := range m.tables {
+		if t.InviteCode == inviteCode {
+			cp := *t
+			cp.Seats = append([]tablerepo.Seat(nil), t.Seats...)
+			return &cp, nil
+		}
+	}
+	return nil, tablerepo.ErrNotFound
 }
 
 type stubStarter struct {
@@ -202,6 +215,195 @@ func TestJoinAssignsUniquePinColors(t *testing.T) {
 	}
 	if colors[0] == colors[1] {
 		t.Fatalf("duplicate colors %v", colors)
+	}
+}
+
+func TestCreatePrivateHasInviteCodeAndExcludesFromPublicJoin(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, Config{})
+
+	priv, err := svc.CreatePrivate(context.Background(), "host", "Host", "africa-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !priv.Private {
+		t.Fatal("expected private")
+	}
+	if priv.InviteCode == nil || len(*priv.InviteCode) != 8 {
+		t.Fatalf("inviteCode=%v", priv.InviteCode)
+	}
+	code := *priv.InviteCode
+	for _, r := range code {
+		if !strings.ContainsRune(inviteAlphabet, r) {
+			t.Fatalf("invite code has invalid rune %q in %q", r, code)
+		}
+	}
+
+	pub, err := svc.Join(context.Background(), "guest", "Guest", "africa-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pub.ID == priv.ID {
+		t.Fatal("public Join seated into private table")
+	}
+	if pub.Private {
+		t.Fatal("public table marked private")
+	}
+	if pub.InviteCode != nil {
+		t.Fatalf("public inviteCode=%v", pub.InviteCode)
+	}
+}
+
+func TestCreatePrivateLeavesExistingLobby(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, Config{})
+
+	first, err := svc.Join(context.Background(), "host", "Host", "africa-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := svc.CreatePrivate(context.Background(), "host", "Host", "africa-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if second.ID == first.ID {
+		t.Fatal("expected a new private table")
+	}
+	stored, err := repo.FindByID(context.Background(), first.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tablerepo.OccupiedCount(stored) != 0 {
+		t.Fatalf("old public lobby still occupied")
+	}
+}
+
+func TestNormalizeInviteCode(t *testing.T) {
+	if got := normalizeInviteCode("a1b2c3d4"); got != "A1B2C3D4" {
+		t.Fatalf("got %q", got)
+	}
+	if got := normalizeInviteCode("A1B2C3D4"); got != "A1B2C3D4" {
+		t.Fatalf("got %q", got)
+	}
+	if normalizeInviteCode("short") != "" {
+		t.Fatal("expected empty for short")
+	}
+	if normalizeInviteCode("IIIIIIII") != "" {
+		t.Fatal("expected empty for I (not in Crockford alphabet)")
+	}
+}
+
+func TestJoinByInviteCodeHappyPath(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, Config{})
+
+	host, err := svc.CreatePrivate(context.Background(), "host", "Host", "africa-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code := *host.InviteCode
+
+	guest, err := svc.JoinByInviteCode(context.Background(), "guest", "Guest", strings.ToLower(code))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if guest.ID != host.ID {
+		t.Fatalf("table %s want %s", guest.ID, host.ID)
+	}
+	occupied := 0
+	for _, s := range guest.Seats {
+		if s.UserID != nil {
+			occupied++
+		}
+	}
+	if occupied != 2 {
+		t.Fatalf("occupied=%d want 2", occupied)
+	}
+}
+
+func TestJoinByInviteCodeRejectsSealed(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, Config{DisconnectHold: time.Second}).(*service)
+	svc.SetGameStarter(stubStarter{id: "game-1"})
+
+	host, err := svc.CreatePrivate(context.Background(), "host", "Host", "africa-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code := *host.InviteCode
+	if _, err := svc.JoinByInviteCode(context.Background(), "guest", "Guest", code); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.SetReady(context.Background(), host.ID, "host", true); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.SetReady(context.Background(), host.ID, "guest", true); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = svc.JoinByInviteCode(context.Background(), "late", "Late", code)
+	if !errors.Is(err, ErrWrongStatus) {
+		t.Fatalf("err=%v want ErrWrongStatus", err)
+	}
+}
+
+func TestJoinByInviteCodeRejectsFull(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, Config{})
+
+	host, err := svc.CreatePrivate(context.Background(), "host", "Host", "africa-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code := *host.InviteCode
+	for i := 1; i < tablerepo.MaxSeats; i++ {
+		uid := "u" + string(rune('0'+i))
+		if _, err := svc.JoinByInviteCode(context.Background(), uid, "P"+uid, code); err != nil {
+			t.Fatalf("seat %d: %v", i, err)
+		}
+	}
+	_, err = svc.JoinByInviteCode(context.Background(), "overflow", "Overflow", code)
+	if !errors.Is(err, ErrFull) {
+		t.Fatalf("err=%v want ErrFull", err)
+	}
+}
+
+func TestJoinByInviteCodeInvalidAndUnknown(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, Config{})
+
+	if _, err := svc.JoinByInviteCode(context.Background(), "a", "A", "bad"); !errors.Is(err, ErrInvalidInviteCode) {
+		t.Fatalf("err=%v want ErrInvalidInviteCode", err)
+	}
+	if _, err := svc.JoinByInviteCode(context.Background(), "a", "A", "ABCDEFGH"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("err=%v want ErrNotFound", err)
+	}
+}
+
+func TestJoinByInviteCodeResumesSeat(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, Config{})
+
+	host, err := svc.CreatePrivate(context.Background(), "host", "Host", "africa-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code := *host.InviteCode
+	again, err := svc.JoinByInviteCode(context.Background(), "host", "Host2", code)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if again.ID != host.ID {
+		t.Fatalf("expected same table")
+	}
+	occupied := 0
+	for _, s := range again.Seats {
+		if s.UserID != nil {
+			occupied++
+		}
+	}
+	if occupied != 1 {
+		t.Fatalf("occupied=%d want 1", occupied)
 	}
 }
 

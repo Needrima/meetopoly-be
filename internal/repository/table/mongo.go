@@ -36,6 +36,11 @@ func (r *MongoRepository) EnsureIndexes(ctx context.Context) error {
 		{
 			Keys: bson.D{{Key: "seats.userId", Value: 1}},
 		},
+		// Phase 20 — unique invite codes on private lobbies (public tables omit the field).
+		{
+			Keys:    bson.D{{Key: "inviteCode", Value: 1}},
+			Options: options.Index().SetUnique(true).SetSparse(true),
+		},
 	}
 	_, err := r.col.Indexes().CreateMany(ctx, models)
 	if err != nil {
@@ -77,9 +82,11 @@ func (r *MongoRepository) FindByID(ctx context.Context, id string) (*Table, erro
 }
 
 func (r *MongoRepository) FindOpenLobby(ctx context.Context, worldID string) (*Table, error) {
+	// Phase 20 — private invite lobbies are never matched into the public pool.
 	filter := bson.M{
 		"worldId": worldID,
 		"status":  StatusLobby,
+		"private": bson.M{"$ne": true},
 	}
 	opts := options.Find().SetSort(bson.D{{Key: "updatedAt", Value: 1}}).SetLimit(20)
 	cur, err := r.col.Find(ctx, filter, opts)
@@ -118,6 +125,18 @@ func (r *MongoRepository) FindLobbyByUser(ctx context.Context, userID string) (*
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("find lobby by user: %w", err)
+	}
+	return &t, nil
+}
+
+func (r *MongoRepository) FindByInviteCode(ctx context.Context, inviteCode string) (*Table, error) {
+	var t Table
+	err := r.col.FindOne(ctx, bson.M{"inviteCode": inviteCode}).Decode(&t)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("find table by invite code: %w", err)
 	}
 	return &t, nil
 }

@@ -67,7 +67,9 @@ func NewRouter(deps Deps) http.Handler {
 		r.Get("/locations/by-slug", handleGetLocationBySlug(deps.Locations))
 		r.Get("/locations/{locationId}", handleGetLocationByID(deps.Locations))
 
+		r.Post("/tables", handleCreateTable(deps.Tables, deps.Users))
 		r.Post("/tables/join", handleJoinTable(deps.Tables, deps.Users))
+		r.Post("/tables/join-code", handleJoinTableByCode(deps.Tables, deps.Users))
 		r.Get("/tables/{tableId}", handleGetTable(deps.Tables))
 		r.Post("/tables/{tableId}/ready", handleSetReady(deps.Tables))
 		r.Post("/tables/{tableId}/leave", handleLeaveTable(deps.Tables))

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.28.0
+  version: 0.29.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -22,7 +22,9 @@ tags:
   - name: Worlds
     description: Distinct world packs derived from locations
   - name: Tables
-    description: Matchmaking lobby (join pool, ready, leave)
+    description: |
+      Matchmaking lobby (public pool join, private create, join-by-code, ready, leave).
+      Phase 20: private lobbies use an 8-char invite code; sealed once the game starts.
   - name: Games
     description: Authoritative M1 game state (Phase 6+)
 paths:
@@ -530,13 +532,56 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /tables:
+    post:
+      operationId: createTable
+      summary: Create a private lobby (Start a game)
+      description: |
+        Phase 20 — creates a **private** lobby for `worldId`, seats the host, and
+        returns a table snapshot including an 8-character `inviteCode` (Crockford
+        Base32, case-insensitive). Private tables are excluded from public
+        matchmaking (`POST /tables/join`). Friends join via `POST /tables/join-code`.
+        Connect to `GET /ws/tables/{tableId}?token=` for live seat/ready updates.
+        Invite codes are valid only while `status` is `lobby`; after all-Ready
+        starts the game the lobby is sealed (no late join).
+      tags:
+        - Tables
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTableRequest"
+      responses:
+        "200":
+          description: Private lobby created and host seated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Table"
+        "400":
+          description: Invalid world
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /tables/join:
     post:
       operationId: joinTable
       summary: Join a World matchmaking lobby
       description: |
-        Finds an open lobby for `worldId` (or creates one), seats the caller,
-        and returns the table snapshot. Connect to `GET /ws/tables/{tableId}?token=`
+        Finds an open **public** lobby for `worldId` (or creates one), seats the caller,
+        and returns the table snapshot. Private tables (Phase 20) are never matched here.
+        Connect to `GET /ws/tables/{tableId}?token=`
         for live seat/ready updates. Messages: client `{type:ready|leave|ping}`,
         server `{type:state|started|pong|error}`.
       tags:
@@ -570,6 +615,58 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "409":
           description: Table full
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /tables/join-code:
+    post:
+      operationId: joinTableByCode
+      summary: Join a private lobby by invite code
+      description: |
+        Phase 20 — seats the caller into the lobby identified by `inviteCode`
+        (8-char Crockford Base32; lookup is case-insensitive). Fails if the code
+        is unknown, the table is full, or the lobby is no longer joinable
+        (`status` is not `lobby` — e.g. game already started). Returns the table
+        snapshot; connect to `GET /ws/tables/{tableId}?token=` for live updates.
+      tags:
+        - Tables
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinTableByCodeRequest"
+      responses:
+        "200":
+          description: Seated in lobby
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Table"
+        "400":
+          description: Invalid invite code format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Unknown invite code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Table full or lobby already started (sealed)
           content:
             application/json:
               schema:
@@ -2295,6 +2392,31 @@ components:
         worldId:
           type: string
           example: africa-1
+    CreateTableRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - worldId
+      properties:
+        worldId:
+          type: string
+          description: World pack for the private lobby (Phase 20 Start a game)
+          example: africa-1
+    JoinTableByCodeRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - inviteCode
+      properties:
+        inviteCode:
+          type: string
+          description: |
+            Phase 20 — 8-character Crockford Base32 invite code from a private lobby
+            (`0-9A-HJKMNPQRSTVWXYZ`; case-insensitive).
+          minLength: 8
+          maxLength: 8
+          pattern: "^[0-9A-Ha-hJjKkMmNnPpQqRrSsTtVvWwXxYyZz]{8}$"
+          example: "A1B2C3D4"
     SetTableReadyRequest:
       type: object
       additionalProperties: false
@@ -2416,6 +2538,7 @@ components:
         - id
         - worldId
         - status
+        - private
         - seats
       properties:
         id:
@@ -2425,6 +2548,20 @@ components:
         status:
           type: string
           enum: [lobby, starting, in_game]
+        private:
+          type: boolean
+          description: |
+            Phase 20 — `true` for invite-only lobbies created via `POST /tables`.
+            Private tables are excluded from public matchmaking.
+        inviteCode:
+          type: string
+          nullable: true
+          description: |
+            Phase 20 — 8-character Crockford Base32 code for private lobbies.
+            Null on public pool tables. Valid for join only while `status` is `lobby`.
+          minLength: 8
+          maxLength: 8
+          example: "A1B2C3D4"
         gameId:
           type: string
           nullable: true

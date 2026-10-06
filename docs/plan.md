@@ -406,7 +406,7 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 **Goal:** Play funnel: pick **World** → matchmaking lobby → **all Ready** → board. Seat sync eventually over **WebSocket** (not WebRTC). Ship a **mobile stub** first (5.0–5.5), then replace with real table HTTP/WS (5.6).
 
-**Funnel (locked)**
+**Funnel (locked for Phase 5; Play hub + private invites → Phase 20)**
 
 ```text
 Menu → Play → World picker → Lobby (matchmaking pool) → all Ready (≥2) → Board
@@ -416,7 +416,7 @@ Menu → Play → World picker → Lobby (matchmaking pool) → all Ready (≥2)
 
 | Topic       | Decision                                                                            |
 | ----------- | ----------------------------------------------------------------------------------- |
-| Matchmaking | Pick World → join waiting pool for that World (no invite codes in v1 stub)          |
+| Matchmaking | Pick World → join waiting pool for that World (private invite lobbies → **Phase 20**) |
 | Worlds list | All worlds from `GET /worlds`                                                       |
 | Capacity    | **2–6** hard cap                                                                    |
 | Ready       | Disabled until ≥2 seated; toggle Ready anytime; bots auto-Ready after a short delay |
@@ -1520,6 +1520,84 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 - Wired: board/hub walkers, hub roster, lobby seats, Meet seat grid, player info modal
 
 **Exit:** Rebuild native binary after `app.json` plugin change; smoke Settings upload/trash + username; confirm photos on lobby + board + hub.
+
+---
+
+### Phase 20 — Play modes + private lobby invites
+
+**Goal:** Insert a Play hub between menu and World picker with three CTAs; add private lobbies with short invite codes; join-by-code into the same lobby UX. After all-Ready starts the game, the lobby is **sealed** (no late join / no rejoin-by-code).
+
+**Funnel (locked)**
+
+```text
+Menu → Play → hub (3 CTAs)
+  ├─ Play with the world     → Worlds (public) → lobby (POST /tables/join)
+  ├─ Start a game            → Worlds (private) → create lobby (POST /tables) → share invite code
+  └─ Join with invite code   → code screen → lobby (POST /tables/join-code)
+→ all Ready (≥2) → Board (sealed)
+```
+
+**Locks (Phase 20)**
+
+| Topic | Decision |
+| ----- | -------- |
+| CTAs | **Play with the world** · **Start a game** · **Join a game with invite code** |
+| Invite code | 8-char Crockford Base32 (`0-9A-HJKMNPQRSTVWXYZ`); case-insensitive; unique sparse index |
+| Share id | `inviteCode` on private tables — **not** `gameId` / raw `tableId` |
+| Private | `private: true` tables excluded from `FindOpenLobby` / public join |
+| Seal | Join-by-code only while `status === lobby`; after start → 409 sealed |
+| Ready/start | Unchanged: every seated Ready and ≥2 → create game → board |
+| Rejoin | Out of scope — no late join after `in_game` |
+
+| Slice | Deliverable | Test before next |
+| ----- | ----------- | ---------------- |
+| **20.0** | ✅ OpenAPI 0.29 (`POST /tables`, `POST /tables/join-code`, `Table.private`/`inviteCode`); plan + skill funnel locks | Spec only — no runtime yet |
+| **20.1** | ✅ Backend `CreatePrivate` + invite gen; pool excludes private; `POST /tables` | `go test` + curl create vs public join |
+| **20.2** | ✅ Backend `JoinByInviteCode` + `POST /tables/join-code` | Tests: happy / full / sealed / resume |
+| **20.3** | ✅ Mobile Play hub; home Play → hub | Manual CTA navigation |
+| **20.4** | Mobile Start a game + lobby share | Private create + Share sheet |
+| **20.5** | Mobile join-code screen | Two devices same lobby; reject after start |
+| **20.6** | E2E smoke + docs close | Checklist below |
+
+**20.0 notes**
+
+- OpenAPI `0.29.0`: `CreateTableRequest`, `JoinTableByCodeRequest`; `Table` requires `private`; nullable `inviteCode`.
+- Orval codegen deferred until **20.1–20.2** handlers exist (avoid dead client stubs).
+- Skill / product / frontend Play funnel locks updated for hub + private invites.
+
+**20.1 notes**
+
+- ✅ `Table.Private` / `InviteCode`; sparse unique index on `inviteCode`.
+- ✅ `CreatePrivate` + 8-char Crockford invite gen (retry on duplicate key); `POST /tables`.
+- ✅ `FindOpenLobby` / memRepo skip `private: true`; public `Join` leaves a private seat instead of resuming it.
+- ✅ View JSON includes `private` + `inviteCode`. Unit tests green. Join-by-code → **20.2**.
+
+**20.2 notes**
+
+- ✅ `FindByInviteCode` (repo) + `JoinByInviteCode` (normalize → seat if `lobby`; resume if already seated; leave other lobby first).
+- ✅ Rejects invalid format (`ErrInvalidInviteCode` → 400), unknown (404), full / sealed (409).
+- ✅ `POST /tables/join-code`. Unit tests green. Mobile hub → **20.3**.
+
+**20.3 notes**
+
+- ✅ `(app)/play` hub: Play with the world / Start a game / Join with invite code.
+- ✅ Home Play → hub; worlds gets `mode=public|private`; join-code stub until **20.5**.
+- Private create + share → **20.4**.
+
+**API (contract)**
+
+- `POST /tables` `{ worldId }` → private lobby + host seated + `inviteCode`
+- `POST /tables/join` `{ worldId }` → public pool only (unchanged behaviour; private excluded)
+- `POST /tables/join-code` `{ inviteCode }` → seat if lobby open
+
+**Smoke checklist (20.6)**
+
+1. Public: two devices same World → same pool lobby → Ready → board
+2. Private: A creates, shares code; B joins by code → Ready → board; C rejected after start
+3. Solo private cannot Ready until second player
+4. Private never appears in public pool
+5. Disconnect hold still works in private lobby
+
 ---
 
 ## 5. Cross-cutting concerns
@@ -1554,7 +1632,8 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 0 Bootstrap → 1 OpenAPI → 2 Auth → 3 Locations+seed
 → 4 2D board + walk + panel → 5 Tables+WS → 6 Game M1
 → 7 Presence WebRTC (board) → 8 Hubs 8.0–8.4 + turn sheet → 9 UX polish
-→ 10 Voice → 11–14 Rules M2–M5 → 15 Contabo → 16 Deferred
+→ 10 Voice → 11–14 Rules M2–M5 → 15 Contabo → 16–17 board video / hub social
+→ 18 spectator (deferred) → 19 Settings profile → 20 Play modes + private invites
 ```
 
 ---
@@ -1700,4 +1779,9 @@ Smoke → **14.4** ✅. **Phase 14 / M5 DONE.**
 | 2026-10-02 | **17.0:** SFU `hubChat` stamp/forward hub-only; rate limit 3/s; tests                                                                                                                                                                    |
 | 2026-10-02 | **17.1:** hub left Chat FlashList + DC send/recv; Live/timer on right roster; clear chat on leave                                                                                                                                         |
 | 2026-10-02 | **17.2:** hub right rail 3-col people grid (AvatarPod + name · country)                                                                                                                                                                  |
+| 2026-10-06 | **Phase 20 split:** Play hub + private lobby invite codes (20.0–20.6); spectator remains Phase 18                                                                                                                                         |
+| 2026-10-06 | **20.0:** OpenAPI 0.29 `POST /tables` + `POST /tables/join-code` + `Table.private`/`inviteCode`; plan + skill funnel locks (no runtime)                                                                                                    |
+| 2026-10-06 | **20.1:** `CreatePrivate` + Crockford invite codes; `POST /tables`; public pool excludes private; tests                                                                                                                                  |
+| 2026-10-06 | **20.2:** `JoinByInviteCode` + `POST /tables/join-code`; sealed/full/invalid/resume tests                                                                                                                                                 |
+| 2026-10-06 | **20.3:** mobile Play hub `(app)/play`; home → hub; worlds `mode` params; join-code stub                                                                                                                                                  |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

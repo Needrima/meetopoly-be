@@ -3,11 +3,13 @@ package table
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	tablerepo "meetopoly-be/internal/repository/table"
 )
@@ -96,11 +98,12 @@ func (s *service) Join(ctx context.Context, userID, username, worldID string) (*
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Resume existing lobby seat (reconnect / remount), unless the table is a
-	// broken half-start (status starting, no game) — those block matchmaking.
+	// Resume existing **public** lobby seat (reconnect / remount), unless the
+	// table is a broken half-start (status starting, no game) — those block
+	// matchmaking. Private lobbies are left so public Join never resumes them.
 	existing, err := s.repo.FindLobbyByUser(ctx, userID)
 	if err == nil && existing.WorldID == worldID {
-		if isBrokenMatchmakingTable(existing) {
+		if existing.Private || isBrokenMatchmakingTable(existing) {
 			_, _ = s.leaveLocked(ctx, existing, userID)
 			existing = nil
 		} else {
@@ -144,6 +147,128 @@ func (s *service) Join(ctx context.Context, userID, username, worldID string) (*
 		view := s.viewOf(ctx, t)
 		s.broadcast(t.ID, Event{Type: "state", Table: view})
 		return view, nil
+	}
+
+	if err := seatUser(t, userID, username); err != nil {
+		return nil, err
+	}
+	if err := s.repo.Update(ctx, t); err != nil {
+		return nil, err
+	}
+	view := s.viewOf(ctx, t)
+	s.broadcast(t.ID, Event{Type: "state", Table: view})
+	return view, nil
+}
+
+// CreatePrivate creates an invite-only lobby and seats the host (Phase 20).
+func (s *service) CreatePrivate(ctx context.Context, userID, username, worldID string) (*View, error) {
+	worldID = strings.TrimSpace(worldID)
+	if worldID == "" {
+		return nil, ErrInvalidWorld
+	}
+	username = strings.TrimSpace(username)
+	if username == "" {
+		username = "Player"
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Always a fresh private table — leave any existing lobby seat first.
+	existing, err := s.repo.FindLobbyByUser(ctx, userID)
+	if err == nil {
+		_, _ = s.leaveLocked(ctx, existing, userID)
+	} else if !errors.Is(err, tablerepo.ErrNotFound) {
+		return nil, err
+	}
+
+	const maxAttempts = 8
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		code, genErr := generateInviteCode()
+		if genErr != nil {
+			return nil, fmt.Errorf("invite code: %w", genErr)
+		}
+		t := newEmptyTable(worldID)
+		t.Private = true
+		t.InviteCode = code
+		if seatErr := seatUser(t, userID, username); seatErr != nil {
+			return nil, seatErr
+		}
+		if insertErr := s.repo.Insert(ctx, t); insertErr != nil {
+			if mongo.IsDuplicateKeyError(insertErr) {
+				continue
+			}
+			return nil, insertErr
+		}
+		view := s.viewOf(ctx, t)
+		s.broadcast(t.ID, Event{Type: "state", Table: view})
+		return view, nil
+	}
+	return nil, fmt.Errorf("invite code: exhausted unique attempts")
+}
+
+// JoinByInviteCode seats the caller into a private lobby identified by invite code.
+// Valid only while status is lobby; sealed tables (started / in_game) return ErrWrongStatus.
+func (s *service) JoinByInviteCode(ctx context.Context, userID, username, inviteCode string) (*View, error) {
+	code := normalizeInviteCode(inviteCode)
+	if code == "" {
+		return nil, ErrInvalidInviteCode
+	}
+	username = strings.TrimSpace(username)
+	if username == "" {
+		username = "Player"
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	t, err := s.repo.FindByInviteCode(ctx, code)
+	if err != nil {
+		if errors.Is(err, tablerepo.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	// Resume if already seated on this table (reconnect / remount).
+	if seat := findSeat(t, userID); seat != nil {
+		if t.Status != tablerepo.StatusLobby {
+			return nil, ErrWrongStatus
+		}
+		s.clearHoldLocked(t.ID, userID)
+		seat.Holding = false
+		seat.HoldEndsAt = nil
+		seat.Username = username
+		ensureSeatColor(t, seat.SeatIndex)
+		if err := s.repo.Update(ctx, t); err != nil {
+			return nil, err
+		}
+		view := s.viewOf(ctx, t)
+		s.broadcast(t.ID, Event{Type: "state", Table: view})
+		return view, nil
+	}
+
+	if t.Status != tablerepo.StatusLobby || t.GameID != "" {
+		return nil, ErrWrongStatus
+	}
+
+	// Leave any other lobby seat first.
+	existing, err := s.repo.FindLobbyByUser(ctx, userID)
+	if err == nil && existing.ID != t.ID {
+		_, _ = s.leaveLocked(ctx, existing, userID)
+		// Re-load target in case leave somehow touched it (should not).
+		t, err = s.repo.FindByInviteCode(ctx, code)
+		if err != nil {
+			if errors.Is(err, tablerepo.ErrNotFound) {
+				return nil, ErrNotFound
+			}
+			return nil, err
+		}
+		if t.Status != tablerepo.StatusLobby || t.GameID != "" {
+			return nil, ErrWrongStatus
+		}
+	} else if err != nil && !errors.Is(err, tablerepo.ErrNotFound) {
+		return nil, err
 	}
 
 	if err := seatUser(t, userID, username); err != nil {
@@ -496,11 +621,13 @@ func (s *service) viewOf(ctx context.Context, t *tablerepo.Table) *View {
 		seats[i] = sv
 	}
 	return &View{
-		ID:      t.ID,
-		WorldID: t.WorldID,
-		Status:  t.Status,
-		Seats:   seats,
-		GameID:  gameIDPtr(t.GameID),
+		ID:         t.ID,
+		WorldID:    t.WorldID,
+		Status:     t.Status,
+		Private:    t.Private,
+		InviteCode: inviteCodePtr(t.InviteCode),
+		Seats:      seats,
+		GameID:     gameIDPtr(t.GameID),
 	}
 }
 
@@ -509,5 +636,13 @@ func gameIDPtr(id string) *string {
 		return nil
 	}
 	v := id
+	return &v
+}
+
+func inviteCodePtr(code string) *string {
+	if code == "" {
+		return nil
+	}
+	v := code
 	return &v
 }
