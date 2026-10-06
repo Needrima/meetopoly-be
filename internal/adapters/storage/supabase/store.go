@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
-
 	"meetopoly-be/internal/services/storage"
 )
 
@@ -86,7 +84,8 @@ func (s *Store) UploadAvatar(
 		return "", storage.ErrTooLarge
 	}
 
-	objectPath := path.Join(userID, uuid.NewString()+ext)
+	// Stable path so replace upserts in place instead of orphaning UUID files.
+	objectPath := path.Join(userID, "avatar"+ext)
 	endpoint := fmt.Sprintf("%s/storage/v1/object/%s/%s", s.baseURL, s.bucket, objectPath)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
@@ -109,7 +108,19 @@ func (s *Store) UploadAvatar(
 		return "", fmt.Errorf("supabase upload status %d: %s", res.StatusCode, strings.TrimSpace(string(respBody)))
 	}
 
-	publicURL := fmt.Sprintf("%s/storage/v1/object/public/%s/%s", s.baseURL, s.bucket, objectPath)
+	// Drop other extensions so jpg→png (etc.) does not leave orphans.
+	if err := s.DeleteUserAvatarVariants(ctx, userID, ext); err != nil {
+		return "", fmt.Errorf("cleanup avatar variants: %w", err)
+	}
+
+	// Cache-bust query so clients refresh after upsert to the same object key.
+	publicURL := fmt.Sprintf(
+		"%s/storage/v1/object/public/%s/%s?v=%d",
+		s.baseURL,
+		s.bucket,
+		objectPath,
+		time.Now().Unix(),
+	)
 	return publicURL, nil
 }
 
@@ -119,11 +130,37 @@ func (s *Store) DeleteByPublicURL(ctx context.Context, publicURL string) error {
 	}
 	objectPath, ok := s.objectPathFromPublicURL(publicURL)
 	if !ok || objectPath == "" {
+		return fmt.Errorf("%w: %q", storage.ErrInvalidObjectURL, publicURL)
+	}
+	return s.deleteObjects(ctx, []string{objectPath})
+}
+
+func (s *Store) DeleteUserAvatarVariants(ctx context.Context, userID, keepExt string) error {
+	if !s.Configured() {
+		return storage.ErrNotConfigured
+	}
+	userID = strings.TrimSpace(userID)
+	if userID == "" {
+		return storage.ErrInvalidImage
+	}
+	keepExt = strings.ToLower(strings.TrimSpace(keepExt))
+	paths := make([]string, 0, len(storage.AvatarExtensions))
+	for _, ext := range storage.AvatarExtensions {
+		if keepExt != "" && ext == keepExt {
+			continue
+		}
+		paths = append(paths, path.Join(userID, "avatar"+ext))
+	}
+	return s.deleteObjects(ctx, paths)
+}
+
+// deleteObjects calls Supabase multi-delete. Body must be {"prefixes":[...]} (not a bare array).
+func (s *Store) deleteObjects(ctx context.Context, objectPaths []string) error {
+	if len(objectPaths) == 0 {
 		return nil
 	}
-
 	endpoint := fmt.Sprintf("%s/storage/v1/object/%s", s.baseURL, s.bucket)
-	payload, err := json.Marshal([]string{objectPath})
+	payload, err := json.Marshal(map[string]any{"prefixes": objectPaths})
 	if err != nil {
 		return err
 	}
@@ -155,11 +192,19 @@ func (s *Store) objectPathFromPublicURL(publicURL string) (string, bool) {
 	if publicURL == "" {
 		return "", false
 	}
+	if i := strings.Index(publicURL, "?"); i >= 0 {
+		publicURL = publicURL[:i]
+	}
 	prefix := fmt.Sprintf("%s/storage/v1/object/public/%s/", s.baseURL, s.bucket)
 	if !strings.HasPrefix(publicURL, prefix) {
 		return "", false
 	}
-	return strings.TrimPrefix(publicURL, prefix), true
+	objectPath := strings.TrimPrefix(publicURL, prefix)
+	objectPath = strings.Trim(objectPath, "/")
+	if objectPath == "" {
+		return "", false
+	}
+	return objectPath, true
 }
 
 func extForContentType(ct string) (string, error) {

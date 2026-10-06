@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"regexp"
 	"strings"
 
@@ -118,8 +119,12 @@ func (s *service) UploadAvatar(
 	if err := s.users.Update(ctx, u); err != nil {
 		return nil, fmt.Errorf("upload avatar update: %w", err)
 	}
-	if prevURL != "" && prevURL != publicURL {
-		_ = s.objects.DeleteByPublicURL(ctx, prevURL)
+	// Legacy UUID (or other non-stable) keys are not covered by variant cleanup.
+	if prevURL != "" && !isStableAvatarURL(prevURL) {
+		if err := s.objects.DeleteByPublicURL(ctx, prevURL); err != nil {
+			slog.Error("avatar replace cleanup failed", "err", err, "userId", userID, "prevUrl", prevURL)
+			return nil, fmt.Errorf("delete previous avatar: %w", err)
+		}
 	}
 	return ToProfile(u), nil
 }
@@ -136,16 +141,45 @@ func (s *service) DeleteAvatar(ctx context.Context, userID string) (*Profile, er
 		return nil, fmt.Errorf("delete avatar find: %w", err)
 	}
 	prevURL := u.AvatarURL
+
+	// Storage first so a failed delete can be retried while Mongo still has the URL.
+	if err := s.objects.DeleteUserAvatarVariants(ctx, userID, ""); err != nil {
+		slog.Error("avatar delete variants failed", "err", err, "userId", userID)
+		return nil, fmt.Errorf("delete avatar storage: %w", err)
+	}
+	if prevURL != "" && !isStableAvatarURL(prevURL) {
+		if err := s.objects.DeleteByPublicURL(ctx, prevURL); err != nil &&
+			!errors.Is(err, storage.ErrNotConfigured) &&
+			!errors.Is(err, storage.ErrInvalidObjectURL) {
+			slog.Error("avatar delete legacy failed", "err", err, "userId", userID, "prevUrl", prevURL)
+			return nil, fmt.Errorf("delete avatar storage: %w", err)
+		}
+	}
+
 	u.AvatarURL = ""
 	if err := s.users.Update(ctx, u); err != nil {
 		return nil, fmt.Errorf("delete avatar update: %w", err)
 	}
-	if prevURL != "" {
-		if err := s.objects.DeleteByPublicURL(ctx, prevURL); err != nil && !errors.Is(err, storage.ErrNotConfigured) {
-			return nil, fmt.Errorf("delete avatar storage: %w", err)
+	return ToProfile(u), nil
+}
+
+// isStableAvatarURL reports whether url points at `{userId}/avatar.{jpg|png|webp}`.
+func isStableAvatarURL(raw string) bool {
+	u := stripURLQuery(raw)
+	for _, ext := range storage.AvatarExtensions {
+		if strings.HasSuffix(u, "/avatar"+ext) {
+			return true
 		}
 	}
-	return ToProfile(u), nil
+	return false
+}
+
+func stripURLQuery(u string) string {
+	u = strings.TrimSpace(u)
+	if i := strings.Index(u, "?"); i >= 0 {
+		return u[:i]
+	}
+	return u
 }
 
 // ToProfile maps a repository user to a public profile.
