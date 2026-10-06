@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Meetopoly API
-  version: 0.29.0
+  version: 0.30.0
   description: |
     Meetopoly HTTP API contract.
     Source of truth for mobile codegen (orval → meetopoly-mobile/api/).
@@ -2540,6 +2540,7 @@ components:
         - status
         - private
         - seats
+        - expiresAt
       properties:
         id:
           type: string
@@ -2566,6 +2567,13 @@ components:
           type: string
           nullable: true
           description: Set when lobby starts an M1 game (Phase 6+)
+        expiresAt:
+          type: string
+          format: date-time
+          description: |
+            Phase 20.6 — when an unstarted lobby is swept (`createdAt` + 15 minutes).
+            Clients should treat join/ready as failed after this instant; the sweeper
+            deletes the table and may push WebSocket `{type:expired}`.
         seats:
           type: array
           minItems: 6

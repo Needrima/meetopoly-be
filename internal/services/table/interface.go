@@ -38,11 +38,13 @@ type View struct {
 	InviteCode *string    `json:"inviteCode"`
 	Seats      []SeatView `json:"seats"`
 	GameID     *string    `json:"gameId"`
+	// ExpiresAt is when an unstarted lobby is swept (createdAt + LobbyTTL). Phase 20.6.
+	ExpiresAt string `json:"expiresAt"`
 }
 
 // Event is pushed to WebSocket subscribers.
 type Event struct {
-	Type  string `json:"type"` // state | started | error
+	Type  string `json:"type"` // state | started | expired | error
 	Table *View  `json:"table,omitempty"`
 	Error string `json:"error,omitempty"`
 }
@@ -60,6 +62,10 @@ type GameStarter interface {
 // Config tunes lobby behaviour.
 type Config struct {
 	DisconnectHold time.Duration
+	// LobbyTTL is how long an unstarted lobby lives from createdAt (Phase 20.6).
+	LobbyTTL time.Duration
+	// SweepInterval is how often the sweeper runs (Phase 20.6).
+	SweepInterval time.Duration
 }
 
 // Service is the table/matchmaking application port.
@@ -79,6 +85,10 @@ type Service interface {
 	SetAvatarLookup(l AvatarLookup)
 	// UpdateSeatedUsername renames the user on their open lobby seat (if any).
 	UpdateSeatedUsername(ctx context.Context, userID, username string) error
+	// SweepExpired deletes unstarted lobbies past LobbyTTL (Phase 20.6).
+	SweepExpired(ctx context.Context) (int, error)
+	// StartSweeper runs SweepExpired on SweepInterval until ctx is cancelled.
+	StartSweeper(ctx context.Context)
 }
 
 // AvatarLookup resolves profile photo URLs for lobby seats (Phase 19.0).

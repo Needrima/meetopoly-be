@@ -44,9 +44,14 @@ type Repository interface {
 	EnsureIndexes(ctx context.Context) error
 	Insert(ctx context.Context, t *Table) error
 	Update(ctx context.Context, t *Table) error
+	Delete(ctx context.Context, id string) error
 	FindByID(ctx context.Context, id string) (*Table, error)
-	FindOpenLobby(ctx context.Context, worldID string) (*Table, error)
+	// FindOpenLobby returns a public lobby with free seats created after createdAfter
+	// (Phase 20.6 — excludes TTL-expired lobbies when createdAfter is set).
+	FindOpenLobby(ctx context.Context, worldID string, createdAfter time.Time) (*Table, error)
 	FindLobbyByUser(ctx context.Context, userID string) (*Table, error)
 	// FindByInviteCode looks up a private lobby by normalized invite code (Phase 20).
 	FindByInviteCode(ctx context.Context, inviteCode string) (*Table, error)
+	// ListUnstartedCreatedBefore returns lobby tables with no game created before `before` (Phase 20.6).
+	ListUnstartedCreatedBefore(ctx context.Context, before time.Time) ([]*Table, error)
 }

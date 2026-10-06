@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
@@ -12,6 +13,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	tablerepo "meetopoly-be/internal/repository/table"
+)
+
+const (
+	defaultLobbyTTL      = 15 * time.Minute
+	defaultSweepInterval = 15 * time.Minute
 )
 
 type service struct {
@@ -28,6 +34,12 @@ type service struct {
 func New(repo tablerepo.Repository, cfg Config) Service {
 	if cfg.DisconnectHold <= 0 {
 		cfg.DisconnectHold = 45 * time.Second
+	}
+	if cfg.LobbyTTL <= 0 {
+		cfg.LobbyTTL = defaultLobbyTTL
+	}
+	if cfg.SweepInterval <= 0 {
+		cfg.SweepInterval = defaultSweepInterval
 	}
 	return &service{
 		repo:  repo,
@@ -101,9 +113,13 @@ func (s *service) Join(ctx context.Context, userID, username, worldID string) (*
 	// Resume existing **public** lobby seat (reconnect / remount), unless the
 	// table is a broken half-start (status starting, no game) — those block
 	// matchmaking. Private lobbies are left so public Join never resumes them.
+	// Expired lobbies (Phase 20.6) are deleted and rematched.
 	existing, err := s.repo.FindLobbyByUser(ctx, userID)
 	if err == nil && existing.WorldID == worldID {
-		if existing.Private || isBrokenMatchmakingTable(existing) {
+		if s.isLobbyExpired(existing) {
+			_ = s.expireLobbyLocked(ctx, existing)
+			existing = nil
+		} else if existing.Private || isBrokenMatchmakingTable(existing) {
 			_, _ = s.leaveLocked(ctx, existing, userID)
 			existing = nil
 		} else {
@@ -129,14 +145,33 @@ func (s *service) Join(ctx context.Context, userID, username, worldID string) (*
 	}
 	// Seated on another world lobby — leave it first.
 	if existing != nil {
-		_, _ = s.leaveLocked(ctx, existing, userID)
+		if s.isLobbyExpired(existing) {
+			_ = s.expireLobbyLocked(ctx, existing)
+		} else {
+			_, _ = s.leaveLocked(ctx, existing, userID)
+		}
 	}
 
-	t, err := s.repo.FindOpenLobby(ctx, worldID)
+	minCreated := time.Now().UTC().Add(-s.cfg.LobbyTTL)
+	t, err := s.repo.FindOpenLobby(ctx, worldID, minCreated)
 	if err != nil && !errors.Is(err, tablerepo.ErrNotFound) {
 		return nil, err
 	}
 	if errors.Is(err, tablerepo.ErrNotFound) {
+		t = newEmptyTable(worldID)
+		if err := seatUser(t, userID, username); err != nil {
+			return nil, err
+		}
+		if err := s.repo.Insert(ctx, t); err != nil {
+			return nil, err
+		}
+		view := s.viewOf(ctx, t)
+		s.broadcast(t.ID, Event{Type: "state", Table: view})
+		return view, nil
+	}
+
+	if s.isLobbyExpired(t) {
+		_ = s.expireLobbyLocked(ctx, t)
 		t = newEmptyTable(worldID)
 		if err := seatUser(t, userID, username); err != nil {
 			return nil, err
@@ -229,6 +264,10 @@ func (s *service) JoinByInviteCode(ctx context.Context, userID, username, invite
 		}
 		return nil, err
 	}
+	if s.isLobbyExpired(t) {
+		_ = s.expireLobbyLocked(ctx, t)
+		return nil, ErrNotFound
+	}
 
 	// Resume if already seated on this table (reconnect / remount).
 	if seat := findSeat(t, userID); seat != nil {
@@ -255,7 +294,11 @@ func (s *service) JoinByInviteCode(ctx context.Context, userID, username, invite
 	// Leave any other lobby seat first.
 	existing, err := s.repo.FindLobbyByUser(ctx, userID)
 	if err == nil && existing.ID != t.ID {
-		_, _ = s.leaveLocked(ctx, existing, userID)
+		if s.isLobbyExpired(existing) {
+			_ = s.expireLobbyLocked(ctx, existing)
+		} else {
+			_, _ = s.leaveLocked(ctx, existing, userID)
+		}
 		// Re-load target in case leave somehow touched it (should not).
 		t, err = s.repo.FindByInviteCode(ctx, code)
 		if err != nil {
@@ -263,6 +306,10 @@ func (s *service) JoinByInviteCode(ctx context.Context, userID, username, invite
 				return nil, ErrNotFound
 			}
 			return nil, err
+		}
+		if s.isLobbyExpired(t) {
+			_ = s.expireLobbyLocked(ctx, t)
+			return nil, ErrNotFound
 		}
 		if t.Status != tablerepo.StatusLobby || t.GameID != "" {
 			return nil, ErrWrongStatus
@@ -303,6 +350,10 @@ func (s *service) SetReady(ctx context.Context, tableID, userID string, ready bo
 			return nil, ErrNotFound
 		}
 		return nil, err
+	}
+	if s.isLobbyExpired(t) {
+		_ = s.expireLobbyLocked(ctx, t)
+		return nil, ErrNotFound
 	}
 	if t.Status != tablerepo.StatusLobby {
 		return nil, ErrWrongStatus
@@ -366,6 +417,103 @@ func (s *service) Leave(ctx context.Context, tableID, userID string) (*View, err
 		return nil, err
 	}
 	return s.leaveLocked(ctx, t, userID)
+}
+
+func (s *service) isLobbyExpired(t *tablerepo.Table) bool {
+	if t == nil {
+		return false
+	}
+	if t.Status != tablerepo.StatusLobby || t.GameID != "" {
+		return false
+	}
+	if t.CreatedAt.IsZero() {
+		return false
+	}
+	return !t.CreatedAt.UTC().Add(s.cfg.LobbyTTL).After(time.Now().UTC())
+}
+
+func (s *service) expiresAtUTC(t *tablerepo.Table) time.Time {
+	if t == nil || t.CreatedAt.IsZero() {
+		return time.Now().UTC().Add(s.cfg.LobbyTTL)
+	}
+	return t.CreatedAt.UTC().Add(s.cfg.LobbyTTL)
+}
+
+// expireLobbyLocked broadcasts expired, clears holds, and deletes the table.
+// Caller must hold s.mu.
+func (s *service) expireLobbyLocked(ctx context.Context, t *tablerepo.Table) error {
+	if t == nil {
+		return nil
+	}
+	view := s.viewOf(ctx, t)
+	s.broadcast(t.ID, Event{Type: "expired", Table: view})
+	for _, seat := range t.Seats {
+		if seat.UserID != "" {
+			s.clearHoldLocked(t.ID, seat.UserID)
+		}
+	}
+	if err := s.repo.Delete(ctx, t.ID); err != nil && !errors.Is(err, tablerepo.ErrNotFound) {
+		return err
+	}
+	return nil
+}
+
+// SweepExpired deletes unstarted lobbies past LobbyTTL (Phase 20.6).
+func (s *service) SweepExpired(ctx context.Context) (int, error) {
+	before := time.Now().UTC().Add(-s.cfg.LobbyTTL)
+	list, err := s.repo.ListUnstartedCreatedBefore(ctx, before)
+	if err != nil {
+		return 0, err
+	}
+	if len(list) == 0 {
+		return 0, nil
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	n := 0
+	for _, t := range list {
+		if !s.isLobbyExpired(t) {
+			continue
+		}
+		if err := s.expireLobbyLocked(ctx, t); err != nil {
+			slog.Error("table sweep expire failed", "tableId", t.ID, "err", err)
+			continue
+		}
+		n++
+	}
+	if n > 0 {
+		slog.Info("table sweep expired lobbies", "count", n)
+	}
+	return n, nil
+}
+
+// StartSweeper runs SweepExpired on SweepInterval until ctx is cancelled.
+func (s *service) StartSweeper(ctx context.Context) {
+	interval := s.cfg.SweepInterval
+	go func() {
+		// Run once shortly after boot so restarts clean backlog without waiting a full interval.
+		timer := time.NewTimer(5 * time.Second)
+		defer timer.Stop()
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-timer.C:
+				if _, err := s.SweepExpired(ctx); err != nil && !errors.Is(err, context.Canceled) {
+					slog.Error("table sweep failed", "err", err)
+				}
+			case <-ticker.C:
+				if _, err := s.SweepExpired(ctx); err != nil && !errors.Is(err, context.Canceled) {
+					slog.Error("table sweep failed", "err", err)
+				}
+			}
+		}
+	}()
 }
 
 func (s *service) leaveLocked(ctx context.Context, t *tablerepo.Table, userID string) (*View, error) {
@@ -628,6 +776,7 @@ func (s *service) viewOf(ctx context.Context, t *tablerepo.Table) *View {
 		InviteCode: inviteCodePtr(t.InviteCode),
 		Seats:      seats,
 		GameID:     gameIDPtr(t.GameID),
+		ExpiresAt:  s.expiresAtUTC(t).Format(time.RFC3339),
 	}
 }
 

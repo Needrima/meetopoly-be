@@ -41,6 +41,13 @@ func (r *MongoRepository) EnsureIndexes(ctx context.Context) error {
 			Keys:    bson.D{{Key: "inviteCode", Value: 1}},
 			Options: options.Index().SetUnique(true).SetSparse(true),
 		},
+		// Phase 20.6 — sweeper / open-lobby TTL filter.
+		{
+			Keys: bson.D{
+				{Key: "status", Value: 1},
+				{Key: "createdAt", Value: 1},
+			},
+		},
 	}
 	_, err := r.col.Indexes().CreateMany(ctx, models)
 	if err != nil {
@@ -81,12 +88,26 @@ func (r *MongoRepository) FindByID(ctx context.Context, id string) (*Table, erro
 	return &t, nil
 }
 
-func (r *MongoRepository) FindOpenLobby(ctx context.Context, worldID string) (*Table, error) {
+func (r *MongoRepository) Delete(ctx context.Context, id string) error {
+	res, err := r.col.DeleteOne(ctx, bson.M{"_id": id})
+	if err != nil {
+		return fmt.Errorf("delete table: %w", err)
+	}
+	if res.DeletedCount == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (r *MongoRepository) FindOpenLobby(ctx context.Context, worldID string, createdAfter time.Time) (*Table, error) {
 	// Phase 20 — private invite lobbies are never matched into the public pool.
 	filter := bson.M{
 		"worldId": worldID,
 		"status":  StatusLobby,
 		"private": bson.M{"$ne": true},
+	}
+	if !createdAfter.IsZero() {
+		filter["createdAt"] = bson.M{"$gt": createdAfter.UTC()}
 	}
 	opts := options.Find().SetSort(bson.D{{Key: "updatedAt", Value: 1}}).SetLimit(20)
 	cur, err := r.col.Find(ctx, filter, opts)
@@ -108,6 +129,37 @@ func (r *MongoRepository) FindOpenLobby(ctx context.Context, worldID string) (*T
 		return nil, fmt.Errorf("iterate lobbies: %w", err)
 	}
 	return nil, ErrNotFound
+}
+
+func (r *MongoRepository) ListUnstartedCreatedBefore(ctx context.Context, before time.Time) ([]*Table, error) {
+	filter := bson.M{
+		"status":    StatusLobby,
+		"createdAt": bson.M{"$lt": before.UTC()},
+		"$or": []bson.M{
+			{"gameId": bson.M{"$exists": false}},
+			{"gameId": ""},
+			{"gameId": nil},
+		},
+	}
+	cur, err := r.col.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("list expired lobbies: %w", err)
+	}
+	defer cur.Close(ctx)
+
+	var out []*Table
+	for cur.Next(ctx) {
+		var t Table
+		if err := cur.Decode(&t); err != nil {
+			return nil, fmt.Errorf("decode expired lobby: %w", err)
+		}
+		cp := t
+		out = append(out, &cp)
+	}
+	if err := cur.Err(); err != nil {
+		return nil, fmt.Errorf("iterate expired lobbies: %w", err)
+	}
+	return out, nil
 }
 
 func (r *MongoRepository) FindLobbyByUser(ctx context.Context, userID string) (*Table, error) {

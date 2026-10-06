@@ -1557,7 +1557,9 @@ Menu → Play → hub (3 CTAs)
 | **20.3** | ✅ Mobile Play hub; home Play → hub | Manual CTA navigation |
 | **20.4** | ✅ Mobile Start a game + lobby share | Private create + Share sheet |
 | **20.5** | ✅ Mobile join-code screen (Formik/Yup → join-code → lobby) | Two devices same lobby; reject after start |
-| **20.6** | E2E smoke + docs close | Checklist below |
+| **20.6** | ✅ Lobby TTL sweeper + `expiresAt` (backend) | Join rejects past TTL; sweep deletes unstarted |
+| **20.7** | ✅ Lobby countdown UI from `expiresAt` | Timer + expired exit |
+| **20.8** | E2E smoke + docs close | Checklist below |
 
 **20.0 notes**
 
@@ -1594,7 +1596,18 @@ Menu → Play → hub (3 CTAs)
 
 - ✅ `(app)/join-code`: Formik + Yup Crockford-8; `POST /tables/join-code` then lobby `mode=code`.
 - ✅ Errors: invalid / not found / full / sealed (already started). Lobby remount resumes seat.
-- E2E two-device + sealed reject → **20.6**.
+- Lobby TTL → **20.6**.
+
+**20.6 notes**
+
+- ✅ Unstarted public+private lobbies expire **15m after `createdAt`** (kill even if seated).
+- ✅ `Table.expiresAt` on views; join/join-code/ready reject + delete past TTL; Go ticker sweeps (boot + every 15m); WS `expired`.
+- ✅ OpenAPI **0.30**. Countdown UI → **20.7**.
+
+**20.7 notes**
+
+- ✅ Lobby shows countdown from server `expiresAt`; WS `expired` / zero / Ready `not_found` → expired screen + Back to Play.
+- ✅ Join-code copy covers expired codes. Full smoke → **20.8**.
 
 **API (contract)**
 
@@ -1602,13 +1615,14 @@ Menu → Play → hub (3 CTAs)
 - `POST /tables/join` `{ worldId }` → public pool only (unchanged behaviour; private excluded)
 - `POST /tables/join-code` `{ inviteCode }` → seat if lobby open
 
-**Smoke checklist (20.6)**
+**Smoke checklist (20.8)**
 
 1. Public: two devices same World → same pool lobby → Ready → board
 2. Private: A creates, shares code; B joins by code → Ready → board; C rejected after start
 3. Solo private cannot Ready until second player
 4. Private never appears in public pool
 5. Disconnect hold still works in private lobby
+6. Lobby past 15m `expiresAt` cannot join; sweeper removes it; UI countdown (20.7)
 
 ---
 
@@ -1798,4 +1812,6 @@ Menu → Play → hub (3 CTAs)
 | 2026-10-06 | **20.3:** mobile Play hub `(app)/play`; home → hub; worlds `mode` params; join-code stub                                                                                                                                                  |
 | 2026-10-06 | **20.4:** orval 0.29; `useEnterLobby` private create; `useTableLobby` modes; lobby invite + Share                                                                                                                                          |
 | 2026-10-06 | **20.5:** join-code Formik/Yup → `joinTableByCode` → lobby; invalid/full/sealed error copy                                                                                                                                                 |
+| 2026-10-06 | **20.6:** lobby TTL 15m + sweeper + `expiresAt` (OpenAPI 0.30); join rejects expired                                                                                                                                                      |
+| 2026-10-06 | **20.7:** lobby countdown from `expiresAt`; expired exit UI                                                                                                                                                                               |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

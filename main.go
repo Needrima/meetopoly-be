@@ -120,6 +120,8 @@ func main() {
 	gameSvc.SetAvatarLookup(profileLookup)
 	tableSvc := tablesvc.New(tables, tablesvc.Config{
 		DisconnectHold: 45 * time.Second,
+		LobbyTTL:       15 * time.Minute,
+		SweepInterval:  15 * time.Minute,
 	})
 	tableSvc.SetAvatarLookup(profileLookup)
 	tableSvc.SetGameStarter(gamesvc.TableBridge{Games: gameSvc})
@@ -132,6 +134,10 @@ func main() {
 		health.NewRedisPinger(redisClient),
 		cfg.Version,
 	)
+
+	runCtx, runCancel := context.WithCancel(context.Background())
+	defer runCancel()
+	tableSvc.StartSweeper(runCtx)
 
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,
@@ -167,6 +173,7 @@ func main() {
 	<-stop
 
 	slog.Info("shutting down")
+	runCancel()
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
