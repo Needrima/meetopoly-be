@@ -1555,7 +1555,7 @@ Menu → Play → hub (3 CTAs)
 | **20.1** | ✅ Backend `CreatePrivate` + invite gen; pool excludes private; `POST /tables` | `go test` + curl create vs public join |
 | **20.2** | ✅ Backend `JoinByInviteCode` + `POST /tables/join-code` | Tests: happy / full / sealed / resume |
 | **20.3** | ✅ Mobile Play hub; home Play → hub | Manual CTA navigation |
-| **20.4** | Mobile Start a game + lobby share | Private create + Share sheet |
+| **20.4** | ✅ Mobile Start a game + lobby share | Private create + Share sheet |
 | **20.5** | Mobile join-code screen | Two devices same lobby; reject after start |
 | **20.6** | E2E smoke + docs close | Checklist below |
 
@@ -1583,6 +1583,12 @@ Menu → Play → hub (3 CTAs)
 - ✅ `(app)/play` hub: Play with the world / Start a game / Join with invite code.
 - ✅ Home Play → hub; worlds gets `mode=public|private`; join-code stub until **20.5**.
 - Private create + share → **20.4**.
+
+**20.4 notes**
+
+- ✅ Orval regen 0.29; `useEnterLobby` creates private on Worlds Proceed then navigates with `mode=code` + `inviteCode` (avoids remount CreatePrivate).
+- ✅ `useTableLobby` modes: public / private / code; lobby shows invite + `Share.share`.
+- Join-code form UI → **20.5**.
 
 **API (contract)**
 
@@ -1784,4 +1790,5 @@ Menu → Play → hub (3 CTAs)
 | 2026-10-06 | **20.1:** `CreatePrivate` + Crockford invite codes; `POST /tables`; public pool excludes private; tests                                                                                                                                  |
 | 2026-10-06 | **20.2:** `JoinByInviteCode` + `POST /tables/join-code`; sealed/full/invalid/resume tests                                                                                                                                                 |
 | 2026-10-06 | **20.3:** mobile Play hub `(app)/play`; home → hub; worlds `mode` params; join-code stub                                                                                                                                                  |
+| 2026-10-06 | **20.4:** orval 0.29; `useEnterLobby` private create; `useTableLobby` modes; lobby invite + Share                                                                                                                                          |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
