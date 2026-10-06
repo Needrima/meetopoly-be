@@ -596,6 +596,39 @@ func TestSweepExpiredRemovesOccupiedLobbyKeepsFreshAndInGame(t *testing.T) {
 	}
 }
 
+func TestLeaveCompactsLobbySeats(t *testing.T) {
+	repo := newMemRepo()
+	svc := New(repo, Config{}).(*service)
+
+	a, err := svc.Join(context.Background(), "a", "Alice", "africa-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Join(context.Background(), "b", "Bob", "africa-1"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Join(context.Background(), "c", "Carol", "africa-1"); err != nil {
+		t.Fatal(err)
+	}
+
+	view, err := svc.Leave(context.Background(), a.ID, "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Seats[0].UserID == nil || *view.Seats[0].UserID != "b" {
+		t.Fatalf("seat 0=%v want b", view.Seats[0].UserID)
+	}
+	if view.Seats[1].UserID == nil || *view.Seats[1].UserID != "c" {
+		t.Fatalf("seat 1=%v want c", view.Seats[1].UserID)
+	}
+	if view.Seats[2].UserID != nil {
+		t.Fatalf("seat 2 should be open, got %v", *view.Seats[2].UserID)
+	}
+	if view.Seats[0].PinColor == nil || *view.Seats[0].PinColor == "" {
+		t.Fatal("compacted seat should keep pinColor")
+	}
+}
+
 func TestJoinSoloResetsLobbyTTL(t *testing.T) {
 	repo := newMemRepo()
 	svc := New(repo, Config{LobbyTTL: 15 * time.Minute}).(*service)

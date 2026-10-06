@@ -548,6 +548,10 @@ func (s *service) leaveLocked(ctx context.Context, t *tablerepo.Table, userID st
 	if !cleared {
 		return s.viewOf(ctx, t), nil
 	}
+	// Lobby only — pack remaining players into seats 0..n-1 (no holes).
+	if t.Status == tablerepo.StatusLobby {
+		compactLobbySeats(t)
+	}
 	normalizeMatchmakingStatus(t)
 	if err := s.repo.Update(ctx, t); err != nil {
 		return nil, err
@@ -555,6 +559,28 @@ func (s *service) leaveLocked(ctx context.Context, t *tablerepo.Table, userID st
 	view := s.viewOf(ctx, t)
 	s.broadcast(t.ID, Event{Type: "state", Table: view})
 	return view, nil
+}
+
+// compactLobbySeats shifts occupied seats left so there are no gaps (Phase 20).
+// Preserves ready / pinColor / hold state; rewrites SeatIndex to the new slot.
+func compactLobbySeats(t *tablerepo.Table) {
+	if t == nil || len(t.Seats) == 0 {
+		return
+	}
+	remaining := make([]tablerepo.Seat, 0, len(t.Seats))
+	for _, seat := range t.Seats {
+		if seat.UserID == "" {
+			continue
+		}
+		remaining = append(remaining, seat)
+	}
+	for i := range t.Seats {
+		t.Seats[i] = emptySeat(i)
+	}
+	for i, seat := range remaining {
+		seat.SeatIndex = i
+		t.Seats[i] = seat
+	}
 }
 
 // isBrokenMatchmakingTable is a half-started lobby with no game — resume would
