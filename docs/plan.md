@@ -52,7 +52,7 @@ Meetopoly is a **mobile-first**, worldwide social property game:
 | Pins on square | Up to **6**; fan OK for ≤4; crowded → **2×3** grid oriented to tile long edge                            |
 | Avatar look    | Pod + Maps-style callout: colored circle + **initial** now; photo later (settings upload)                |
 | App home       | Signed-in **menu** (Play / Settings / About / Log out) — **not** the board as root                       |
-| Leave board    | Only via panel **⋯** (no on-art Back); block Android back + iOS swipe-back while on board                |
+| Leave game    | Only via panel **⋯** (no on-art Back); block Android back + iOS swipe-back while on board                |
 | Presence sync  | Pins via game WS; **board** avatar poses Phase **7** (~10–20 Hz DataChannel); **hub** poses Phase **8**  |
 | Voice          | Phase **10**; same WebRTC room model as presence                                                         |
 
@@ -367,7 +367,7 @@ Each phase lists **goal**, **backend files**, **mobile files**, **exit criteria*
 
 - **Home** (`/(app)/index`): branded menu — **Play**, **Settings** (stub OK), **About Meetopoly** (stub OK), **Log out**. Health / Locations are reachable from the board **⋯** drawer.
 - **Play** → `/(app)/board` (direct; no World picker / lobby yet).
-- **Board panel top:** **⋯** opens a **right drawer** (X top-left) — **Leave board**, **Health**, **Locations**. Log out stays on menu home only.
+- **Board panel top:** **⋯** opens a **right drawer** (X top-left) — **Leave game**, **Health**, **Locations**. Log out stays on menu home only.
 - Remove on-board **Back** Pressable. `BackHandler` + `gestureEnabled: false` (or equivalent) so hardware/swipe back cannot leave the board; hub **Leave** stays explicit.
 - Settings / About: placeholder screens or short modals are enough for 4.8.
 
@@ -506,7 +506,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 | **6.1**  | ✅ Dice + pin move + pass-GO; tile-by-tile motion; auto-advance (interim)                                                                                                                                                                                    | Buy, rent, End UI                                                                               |
 | **6.2**  | ✅ Explicit **End** + **doubles** re-roll; stop auto-advance after roll; **game WS** push                                                                                                                                                                    | Buy, auction, Jail                                                                              |
 | **6.2b** | ✅ Dice **roll animation** (Moti) on all devices when `lastRoll` updates; hold pin walk until dice land                                                                                                                                                      | Timer, buy, Lottie pack unless asked                                                            |
-| **6.2c** | Leave board = **resign** (confirm); notify via game WS; last active player **wins**                                                                                                                                                                          | Full bankruptcy asset transfer (→ Phase 14); game WS disconnect hold → **7.5**                  |
+| **6.2c** | Leave game = **resign** (confirm); notify via game WS; last active player **wins**                                                                                                                                                                          | Full bankruptcy asset transfer (→ Phase 14); game WS disconnect hold → **7.5**                  |
 | **6.3**  | ✅ Interim **3-min** per-turn AFK (`turnDeadline`) — **superseded by 6.3b**                                                                                                                                                                                  | —                                                                                               |
 | **6.3b** | ✅ **45-min per-player time bank**; drain only on your turn; bank = 0 → eliminate; all banks on every HUD                                                                                                                                                    | Phase 13 pause actions (auction/trade/…); hubs                                                  |
 | **6.4**  | ✅ **Buy at list price** for unowned city / airport / utility; ownership on game doc; classic price/rent ladder in seeds; buy modal shows 1–4 houses + hotel; **owner color chip** on tiles; **tap any tile** → info sheet (deed / Chance / Chest / tax / …) | Auction (→ Phase 13); if player skips buy, property stays unowned until 13; mortgage chip later |
@@ -627,7 +627,7 @@ Roll → move (+pass GO if applicable) → resolve space →
 **7.4 notes**
 
 - Prove independence: dice/pin walk must not snap or force social avatars.
-- Presence reconnect rejoins board room without breaking game WS; leave board tears down presence peer cleanly.
+- Presence reconnect rejoins board room without breaking game WS; leave game tears down presence peer cleanly.
 - Harden WebRTC when PC/DC dies while presence signaling WS stays up (renegotiate or bounce socket).
 - Pose fan-out rate-limit on SFU (~20 Hz/peer); `HubRoomID` stub next to `BoardRoomID` for Phase 8.
 - **Done (2026-09-24) 7.4:** SFU `allowPose` + `HubRoomID`; mobile PC/DC recover while WS open; `disconnect()` on leave/hub enter; pins remain game-WS-only (no avatar snap on roll).
@@ -886,7 +886,7 @@ Manual (2 clients preferred; BE running; landscape):
 2. Play → create/join table → Ready → game starts (pins, MeetCoin, turn HUD).
 3. Walk board, roll, buy unowned, pay/collect rent, pass GO, pay tax if landed.
 4. Enter a hub (X leave / Open board / roster / country) → leave hub → back on board.
-5. Leave board via ⋯ (resign confirm) → home. No stuck WS / false resign for peer.
+5. Leave game via ⋯ (resign confirm) → home. No stuck WS / false resign for peer.
 
 **B. Economy feedback (9.3)**
 
@@ -1556,7 +1556,7 @@ Menu → Play → hub (3 CTAs)
 | **20.2** | ✅ Backend `JoinByInviteCode` + `POST /tables/join-code` | Tests: happy / full / sealed / resume |
 | **20.3** | ✅ Mobile Play hub; home Play → hub | Manual CTA navigation |
 | **20.4** | ✅ Mobile Start a game + lobby share | Private create + Share sheet |
-| **20.5** | Mobile join-code screen | Two devices same lobby; reject after start |
+| **20.5** | ✅ Mobile join-code screen (Formik/Yup → join-code → lobby) | Two devices same lobby; reject after start |
 | **20.6** | E2E smoke + docs close | Checklist below |
 
 **20.0 notes**
@@ -1589,6 +1589,12 @@ Menu → Play → hub (3 CTAs)
 - ✅ Orval regen 0.29; `useEnterLobby` creates private on Worlds Proceed then navigates with `mode=code` + `inviteCode` (avoids remount CreatePrivate).
 - ✅ `useTableLobby` modes: public / private / code; lobby shows invite + `Share.share`.
 - Join-code form UI → **20.5**.
+
+**20.5 notes**
+
+- ✅ `(app)/join-code`: Formik + Yup Crockford-8; `POST /tables/join-code` then lobby `mode=code`.
+- ✅ Errors: invalid / not found / full / sealed (already started). Lobby remount resumes seat.
+- E2E two-device + sealed reject → **20.6**.
 
 **API (contract)**
 
@@ -1721,7 +1727,7 @@ Menu → Play → hub (3 CTAs)
 | 2026-09-25 | **9.0d:** `HubRoster` IN HUB n/16 · 2-col · country · X; right-rail joystick                                                                                                                                                              |
 | 2026-09-25 | **9.0e:** hub chrome smoke checklist (shell/copy/walk/roster/country/presence/leave)                                                                                                                                                      |
 | 2026-09-25 | **9.1:** shared `DeedCard` (strip border + Moti stagger); buy + tile-info overlays; Phase 9.1–9.4 sub-slices locked                                                                                                                       |
-| 2026-09-25 | **9.2:** home Settings `@expo/ui` Mute mic (SecureStore); Leave board-only; report deferred until picker + API                                                                                                                            |
+| 2026-09-25 | **9.2:** home Settings `@expo/ui` Mute mic (SecureStore); Leave game-only; report deferred until picker + API                                                                                                                            |
 | 2026-09-27 | **9.3:** board economy modals (buy/rent/tax/salary, 2.5s queue, involved-only); hub/spectators toasts; Chance/Auction/Jail refs → later phases                                                                                            |
 | 2026-09-27 | **9.4:** HubRoster ReactNode tsc fix; economy queue unique ids; Phase 9 full-match smoke checklist documented                                                                                                                             |
 | 2026-09-27 | **Phase 10 split:** 10.0–10.4 hub-first voice; muteMic SoT; audio-only; STUN; board voice = 10.4 ask-before                                                                                                                               |
@@ -1791,4 +1797,5 @@ Menu → Play → hub (3 CTAs)
 | 2026-10-06 | **20.2:** `JoinByInviteCode` + `POST /tables/join-code`; sealed/full/invalid/resume tests                                                                                                                                                 |
 | 2026-10-06 | **20.3:** mobile Play hub `(app)/play`; home → hub; worlds `mode` params; join-code stub                                                                                                                                                  |
 | 2026-10-06 | **20.4:** orval 0.29; `useEnterLobby` private create; `useTableLobby` modes; lobby invite + Share                                                                                                                                          |
+| 2026-10-06 | **20.5:** join-code Formik/Yup → `joinTableByCode` → lobby; invalid/full/sealed error copy                                                                                                                                                 |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
