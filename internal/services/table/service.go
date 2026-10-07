@@ -222,7 +222,7 @@ func (s *service) CreatePrivate(ctx context.Context, userID, username, worldID s
 	}
 
 	const maxAttempts = 8
-	for attempt := 0; attempt < maxAttempts; attempt++ {
+	for range maxAttempts {
 		code, genErr := generateInviteCode()
 		if genErr != nil {
 			return nil, fmt.Errorf("invite code: %w", genErr)

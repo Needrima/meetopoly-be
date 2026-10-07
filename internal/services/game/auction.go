@@ -3,19 +3,20 @@ package game
 import (
 	"context"
 	"errors"
+	"slices"
 	"time"
 
 	gamerepo "meetopoly-be/internal/repository/game"
 )
 
 var (
-	ErrNoBuyOffer      = errors.New("no buy offer to auction")
-	ErrAuctionActive   = errors.New("auction already in progress")
-	ErrNoAuction       = errors.New("no active auction")
-	ErrNotAuctionTurn  = errors.New("not your turn to bid")
-	ErrBidTooLow       = errors.New("bid too low")
-	ErrAlreadyFolded   = errors.New("already folded from auction")
-	ErrMustResolveBuy  = errors.New("must buy or start auction before ending turn")
+	ErrNoBuyOffer     = errors.New("no buy offer to auction")
+	ErrAuctionActive  = errors.New("auction already in progress")
+	ErrNoAuction      = errors.New("no active auction")
+	ErrNotAuctionTurn = errors.New("not your turn to bid")
+	ErrBidTooLow      = errors.New("bid too low")
+	ErrAlreadyFolded  = errors.New("already folded from auction")
+	ErrMustResolveBuy = errors.New("must buy or start auction before ending turn")
 )
 
 // AuctionEventView is one line in the public auction feed.
@@ -28,21 +29,21 @@ type AuctionEventView struct {
 
 // AuctionView is the public active auction snapshot (Phase 13.0).
 type AuctionView struct {
-	BoardIndex            int                 `json:"boardIndex"`
-	Slug                  string              `json:"slug"`
-	Name                  string              `json:"name"`
-	Kind                  string              `json:"kind"`
-	ListPrice             int                 `json:"listPrice"`
-	HighBid               int                 `json:"highBid"`
-	HighBidderUserID      string              `json:"highBidderUserId,omitempty"`
-	HighBidderUsername    string              `json:"highBidderUsername,omitempty"`
-	CurrentBidderUserID   string              `json:"currentBidderUserId"`
-	CurrentBidderUsername string              `json:"currentBidderUsername,omitempty"`
-	MinBid                int                 `json:"minBid"`
-	BidDeadline           string              `json:"bidDeadline"`
-	FoldedUserIDs         []string            `json:"foldedUserIds"`
-	History               []AuctionEventView  `json:"history"`
-	StartedByUserID       string              `json:"startedByUserId"`
+	BoardIndex            int                `json:"boardIndex"`
+	Slug                  string             `json:"slug"`
+	Name                  string             `json:"name"`
+	Kind                  string             `json:"kind"`
+	ListPrice             int                `json:"listPrice"`
+	HighBid               int                `json:"highBid"`
+	HighBidderUserID      string             `json:"highBidderUserId,omitempty"`
+	HighBidderUsername    string             `json:"highBidderUsername,omitempty"`
+	CurrentBidderUserID   string             `json:"currentBidderUserId"`
+	CurrentBidderUsername string             `json:"currentBidderUsername,omitempty"`
+	MinBid                int                `json:"minBid"`
+	BidDeadline           string             `json:"bidDeadline"`
+	FoldedUserIDs         []string           `json:"foldedUserIds"`
+	History               []AuctionEventView `json:"history"`
+	StartedByUserID       string             `json:"startedByUserId"`
 }
 
 // LastAuctionView is the most recent settle/void for toasts (Phase 13.0).
@@ -82,12 +83,7 @@ func isFolded(a *gamerepo.Auction, userID string) bool {
 	if a == nil {
 		return false
 	}
-	for _, id := range a.FoldedUserIDs {
-		if id == userID {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(a.FoldedUserIDs, userID)
 }
 
 func nonFoldedActive(g *gamerepo.Game, a *gamerepo.Auction) []string {
@@ -477,10 +473,7 @@ func (s *service) armAuctionTimerLocked(g *gamerepo.Game) {
 		return
 	}
 	deadline := g.Auction.BidderTurnStartedAt.Add(gamerepo.AuctionBidTurn)
-	delay := time.Until(deadline)
-	if delay < 0 {
-		delay = 0
-	}
+	delay := max(time.Until(deadline), 0)
 	gameID := g.ID
 	s.auctionTimers[gameID] = time.AfterFunc(delay, func() {
 		_ = s.onAuctionBidTimeout(context.Background(), gameID)

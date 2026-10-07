@@ -37,7 +37,11 @@ func (r *RedisRepository) Create(ctx context.Context, token string, data TokenDa
 	pipe.Set(ctx, keyPrefix+token, payload, ttl)
 	// Index login sessions so we can revoke all for a user (password reset).
 	if data.Kind == KindSession && data.UserID != "" {
-		pipe.SAdd(ctx, userSessionsPrefix+data.UserID, token)
+		setKey := userSessionsPrefix + data.UserID
+		pipe.SAdd(ctx, setKey, token)
+		if ttl > 0 {
+			pipe.Expire(ctx, setKey, ttl)
+		}
 	}
 	if _, err := pipe.Exec(ctx); err != nil {
 		return fmt.Errorf("session set: %w", err)
@@ -96,6 +100,41 @@ func (r *RedisRepository) DeleteAllForUser(ctx context.Context, userID string) e
 	pipe.Del(ctx, setKey)
 	if _, err := pipe.Exec(ctx); err != nil {
 		return fmt.Errorf("session delete all: %w", err)
+	}
+	return nil
+}
+
+func (r *RedisRepository) TTL(ctx context.Context, token string) (time.Duration, error) {
+	d, err := r.client.TTL(ctx, keyPrefix+token).Result()
+	if err != nil {
+		return 0, fmt.Errorf("session ttl: %w", err)
+	}
+	// Redis: -2 = missing, -1 = no expiry.
+	if d == -2*time.Second {
+		return 0, ErrNotFound
+	}
+	return d, nil
+}
+
+func (r *RedisRepository) Touch(ctx context.Context, token string, ttl time.Duration) error {
+	if ttl <= 0 {
+		return nil
+	}
+	data, err := r.Get(ctx, token)
+	if err != nil {
+		return err
+	}
+	pipe := r.client.TxPipeline()
+	pipe.Expire(ctx, keyPrefix+token, ttl)
+	// Re-SAdd so password-reset revoke-all still finds the token if the index
+	// set had expired (Expire alone is a no-op on a missing key).
+	if data.Kind == KindSession && data.UserID != "" {
+		setKey := userSessionsPrefix + data.UserID
+		pipe.SAdd(ctx, setKey, token)
+		pipe.Expire(ctx, setKey, ttl)
+	}
+	if _, err := pipe.Exec(ctx); err != nil {
+		return fmt.Errorf("session touch: %w", err)
 	}
 	return nil
 }

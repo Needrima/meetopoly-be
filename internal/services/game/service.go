@@ -198,7 +198,7 @@ type View struct {
 	// CanBankrupt — caller/current may declare bankruptcy (cash < 0).
 	CanBankrupt bool `json:"canBankrupt"`
 	// CanStartDebtPay — current player may open the 2m raise-funds window.
-	CanStartDebtPay bool `json:"canStartDebtPay"`
+	CanStartDebtPay bool   `json:"canStartDebtPay"`
 	WinnerUserID    string `json:"winnerUserId,omitempty"`
 	WinnerUsername  string `json:"winnerUsername,omitempty"`
 	// TurnStartedAt — RFC3339 UTC; current player's bank drains from this instant.
@@ -1168,10 +1168,7 @@ func (s *service) Build(ctx context.Context, gameID, userID string, boardIndex i
 		return nil, ErrMortgagedSet
 	}
 	minH := minHousesInColorGroup(spaces, g.Deeds, userID, sp.ColorGroup)
-	curH := g.Deeds[deedIdx].Houses
-	if curH < 0 {
-		curH = 0
-	}
+	curH := max(g.Deeds[deedIdx].Houses, 0)
 	if curH != minH {
 		return nil, ErrUnevenBuild
 	}
@@ -1242,10 +1239,7 @@ func (s *service) SellBuilding(ctx context.Context, gameID, userID string, board
 	if deedIdx < 0 || g.Deeds[deedIdx].OwnerUserID != userID {
 		return nil, ErrNotOwner
 	}
-	curH := g.Deeds[deedIdx].Houses
-	if curH < 0 {
-		curH = 0
-	}
+	curH := max(g.Deeds[deedIdx].Houses, 0)
 	if curH <= 0 {
 		return nil, ErrNothingToSell
 	}
@@ -1621,7 +1615,7 @@ func capitalizePlayerName(s string) string {
 	}
 	b := []byte(s)
 	capNext := true
-	for i := 0; i < len(b); i++ {
+	for i := range b {
 		c := b[i]
 		if c == '_' {
 			capNext = true
@@ -1684,7 +1678,7 @@ func advanceToNextActive(g *gamerepo.Game) {
 	if n == 0 {
 		return
 	}
-	for i := 0; i < n; i++ {
+	for range n {
 		g.CurrentTurn = (g.CurrentTurn + 1) % n
 		p := playerByTurnOrder(g, g.CurrentTurn)
 		if p != nil && !p.Resigned {
@@ -1753,14 +1747,8 @@ func (s *service) pauseCurrentBankLocked(g *gamerepo.Game) {
 		s.cancelBankTimerLocked(g.ID)
 		return
 	}
-	elapsed := time.Since(g.TurnStartedAt)
-	if elapsed < 0 {
-		elapsed = 0
-	}
-	left := g.Players[idx].TimeRemainingMs - elapsed.Milliseconds()
-	if left < 0 {
-		left = 0
-	}
+	elapsed := max(time.Since(g.TurnStartedAt), 0)
+	left := max(g.Players[idx].TimeRemainingMs-elapsed.Milliseconds(), 0)
 	g.Players[idx].TimeRemainingMs = left
 	g.TurnStartedAt = time.Time{}
 	s.cancelBankTimerLocked(g.ID)
@@ -1818,10 +1806,7 @@ func (s *service) syncTimeBankLocked(ctx context.Context, g *gamerepo.Game) (boo
 		if idx < 0 || g.Players[idx].Resigned || g.TurnStartedAt.IsZero() {
 			break
 		}
-		elapsed := time.Since(g.TurnStartedAt)
-		if elapsed < 0 {
-			elapsed = 0
-		}
+		elapsed := max(time.Since(g.TurnStartedAt), 0)
 		if elapsed.Milliseconds() < g.Players[idx].TimeRemainingMs {
 			s.armBankTimerLocked(g)
 			break
@@ -1879,10 +1864,7 @@ func (s *service) armBankTimerLocked(g *gamerepo.Game) {
 	if idx < 0 || g.Players[idx].Resigned {
 		return
 	}
-	left := g.Players[idx].TimeRemainingMs - time.Since(g.TurnStartedAt).Milliseconds()
-	if left < 0 {
-		left = 0
-	}
+	left := max(g.Players[idx].TimeRemainingMs-time.Since(g.TurnStartedAt).Milliseconds(), 0)
 	delay := time.Duration(left) * time.Millisecond
 	gameID := g.ID
 	s.bankTimers[gameID] = time.AfterFunc(delay, func() {
@@ -2050,10 +2032,7 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 	}
 	deeds := make([]DeedView, 0, len(g.Deeds))
 	for _, d := range g.Deeds {
-		houses := d.Houses
-		if houses < 0 {
-			houses = 0
-		}
+		houses := max(d.Houses, 0)
 		if houses > 5 {
 			houses = 5
 		}
@@ -2181,10 +2160,7 @@ func toView(g *gamerepo.Game, spaces []Space) *View {
 	}
 	var debtPay *DebtPayView
 	if g.DebtPay != nil {
-		rem := time.Until(g.DebtPay.Deadline).Milliseconds()
-		if rem < 0 {
-			rem = 0
-		}
+		rem := max(time.Until(g.DebtPay.Deadline).Milliseconds(), 0)
 		debtPay = &DebtPayView{
 			UserID:    g.DebtPay.UserID,
 			Username:  nameByID[g.DebtPay.UserID],
@@ -2315,11 +2291,7 @@ func (s *service) resolveLandingWithOpts(
 
 	pay := amount
 	if g.Players[payerIdx].Cash < amount {
-		if g.Players[payerIdx].Cash > 0 {
-			pay = g.Players[payerIdx].Cash
-		} else {
-			pay = 0
-		}
+		pay = max(g.Players[payerIdx].Cash, 0)
 	}
 	applyPaymentShortfallLocked(g, payerIdx, amount, pay, toUserID, kind, spaceName, boardIndex)
 }
@@ -2372,11 +2344,7 @@ func chargeJailFineLocked(g *gamerepo.Game, playerIdx int) {
 	amount := gamerepo.JailFine
 	pay := amount
 	if g.Players[playerIdx].Cash < amount {
-		if g.Players[playerIdx].Cash > 0 {
-			pay = g.Players[playerIdx].Cash
-		} else {
-			pay = 0
-		}
+		pay = max(g.Players[playerIdx].Cash, 0)
 	}
 	boardIndex := g.Players[playerIdx].BoardIndex
 	applyPaymentShortfallLocked(g, playerIdx, amount, pay, "", "jail", "Jail", boardIndex)

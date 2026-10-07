@@ -1635,7 +1635,7 @@ Menu → Play → hub (3 CTAs)
 | Slice | Deliverable | Test before next |
 | ----- | ----------- | ---------------- |
 | **21.0** | ✅ Redis cache for `/worlds` + `/locations*` (miss→Mongo fill); boot + 24h refresher | Unit + curl worlds/locations still correct |
-| **21.1** | Login session Redis TTL + sliding refresh | Login TTL > 0; idle expiry; active refresh |
+| **21.1** | ✅ Login session Redis TTL + sliding refresh | Login TTL > 0; idle expiry; active refresh |
 
 **21.0 notes**
 
@@ -1643,7 +1643,13 @@ Menu → Play → hub (3 CTAs)
 - ✅ Location service reads cache first; Redis errors fall through to Mongo.
 - ✅ `StartCacheRefresher`: warm ~5s after boot, then every 24h.
 - After `go run ./cmd/seed-locations …`, flush `cache:v1:*` (or restart after TTL) so clients see new seed data.
-- Session TTL → **21.1** (do not start until go-ahead).
+
+**21.1 notes**
+
+- ✅ `SESSION_TTL_HOURS` (default **720** = 30d) → `auth.Config.SessionTTL`; login + complete-profile `Create` use TTL > 0.
+- ✅ `ResolveSession` sliding refresh: `TTL` then `Touch` when remaining < half SessionTTL, or legacy key with no expiry (Redis −1).
+- ✅ `user_sessions:{userId}` index TTL refreshed on Create/Touch with the session key.
+- Signup / password-reset tokens keep their own short TTLs (unchanged).
 
 ---
 
@@ -1836,4 +1842,5 @@ Menu → Play → hub (3 CTAs)
 | 2026-10-06 | **20.6:** lobby TTL 15m + sweeper + `expiresAt` (OpenAPI 0.30); join rejects expired                                                                                                                                                      |
 | 2026-10-06 | **20.7:** lobby countdown from `expiresAt`; expired exit UI                                                                                                                                                                               |
 | 2026-10-07 | **21.0:** Redis cache for worlds/locations + boot/24h refresher                                                                                                                                                                           |
+| 2026-10-07 | **21.1:** login Redis session TTL (default 30d) + sliding refresh on ResolveSession; `SESSION_TTL_HOURS`                                                                                                                                   |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

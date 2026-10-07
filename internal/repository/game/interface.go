@@ -157,18 +157,18 @@ type AuctionEvent struct {
 
 // Auction is an active bank auction for one unowned space (Phase 13.0).
 type Auction struct {
-	BoardIndex            int            `bson:"boardIndex" json:"boardIndex"`
-	Slug                  string         `bson:"slug" json:"slug"`
-	Name                  string         `bson:"name" json:"name"`
-	Kind                  string         `bson:"kind" json:"kind"`
-	ListPrice             int            `bson:"listPrice" json:"listPrice"`
-	HighBid               int            `bson:"highBid" json:"highBid"`
-	HighBidderUserID      string         `bson:"highBidderUserId,omitempty" json:"highBidderUserId,omitempty"`
-	CurrentBidderUserID   string         `bson:"currentBidderUserId" json:"currentBidderUserId"`
-	BidderTurnStartedAt   time.Time      `bson:"bidderTurnStartedAt" json:"bidderTurnStartedAt"`
-	FoldedUserIDs         []string       `bson:"foldedUserIds,omitempty" json:"foldedUserIds,omitempty"`
-	History               []AuctionEvent `bson:"history,omitempty" json:"history,omitempty"`
-	StartedByUserID       string         `bson:"startedByUserId" json:"startedByUserId"`
+	BoardIndex          int            `bson:"boardIndex" json:"boardIndex"`
+	Slug                string         `bson:"slug" json:"slug"`
+	Name                string         `bson:"name" json:"name"`
+	Kind                string         `bson:"kind" json:"kind"`
+	ListPrice           int            `bson:"listPrice" json:"listPrice"`
+	HighBid             int            `bson:"highBid" json:"highBid"`
+	HighBidderUserID    string         `bson:"highBidderUserId,omitempty" json:"highBidderUserId,omitempty"`
+	CurrentBidderUserID string         `bson:"currentBidderUserId" json:"currentBidderUserId"`
+	BidderTurnStartedAt time.Time      `bson:"bidderTurnStartedAt" json:"bidderTurnStartedAt"`
+	FoldedUserIDs       []string       `bson:"foldedUserIds,omitempty" json:"foldedUserIds,omitempty"`
+	History             []AuctionEvent `bson:"history,omitempty" json:"history,omitempty"`
+	StartedByUserID     string         `bson:"startedByUserId" json:"startedByUserId"`
 }
 
 // LastAuction is the most recent auction settle/void (Phase 13.0) for client toasts.
@@ -183,9 +183,9 @@ type LastAuction struct {
 
 // TradeSide is one side of a trade offer (Phase 13.2).
 type TradeSide struct {
-	Cash              int   `bson:"cash,omitempty" json:"cash,omitempty"`
-	BoardIndexes      []int `bson:"boardIndexes,omitempty" json:"boardIndexes,omitempty"`
-	GetOutOfJailFree  int   `bson:"getOutOfJailFree,omitempty" json:"getOutOfJailFree,omitempty"`
+	Cash             int   `bson:"cash,omitempty" json:"cash,omitempty"`
+	BoardIndexes     []int `bson:"boardIndexes,omitempty" json:"boardIndexes,omitempty"`
+	GetOutOfJailFree int   `bson:"getOutOfJailFree,omitempty" json:"getOutOfJailFree,omitempty"`
 }
 
 // TradeOffer is the single open player-to-player trade (Phase 13.2).
@@ -265,7 +265,7 @@ type Game struct {
 	WinnerUserID   string `bson:"winnerUserId,omitempty" json:"winnerUserId,omitempty"`
 	WinnerUsername string `bson:"winnerUsername,omitempty" json:"winnerUsername,omitempty"`
 	// TurnStartedAt — when the current player's bank started draining (Phase 6.3b).
-	TurnStartedAt time.Time `bson:"turnStartedAt,omitempty" json:"turnStartedAt,omitempty"`
+	TurnStartedAt time.Time `bson:"turnStartedAt,omitempty" json:"turnStartedAt"`
 	CreatedAt     time.Time `bson:"createdAt" json:"createdAt"`
 	UpdatedAt     time.Time `bson:"updatedAt" json:"updatedAt"`
 }

@@ -137,7 +137,7 @@ func TestRollDoesNotAdvanceTurn_EndTurnDoes(t *testing.T) {
 	var view *View
 	var err error
 	// Keep rolling until non-doubles so we hit awaiting_end.
-	for i := 0; i < 40; i++ {
+	for range 40 {
 		view, err = svc.Roll(context.Background(), "g1", "a")
 		if err != nil {
 			t.Fatal(err)
@@ -191,7 +191,7 @@ func TestThirdDoublesSkipsMoveAndRequiresEnd(t *testing.T) {
 	var view *View
 	var err error
 	found := false
-	for i := 0; i < 80; i++ {
+	for range 80 {
 		// Reset streak before each attempt if previous roll wasn't doubles
 		cur, _ = repo.FindByID(context.Background(), "g1")
 		if cur.TurnPhase != gamerepo.TurnPhaseAwaitingRoll {
@@ -807,7 +807,7 @@ func TestJailDoublesExitMoves(t *testing.T) {
 	seedTwoPlayer(t, repo)
 
 	found := false
-	for i := 0; i < 80; i++ {
+	for range 80 {
 		g, _ := repo.FindByID(context.Background(), "g1")
 		g.Players[0].BoardIndex = gamerepo.JailBoardIndex
 		g.Players[0].InJail = true
@@ -851,7 +851,7 @@ func TestJailFailedAttemptsThenForcedPay(t *testing.T) {
 	// Two failed non-doubles attempts
 	for attempt := 1; attempt <= 2; attempt++ {
 		got := false
-		for i := 0; i < 80; i++ {
+		for range 80 {
 			g, _ := repo.FindByID(context.Background(), "g1")
 			g.Players[0].BoardIndex = gamerepo.JailBoardIndex
 			g.Players[0].InJail = true
@@ -887,7 +887,7 @@ func TestJailFailedAttemptsThenForcedPay(t *testing.T) {
 
 	// Third fail with cash → pay + move
 	got := false
-	for i := 0; i < 80; i++ {
+	for range 80 {
 		g, _ := repo.FindByID(context.Background(), "g1")
 		g.Players[0].BoardIndex = gamerepo.JailBoardIndex
 		g.Players[0].InJail = true
@@ -942,7 +942,7 @@ func TestJailThirdFailBrokeLeavesWithDebt(t *testing.T) {
 	seedTwoPlayer(t, repo)
 
 	got := false
-	for i := 0; i < 80; i++ {
+	for range 80 {
 		g, _ := repo.FindByID(context.Background(), "g1")
 		g.Players[0].BoardIndex = gamerepo.JailBoardIndex
 		g.Players[0].InJail = true
@@ -999,7 +999,7 @@ func TestPassGoStillWorks(t *testing.T) {
 	cur.Players[0].BoardIndex = 38
 	_ = repo.Update(context.Background(), cur)
 
-	for i := 0; i < 40; i++ {
+	for range 40 {
 		cur, _ = repo.FindByID(context.Background(), "g1")
 		cur.Players[0].BoardIndex = 38
 		cur.Players[0].Cash = 2000

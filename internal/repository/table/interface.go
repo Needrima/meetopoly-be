@@ -16,9 +16,9 @@ const (
 
 // Seat is one of six table slots.
 type Seat struct {
-	SeatIndex  int        `bson:"seatIndex" json:"seatIndex"`
-	UserID     string     `bson:"userId,omitempty" json:"userId,omitempty"`
-	Username   string     `bson:"username,omitempty" json:"username,omitempty"`
+	SeatIndex int    `bson:"seatIndex" json:"seatIndex"`
+	UserID    string `bson:"userId,omitempty" json:"userId,omitempty"`
+	Username  string `bson:"username,omitempty" json:"username,omitempty"`
 	// PinColor is set on join — unique among occupied seats (lobby → game).
 	PinColor   string     `bson:"pinColor,omitempty" json:"pinColor,omitempty"`
 	Ready      bool       `bson:"ready" json:"ready"`

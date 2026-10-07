@@ -186,7 +186,7 @@ func remapWorld(worldID string, docs, africaDonor []LocationDoc) ([]LocationDoc,
 	propI, chanceI, chestI, railI := 0, 0, 0, 0
 	out := make([]LocationDoc, 0, 40)
 
-	for idx := 0; idx < 40; idx++ {
+	for idx := range 40 {
 		slot := classicSlots[idx]
 		var doc LocationDoc
 		switch {
@@ -385,7 +385,7 @@ func pickProperties(docs []LocationDoc) (keep, leftovers []LocationDoc) {
 		return props[i].BoardIndex < props[j].BoardIndex
 	})
 	if len(props) >= 22 {
-		for i := 0; i < 22; i++ {
+		for i := range 22 {
 			keep = append(keep, Clone(props[i]))
 		}
 		for i := 22; i < len(props); i++ {

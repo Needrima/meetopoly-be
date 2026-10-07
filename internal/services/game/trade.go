@@ -9,12 +9,12 @@ import (
 )
 
 var (
-	ErrNoTrade           = errors.New("no open trade offer")
-	ErrTradeActive       = errors.New("a trade offer is already open")
-	ErrInvalidTrade      = errors.New("invalid trade offer")
-	ErrNotTradeTarget    = errors.New("not the trade target")
-	ErrTradeNeedsDeed    = errors.New("cash-for-cash trades are not allowed")
-	ErrTradeHasBuildings = errors.New("cannot trade properties with houses or hotels")
+	ErrNoTrade             = errors.New("no open trade offer")
+	ErrTradeActive         = errors.New("a trade offer is already open")
+	ErrInvalidTrade        = errors.New("invalid trade offer")
+	ErrNotTradeTarget      = errors.New("not the trade target")
+	ErrTradeNeedsDeed      = errors.New("cash-for-cash trades are not allowed")
+	ErrTradeHasBuildings   = errors.New("cannot trade properties with houses or hotels")
 	ErrTradeMortgageChoice = errors.New("mortgageAction required: redeem_all or leave_all")
 )
 
@@ -223,10 +223,7 @@ func (s *service) armTradeTimerLocked(g *gamerepo.Game) {
 	if g.Trade == nil {
 		return
 	}
-	delay := time.Until(g.Trade.ReplyDeadline)
-	if delay < 0 {
-		delay = 0
-	}
+	delay := max(time.Until(g.Trade.ReplyDeadline), 0)
 	gameID := g.ID
 	s.tradeTimers[gameID] = time.AfterFunc(delay, func() {
 		_ = s.onTradeReplyTimeout(context.Background(), gameID)

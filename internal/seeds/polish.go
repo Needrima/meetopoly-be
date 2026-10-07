@@ -329,7 +329,7 @@ func nextLetterCode(name, preferred string, used map[string]struct{}) string {
 			return cand
 		}
 	}
-	for n := 0; n < 1000; n++ {
+	for n := range 1000 {
 		cand := fmt.Sprintf("X%02d", n)
 		if _, ok := used[cand]; !ok {
 			return cand
@@ -342,7 +342,7 @@ func letterTriples(letters string) []string {
 	var out []string
 	seen := map[string]struct{}{}
 	n := len(letters)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		for j := i + 1; j < n; j++ {
 			for k := j + 1; k < n; k++ {
 				cand := string([]byte{letters[i], letters[j], letters[k]})

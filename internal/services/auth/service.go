@@ -56,11 +56,12 @@ const (
 	maxVerifyAttempts = 8
 )
 
-// Config holds TTLs for short-lived signup tokens and email codes.
-// Login sessions have no TTL — they persist until logout.
+// Config holds TTLs for signup tokens, email codes, and login sessions (Phase 21.1).
 type Config struct {
 	SignupTokenTTL      time.Duration
 	VerificationCodeTTL time.Duration
+	// SessionTTL is Redis lifetime for KindSession tokens (default 30d). Sliding refresh on use.
+	SessionTTL time.Duration
 }
 
 type service struct {
@@ -272,7 +273,7 @@ func (s *service) CompleteProfile(
 		UserID: u.ID,
 		Email:  u.Email,
 		Kind:   sessionrepo.KindSession,
-	}, 0); err != nil {
+	}, s.sessionTTL()); err != nil {
 		return "", nil, fmt.Errorf("complete profile store session: %w", err)
 	}
 	return sessionToken, usersvc.ToProfile(u), nil
@@ -321,7 +322,7 @@ func (s *service) Login(ctx context.Context, email, password string) (*LoginResu
 		UserID: u.ID,
 		Email:  u.Email,
 		Kind:   sessionrepo.KindSession,
-	}, 0); err != nil {
+	}, s.sessionTTL()); err != nil {
 		return nil, fmt.Errorf("login store session: %w", err)
 	}
 	return &LoginResult{
@@ -531,7 +532,8 @@ func (s *service) requirePasswordReset(ctx context.Context, token string) (*sess
 }
 
 func (s *service) ResolveSession(ctx context.Context, token string) (string, error) {
-	data, err := s.sessions.Get(ctx, strings.TrimSpace(token))
+	token = strings.TrimSpace(token)
+	data, err := s.sessions.Get(ctx, token)
 	if err != nil {
 		if errors.Is(err, sessionrepo.ErrNotFound) {
 			return "", ErrUnauthorized
@@ -541,7 +543,29 @@ func (s *service) ResolveSession(ctx context.Context, token string) (string, err
 	if data.Kind != sessionrepo.KindSession {
 		return "", ErrUnauthorized
 	}
+	s.slideSessionTTL(ctx, token)
 	return data.UserID, nil
+}
+
+func (s *service) sessionTTL() time.Duration {
+	if s.cfg.SessionTTL > 0 {
+		return s.cfg.SessionTTL
+	}
+	return 30 * 24 * time.Hour
+}
+
+// slideSessionTTL extends Redis expiry when remaining life is under half SessionTTL
+// (or when the key has no expiry — legacy sessions from before Phase 21.1).
+func (s *service) slideSessionTTL(ctx context.Context, token string) {
+	ttl := s.sessionTTL()
+	remaining, err := s.sessions.TTL(ctx, token)
+	if err != nil {
+		return
+	}
+	// remaining < 0 → no expiry set (Redis TTL -1).
+	if remaining < 0 || remaining < ttl/2 {
+		_ = s.sessions.Touch(ctx, token, ttl)
+	}
 }
 
 func (s *service) ResolveSignup(ctx context.Context, token string) (string, string, error) {
@@ -592,7 +616,7 @@ func capitalizeUsername(s string) string {
 	}
 	b := []byte(s)
 	capNext := true
-	for i := 0; i < len(b); i++ {
+	for i := range b {
 		c := b[i]
 		if c == '_' {
 			capNext = true

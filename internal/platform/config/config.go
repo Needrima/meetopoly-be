@@ -26,17 +26,19 @@ type Config struct {
 
 	SignupTokenTTL      time.Duration
 	VerificationCodeTTL time.Duration
-	SMTPHost            string
-	SMTPPort            int
-	SMTPUser            string
-	SMTPPass            string
-	SMTPFrom            string
+	// SessionTTL: login Redis session lifetime (Phase 21.1). Default 720h (30 days).
+	SessionTTL time.Duration
+	SMTPHost   string
+	SMTPPort   int
+	SMTPUser   string
+	SMTPPass   string
+	SMTPFrom   string
 
 	// Supabase Storage (Phase 19.0 avatars). Empty → avatar upload/delete unavailable.
-	SupabaseURL             string
-	SupabaseServiceRoleKey  string
-	SupabaseAnonKey         string
-	SupabaseStorageBucket   string
+	SupabaseURL            string
+	SupabaseServiceRoleKey string
+	SupabaseAnonKey        string
+	SupabaseStorageBucket  string
 }
 
 // Load reads optional `.env` via godotenv, then environment variables.
@@ -59,6 +61,7 @@ func Load() Config {
 
 		SignupTokenTTL:      time.Duration(getenvInt("SIGNUP_TOKEN_TTL_MINUTES", 30)) * time.Minute,
 		VerificationCodeTTL: time.Duration(getenvInt("VERIFICATION_CODE_TTL_MINUTES", 2)) * time.Minute,
+		SessionTTL:          time.Duration(getenvInt("SESSION_TTL_HOURS", 720)) * time.Hour,
 
 		SMTPHost: getenv("SMTP_HOST", "smtp.gmail.com"),
 		SMTPPort: getenvInt("SMTP_PORT", 587),

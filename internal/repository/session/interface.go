@@ -28,4 +28,9 @@ type Repository interface {
 	Delete(ctx context.Context, token string) error
 	// DeleteAllForUser revokes every KindSession token for the user.
 	DeleteAllForUser(ctx context.Context, userID string) error
+	// TTL returns remaining lifetime. ErrNotFound if missing.
+	// If the key has no expiry (legacy), remaining is negative.
+	TTL(ctx context.Context, token string) (remaining time.Duration, err error)
+	// Touch sets/extends key expiry to ttl (no-op if key missing).
+	Touch(ctx context.Context, token string, ttl time.Duration) error
 }

@@ -132,7 +132,6 @@ func (h *Hub) HandleTable(w http.ResponseWriter, r *http.Request) {
 	c.readPump(h)
 }
 
-
 func (c *client) writePump() {
 	defer func() { _ = c.conn.Close() }()
 	for msg := range c.send {

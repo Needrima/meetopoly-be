@@ -236,10 +236,7 @@ func repairsDue(g *gamerepo.Game, playerIdx int, perHouse, perHotel int) int {
 		if d.OwnerUserID != uid {
 			continue
 		}
-		h := d.Houses
-		if h < 0 {
-			h = 0
-		}
+		h := max(d.Houses, 0)
 		if h >= 5 {
 			total += perHotel
 		} else {
@@ -273,11 +270,7 @@ func debitToBank(g *gamerepo.Game, playerIdx, amount int, kind, spaceName string
 	}
 	pay := amount
 	if g.Players[playerIdx].Cash < amount {
-		if g.Players[playerIdx].Cash > 0 {
-			pay = g.Players[playerIdx].Cash
-		} else {
-			pay = 0
-		}
+		pay = max(g.Players[playerIdx].Cash, 0)
 	}
 	applyPaymentShortfallLocked(
 		g, playerIdx, amount, pay, "", kind, spaceName, g.Players[playerIdx].BoardIndex,
@@ -306,14 +299,8 @@ func payEachOtherPlayer(g *gamerepo.Game, playerIdx, each int) {
 			continue
 		}
 		need := each
-		avail := payer.Cash
-		if avail < 0 {
-			avail = 0
-		}
-		pay := need
-		if avail < pay {
-			pay = avail
-		}
+		avail := max(payer.Cash, 0)
+		pay := min(avail, need)
 		if pay > 0 {
 			payer.Cash -= pay
 			g.Players[i].Cash += pay
@@ -359,10 +346,7 @@ func collectFromEachOtherPlayer(g *gamerepo.Game, playerIdx, each int) {
 		if i == playerIdx || g.Players[i].Resigned {
 			continue
 		}
-		pay := each
-		if g.Players[i].Cash < pay {
-			pay = g.Players[i].Cash
-		}
+		pay := min(g.Players[i].Cash, each)
 		if pay <= 0 {
 			continue
 		}

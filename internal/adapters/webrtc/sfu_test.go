@@ -25,7 +25,7 @@ func (m *memSignal) WriteJSON(v any) error {
 func TestHubRoomFull(t *testing.T) {
 	sfu := NewSFU()
 	room := HubRoomID("africa-1:lagos")
-	for i := 0; i < MaxHubPeers; i++ {
+	for i := range MaxHubPeers {
 		id := fmt.Sprintf("u%d", i)
 		if err := sfu.Attach(room, id, id, "", "", &memSignal{}); err != nil {
 			t.Fatalf("attach %d: %v", i, err)

@@ -187,10 +187,7 @@ func minHousesInColorGroup(spaces []Space, deeds []gamerepo.Deed, ownerUserID, c
 		if !ok {
 			continue
 		}
-		h := d.Houses
-		if h < 0 {
-			h = 0
-		}
+		h := max(d.Houses, 0)
 		if h > 5 {
 			h = 5
 		}
@@ -221,10 +218,7 @@ func maxHousesInColorGroup(spaces []Space, deeds []gamerepo.Deed, ownerUserID, c
 		if !ok {
 			continue
 		}
-		h := d.Houses
-		if h < 0 {
-			h = 0
-		}
+		h := max(d.Houses, 0)
 		if h > 5 {
 			h = 5
 		}
@@ -336,10 +330,7 @@ func rentDueForLanding(
 		if len(table) == 0 {
 			table = []int{25, 50, 100, 200}
 		}
-		idx := n - 1
-		if idx < 0 {
-			idx = 0
-		}
+		idx := max(n-1, 0)
 		if idx >= len(table) {
 			idx = len(table) - 1
 		}

@@ -109,6 +109,7 @@ func main() {
 	authSvc := auth.New(users, codes, sessions, mailer, auth.Config{
 		SignupTokenTTL:      cfg.SignupTokenTTL,
 		VerificationCodeTTL: cfg.VerificationCodeTTL,
+		SessionTTL:          cfg.SessionTTL,
 	})
 	userSvc := usersvc.New(users, supabaseStore)
 	locationCache := locationsvc.NewRedisCache(redisClient, 26*time.Hour)

@@ -387,9 +387,9 @@ type tradeSideRequest struct {
 }
 
 type tradeProposeRequest struct {
-	ToUserID string            `json:"toUserId"`
-	Give     tradeSideRequest  `json:"give"`
-	Take     tradeSideRequest  `json:"take"`
+	ToUserID string           `json:"toUserId"`
+	Give     tradeSideRequest `json:"give"`
+	Take     tradeSideRequest `json:"take"`
 }
 
 func handleProposeTrade(games gamesvc.Service) http.HandlerFunc {

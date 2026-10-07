@@ -3,6 +3,7 @@ package game
 import (
 	"context"
 	"errors"
+	"slices"
 	"time"
 
 	gamerepo "meetopoly-be/internal/repository/game"
@@ -169,10 +170,7 @@ func (s *service) armDebtPayTimerLocked(g *gamerepo.Game) {
 		return
 	}
 	s.cancelDebtPayTimerLocked(g.ID)
-	delay := time.Until(g.DebtPay.Deadline)
-	if delay < 0 {
-		delay = 0
-	}
+	delay := max(time.Until(g.DebtPay.Deadline), 0)
 	gameID := g.ID
 	s.debtPayTimers[gameID] = time.AfterFunc(delay, func() {
 		s.mu.Lock()
@@ -296,10 +294,7 @@ func applyPaymentShortfallLocked(
 	if pay > amount {
 		pay = amount
 	}
-	available := payer.Cash
-	if available < 0 {
-		available = 0
-	}
+	available := max(payer.Cash, 0)
 	if pay > available {
 		pay = available
 	}
@@ -357,10 +352,7 @@ func applyRaiseTowardDebtLocked(g *gamerepo.Game, payerIdx, raised int) {
 	}
 
 	debt := -p.Cash
-	pay := raised
-	if pay > debt {
-		pay = debt
-	}
+	pay := min(raised, debt)
 	toUserID := ""
 	kind := "rent"
 	boardIndex := p.BoardIndex
@@ -476,11 +468,9 @@ func suppressBuyIfSittingOnWipedLocked(g *gamerepo.Game, wiped []int) {
 	if g.LastRoll.ToIndex != bi {
 		return
 	}
-	for _, w := range wiped {
-		if w == bi {
-			g.SuppressBuyOffer = true
-			return
-		}
+	if slices.Contains(wiped, bi) {
+		g.SuppressBuyOffer = true
+		return
 	}
 }
 

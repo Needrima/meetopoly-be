@@ -176,8 +176,8 @@ func isStableAvatarURL(raw string) bool {
 
 func stripURLQuery(u string) string {
 	u = strings.TrimSpace(u)
-	if i := strings.Index(u, "?"); i >= 0 {
-		return u[:i]
+	if before, _, ok := strings.Cut(u, "?"); ok {
+		return before
 	}
 	return u
 }
@@ -209,7 +209,7 @@ func capitalizeUsername(s string) string {
 	}
 	b := []byte(s)
 	capNext := true
-	for i := 0; i < len(b); i++ {
+	for i := range b {
 		c := b[i]
 		if c == '_' {
 			capNext = true
