@@ -111,7 +111,12 @@ func main() {
 		VerificationCodeTTL: cfg.VerificationCodeTTL,
 	})
 	userSvc := usersvc.New(users, supabaseStore)
-	locationSvc := locationsvc.New(locations)
+	locationCache := locationsvc.NewRedisCache(redisClient, 26*time.Hour)
+	locationSvc := locationsvc.New(locations, locationCache, locationsvc.CacheConfig{
+		TTL:           26 * time.Hour,
+		RefreshEvery:  24 * time.Hour,
+		RefreshBootIn: 5 * time.Second,
+	})
 	gameSvc := gamesvc.New(repoGames, gamesvc.NewLocationSpaceCatalog(locations), gamesvc.Config{
 		DisconnectHold: cfg.GameDisconnectHold,
 	})
@@ -138,6 +143,7 @@ func main() {
 	runCtx, runCancel := context.WithCancel(context.Background())
 	defer runCancel()
 	tableSvc.StartSweeper(runCtx)
+	locationSvc.StartCacheRefresher(runCtx)
 
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,

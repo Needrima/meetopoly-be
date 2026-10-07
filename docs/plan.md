@@ -1628,6 +1628,25 @@ Menu → Play → hub (3 CTAs)
 
 ---
 
+### Phase 21 — Backend performance (static cache + session TTL)
+
+**Goal:** Cut Mongo load for rarely changing World content; later tighten login session Redis lifetime. Gated: implement → review → test → wait for go-ahead.
+
+| Slice | Deliverable | Test before next |
+| ----- | ----------- | ---------------- |
+| **21.0** | ✅ Redis cache for `/worlds` + `/locations*` (miss→Mongo fill); boot + 24h refresher | Unit + curl worlds/locations still correct |
+| **21.1** | Login session Redis TTL + sliding refresh | Login TTL > 0; idle expiry; active refresh |
+
+**21.0 notes**
+
+- ✅ Keys `cache:v1:worlds`, `cache:v1:locations:{worldId}`, `cache:v1:location:id:{id}`, `cache:v1:location:slug:{worldId}:{slug}`; Redis TTL ~26h.
+- ✅ Location service reads cache first; Redis errors fall through to Mongo.
+- ✅ `StartCacheRefresher`: warm ~5s after boot, then every 24h.
+- After `go run ./cmd/seed-locations …`, flush `cache:v1:*` (or restart after TTL) so clients see new seed data.
+- Session TTL → **21.1** (do not start until go-ahead).
+
+---
+
 ## 5. Cross-cutting concerns
 
 ### 5.1 Testing
@@ -1816,4 +1835,5 @@ Menu → Play → hub (3 CTAs)
 | 2026-10-06 | **20.5:** join-code Formik/Yup → `joinTableByCode` → lobby; invalid/full/sealed error copy                                                                                                                                                 |
 | 2026-10-06 | **20.6:** lobby TTL 15m + sweeper + `expiresAt` (OpenAPI 0.30); join rejects expired                                                                                                                                                      |
 | 2026-10-06 | **20.7:** lobby countdown from `expiresAt`; expired exit UI                                                                                                                                                                               |
+| 2026-10-07 | **21.0:** Redis cache for worlds/locations + boot/24h refresher                                                                                                                                                                           |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

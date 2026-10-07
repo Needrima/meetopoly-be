@@ -14,7 +14,14 @@ go run ./cmd/seed-locations -file seeds/locations.json
 
 Uses `MONGO_URI` / `MONGO_DATABASE` from env (defaults: `mongodb://127.0.0.1:27017`, `meetopoly`). Replaces all documents in `locations`, then ensures indexes on `(worldId, boardIndex)` and unique `(worldId, slug)`.
 
-Offline JSON editors (no Mongo): `cmd/remap-locations`, `cmd/polish-locations` — see **Seed tooling** below.
+**Phase 21.0 — Redis cache:** after re-seeding, flush warm keys so the API does not serve stale content:
+
+```bash
+redis-cli KEYS 'cache:v1:*' | xargs -r redis-cli DEL
+# macOS (no xargs -r): redis-cli KEYS 'cache:v1:*' | xargs redis-cli DEL
+```
+
+Or restart the API and wait for the boot refresher (~5s) after deleting keys. Offline JSON editors (no Mongo): `cmd/remap-locations`, `cmd/polish-locations` — see **Seed tooling** below.
 
 ### Board template (all worlds)
 
