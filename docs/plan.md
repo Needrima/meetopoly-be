@@ -1653,6 +1653,47 @@ Menu → Play → hub (3 CTAs)
 
 ---
 
+### Phase 22 — Board turn cinematics (mobile perf)
+
+**Goal:** Cut main-thread / DataChannel load on low-end devices during turns. **Client-only** — game WS still fans out full `state` (`lastRoll`, `lastCard`, …). Gated: implement → review → test → certify before next slice.
+
+| Slice | Deliverable | Test before next |
+| ----- | ----------- | ---------------- |
+| **22.1** | ✅ Synced dice reveal: roller Moti overlay; spectators silent wait `DICE_REVEAL_MS` then toast + pin walk; hub toast + `holdPinWalk` | 2+ devices: toast after settle; roller End/Roll gated; no stale replay on rejoin |
+| **22.2** | ✅ Deck fly drawer-only (`useDeckDrawFly` `isDrawer`); spectators no `deckFlyBusy` | Drawer fly→modal; others toast only; no fly on spectators |
+| **22.3** | ✅ Economy/hub timing: spectator Chance park = modal window (no fly pad); hub pin timer once + extend on `lastCard` (no stuck `turnBusy`) | Card/rent/salary matrix; hub unlocks after settle |
+| **22.4** | ✅ Adaptive pose send (`usePresencePoseSend`): walk 10 Hz / idle ~3 Hz; idle during dice hold + pin walk (board) / `turnBusy` (hub) | Walk smooth; idle quieter; cinema uses idle rate |
+| **22.5** | ✅ Docs: this section + skill/frontend note | — |
+
+**22.1 notes**
+
+- `useDiceRollMotion(game, { localUserId, onSpectatorRoll })` — roller overlay + hold; spectators hold without Moti, toast on release.
+- `buildDiceRollToast` in `economyFeedback.ts`; board `boardFocused` / hub `hubFocused` avoid double toasts.
+- Pin walk: `useGamePinMotion` starts walk when `!holdWalk` (spectators after silent reveal).
+
+**22.2 notes**
+
+- Non-drawers advance `doneSig` immediately — no `DeckDrawFlyCard`, no `deckFlyBusy` gate.
+
+**22.3 notes**
+
+- `cardRevealHoldMs` — drawer `CARD_REVEAL_HOLD_MS` (fly+modal); others `ECONOMY_MODAL_MS`.
+- `useHubTurnBusy` timer survives `game` identity churn; extends if plan grows.
+
+**22.4 notes**
+
+- `POSE_SEND_WALK_MS = 100`, `POSE_SEND_IDLE_MS = 333`; stick deadzone `0.04`.
+- Board blur still stops pose publish (Phase 8.0).
+
+**Hotfixes (same track)**
+
+- Dice settle: settled faces always use server `die1`/`die2` (`DiceRollOverlay`).
+- Trade sheet: live `useWindowDimensions` height (not module-level portrait `Dimensions`).
+
+**Deferred:** receive-side pose decimation; binary pose encoding; Phase 18 spectator-after-eliminate.
+
+---
+
 ## 5. Cross-cutting concerns
 
 ### 5.1 Testing
@@ -1676,6 +1717,7 @@ Menu → Play → hub (3 CTAs)
 - Prefer Views + SVG tiles over heavy bitmaps; recycle/memo tile list only if needed.
 - Keep right-rail video (later) capped; don’t re-render full board on every RTC frame.
 - Target smooth 60 FPS UI on mid-range phones for the 2D board.
+- **Phase 22 (DONE):** turn cinematics = roller/involved full UX; others toast / lighter gates; adaptive pose send (walk 10 Hz, idle ~3 Hz).
 
 ---
 
@@ -1687,6 +1729,7 @@ Menu → Play → hub (3 CTAs)
 → 7 Presence WebRTC (board) → 8 Hubs 8.0–8.4 + turn sheet → 9 UX polish
 → 10 Voice → 11–14 Rules M2–M5 → 15 Contabo → 16–17 board video / hub social
 → 18 spectator (deferred) → 19 Settings profile → 20 Play modes + private invites
+→ 21 BE cache/session TTL → 22 board turn cinematics (mobile perf)
 ```
 
 ---
@@ -1843,4 +1886,9 @@ Menu → Play → hub (3 CTAs)
 | 2026-10-06 | **20.7:** lobby countdown from `expiresAt`; expired exit UI                                                                                                                                                                               |
 | 2026-10-07 | **21.0:** Redis cache for worlds/locations + boot/24h refresher                                                                                                                                                                           |
 | 2026-10-07 | **21.1:** login Redis session TTL (default 30d) + sliding refresh on ResolveSession; `SESSION_TTL_HOURS`                                                                                                                                   |
+| 2026-10-08 | **Phase 22:** board turn cinematics (mobile perf) — dice synced reveal, deck fly drawer-only, economy/hub timing, adaptive pose send; docs 22.5                                                                                            |
+| 2026-10-08 | **22.1:** roller dice overlay; spectators wait `DICE_REVEAL_MS` then toast + pin; hub focus-gated toasts                                                                                                                                  |
+| 2026-10-08 | **22.2:** `useDeckDrawFly` `isDrawer` — skip fly/`deckFlyBusy` for non-drawers                                                                                                                                                             |
+| 2026-10-08 | **22.3:** `cardRevealHoldMs` + hub `useHubTurnBusy` once/extend timer; dice settle + trade sheet height hotfixes                                                                                                                          |
+| 2026-10-08 | **22.4:** `usePresencePoseSend` walk 10 Hz / idle ~3 Hz; idle during dice/pin/`turnBusy`                                                                                                                                                   |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
