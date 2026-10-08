@@ -1694,6 +1694,28 @@ Menu → Play → hub (3 CTAs)
 
 ---
 
+### Phase 23 — Presence render path (mobile perf)
+
+**Goal:** Keep high-frequency presence poses off the React render path; cheap static-data wins on the client. **23.0–23.4** client; **23.5** optional BE. Gated: implement → review → test → certify before next slice.
+
+| Slice | Deliverable | Test before next |
+| ----- | ----------- | ---------------- |
+| **23.0 (A)** | ✅ TanStack `staleTime` on `useWorlds` / `useLocations` (+ carousel prefetch); aligns with Phase 21 Redis TTL | Worlds picker + board tiles load; no extra refetch spam on app focus |
+| **23.1 (B1)** | Board `RemotePoseRegistry`; DC → SharedValues; draw without `presence.remotes` render deps; board linger on soft reconnect | 2 devices walk; hub 8.2 synthetic tile; reconnect linger |
+| **23.2 (B2)** | Hub registry parity | Hub walk + welcome seed + reconnect |
+| **23.3 (C)** | `useFrameCallback` interpolation; narrow `useInterpolatedBoardPose` | 10 Hz / 3 Hz smooth; burst without jitter |
+| **23.4 (D)** | Board presence layer isolated from `useGame` re-renders | Roll/trade while others walk |
+| **23.5 (E)** | Optional: `Cache-Control` on worlds/locations HTTP; Mongo index tweaks after `explain()` | Go tests + curl |
+
+**23.0 notes**
+
+- `WORLDS_AND_LOCATIONS_STALE_MS` = 26h in `meetopoly-mobile/hooks/useLocations.ts` (matches ~26h Redis key TTL).
+- `useWorldsCarousel` neighbor prefetch uses the same `staleTime` so prefetched pages are not immediately stale.
+
+**Deferred (Phase 23):** split PeerConnections; binary pose encoding; game WS diffs. Picks up Phase 22 “receive-side pose decimation” via **23.1+** registry (not a separate decimation layer).
+
+---
+
 ## 5. Cross-cutting concerns
 
 ### 5.1 Testing
@@ -1718,6 +1740,7 @@ Menu → Play → hub (3 CTAs)
 - Keep right-rail video (later) capped; don’t re-render full board on every RTC frame.
 - Target smooth 60 FPS UI on mid-range phones for the 2D board.
 - **Phase 22 (DONE):** turn cinematics = roller/involved full UX; others toast / lighter gates; adaptive pose send (walk 10 Hz, idle ~3 Hz).
+- **Phase 23 (in progress):** static TanStack staleTime (23.0 ✅); presence pose registry + UI-thread interp (23.1–23.4).
 
 ---
 
@@ -1730,6 +1753,7 @@ Menu → Play → hub (3 CTAs)
 → 10 Voice → 11–14 Rules M2–M5 → 15 Contabo → 16–17 board video / hub social
 → 18 spectator (deferred) → 19 Settings profile → 20 Play modes + private invites
 → 21 BE cache/session TTL → 22 board turn cinematics (mobile perf)
+→ 23 presence render path (mobile perf)
 ```
 
 ---
@@ -1891,4 +1915,5 @@ Menu → Play → hub (3 CTAs)
 | 2026-10-08 | **22.2:** `useDeckDrawFly` `isDrawer` — skip fly/`deckFlyBusy` for non-drawers                                                                                                                                                             |
 | 2026-10-08 | **22.3:** `cardRevealHoldMs` + hub `useHubTurnBusy` once/extend timer; dice settle + trade sheet height hotfixes                                                                                                                          |
 | 2026-10-08 | **22.4:** `usePresencePoseSend` walk 10 Hz / idle ~3 Hz; idle during dice/pin/`turnBusy`                                                                                                                                                   |
+| 2026-10-08 | **23.0:** TanStack `staleTime` (26h) on worlds/locations + carousel prefetch; Phase 23 section in plan                                                                                                                                      |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |
