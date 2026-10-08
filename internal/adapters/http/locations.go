@@ -83,7 +83,7 @@ func handleListWorlds(svc locationsvc.Service) http.HandlerFunc {
 				Count:   world.Count,
 			})
 		}
-		writeJSON(w, http.StatusOK, worldsResponse{Worlds: out})
+		writeStaticJSON(w, http.StatusOK, worldsResponse{Worlds: out})
 	}
 }
 
@@ -99,7 +99,7 @@ func handleListLocations(svc locationsvc.Service) http.HandlerFunc {
 		for i := range locs {
 			out = append(out, toLocationResponse(&locs[i]))
 		}
-		writeJSON(w, http.StatusOK, locationsResponse{Locations: out})
+		writeStaticJSON(w, http.StatusOK, locationsResponse{Locations: out})
 	}
 }
 
@@ -111,7 +111,7 @@ func handleGetLocationByID(svc locationsvc.Service) http.HandlerFunc {
 			mapLocationError(w, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, toLocationResponse(loc))
+		writeStaticJSON(w, http.StatusOK, toLocationResponse(loc))
 	}
 }
 
@@ -124,7 +124,7 @@ func handleGetLocationBySlug(svc locationsvc.Service) http.HandlerFunc {
 			mapLocationError(w, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, toLocationResponse(loc))
+		writeStaticJSON(w, http.StatusOK, toLocationResponse(loc))
 	}
 }
 

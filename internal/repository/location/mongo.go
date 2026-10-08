@@ -71,16 +71,7 @@ func (r *MongoRepository) EnsureIndexes(ctx context.Context) error {
 	// Older unique (worldId, boardCode) blocked CHA/CHE shares and city+airport IATA.
 	_, _ = r.col.Indexes().DropOne(ctx, "worldId_1_boardCode_1")
 
-	models := []mongo.IndexModel{
-		{
-			Keys: bson.D{{Key: "worldId", Value: 1}, {Key: "boardIndex", Value: 1}},
-		},
-		{
-			Keys:    bson.D{{Key: "worldId", Value: 1}, {Key: "slug", Value: 1}},
-			Options: options.Index().SetUnique(true),
-		},
-	}
-	_, err := r.col.Indexes().CreateMany(ctx, models)
+	_, err := r.col.Indexes().CreateMany(ctx, LocationIndexModels())
 	if err != nil {
 		return fmt.Errorf("location indexes: %w", err)
 	}

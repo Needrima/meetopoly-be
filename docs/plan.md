@@ -1703,9 +1703,9 @@ Menu → Play → hub (3 CTAs)
 | **23.0 (A)** | ✅ TanStack `staleTime` on `useWorlds` / `useLocations` (+ carousel prefetch); aligns with Phase 21 Redis TTL | Worlds picker + board tiles load; no extra refetch spam on app focus |
 | **23.1 (B1)** | ✅ Board `RemotePoseRegistry`; DC → SharedValues; `buildBoardRemoteMetas` + `BoardRegistryRemoteAvatar`; board linger on soft reconnect | 2 devices walk; hub 8.2 synthetic tile; reconnect linger |
 | **23.2 (B2)** | ✅ Hub registry parity (`buildHubRemoteMetas`, `HubScene` + `useHubPresence` registry) | Hub walk + welcome seed + reconnect |
-| **23.3 (C)** | `useFrameCallback` interpolation; narrow `useInterpolatedBoardPose` | 10 Hz / 3 Hz smooth; burst without jitter |
-| **23.4 (D)** | Board presence layer isolated from `useGame` re-renders | Roll/trade while others walk |
-| **23.5 (E)** | Optional: `Cache-Control` on worlds/locations HTTP; Mongo index tweaks after `explain()` | Go tests + curl |
+| **23.3 (C)** | ✅ `useRegistryPoseFrame` + registry segment SharedValues; `useInterpolatedBoardPose` legacy fallback only | 10 Hz / 3 Hz smooth; burst without jitter |
+| **23.4 (D)** | ✅ Board/hub presence layer isolated from `useGame` re-renders | Roll/trade while others walk |
+| **23.5 (E)** | ✅ `Cache-Control` on worlds/locations HTTP; named Mongo indexes + explain notes | Go tests + curl |
 
 **23.0 notes**
 
@@ -1722,6 +1722,25 @@ Menu → Play → hub (3 CTAs)
 
 - `useHubPresence` sets `usePoseRegistry: true`; welcome / peer-joined seed via `seedPoseFromPeer` → registry; `peer-left` removes registry slot (hub only).
 - `buildHubRemoteMetas` + `HubScene` / `BoardRegistryRemoteAvatar` with non-square `boardHeight`.
+
+**23.3 notes**
+
+- Registry segments: `runOnUI` sets from/to pixels + duration (50–200 ms from receive delta, default 100 ms); `useRegistryPoseFrame` linear step each frame; hold at target up to 150 ms gap.
+- Removed per-packet `withTiming` in `remotePoseRegistry.ts`.
+- **23.3.1:** `RegistryPeerSlot` = SharedValues only; `lastXNorm` / packet timing in JS `Map` — fixes Reanimated “modify key passed to worklet” warnings; clamp norms on JS before `resizeSurfaceWorklet` (no nested worklet helper).
+- Worlds: `useWorldCardSceneReady` uses `requestIdleCallback` / timeout + 2× `rAF` instead of deprecated `InteractionManager`.
+
+**23.4 notes**
+
+- `BoardPresenceLayer` (memo + deep compare on `registryRemotes` / local avatar props) wired from `Board` when `poseRegistry` is set; tiles/pins/deeds stay in `BoardStaticLayer` / `BoardPinsLayer`.
+- `usePresencePlayerRevision` + `presencePlayerSig` — rebuild remote metas only when hubId/resigned/pinColor/avatarUrl/username change, not cash/timer WS ticks; stable `remotePeerKey` for peer join/leave.
+- `board.tsx`: `localBoardAvatar` `useMemo` so parent re-renders do not bust presence memo when walk SharedValues unchanged.
+- Hub parity: `usePresenceRosterRevision` + memoized `HubScene` with the same meta compare pattern.
+
+**23.5 notes**
+
+- `GET /worlds`, `/locations`, `/locations/{id}`, `/locations/by-slug` → `Cache-Control: private, max-age=93600, stale-while-revalidate=86400` (26h, aligns Redis + mobile staleTime).
+- `LocationIndexModels()` — named `worldId_1_boardIndex_1` (list+sort) and unique `worldId_1_slug_1`; `ListWorlds` aggregate may COLLSCAN at seed scale (Redis-warm path dominates). After re-seed, flush `cache:v1:*` unchanged from 21.0.
 
 **Deferred (Phase 23):** split PeerConnections; binary pose encoding; game WS diffs. Picks up Phase 22 “receive-side pose decimation” via **23.1+** registry (not a separate decimation layer).
 
@@ -1751,7 +1770,7 @@ Menu → Play → hub (3 CTAs)
 - Keep right-rail video (later) capped; don’t re-render full board on every RTC frame.
 - Target smooth 60 FPS UI on mid-range phones for the 2D board.
 - **Phase 22 (DONE):** turn cinematics = roller/involved full UX; others toast / lighter gates; adaptive pose send (walk 10 Hz, idle ~3 Hz).
-- **Phase 23 (in progress):** static TanStack staleTime (23.0 ✅); board + hub pose registry (23.1–23.2 ✅); UI-thread interp + render isolation (23.3–23.4).
+- **Phase 23 (DONE):** static TanStack staleTime (23.0 ✅); pose registry + frame interp (23.1–23.3 ✅); render isolation (23.4 ✅); HTTP cache headers + location indexes (23.5 ✅).
 
 ---
 
@@ -1929,4 +1948,9 @@ Menu → Play → hub (3 CTAs)
 | 2026-10-08 | **23.0:** TanStack `staleTime` (26h) on worlds/locations + carousel prefetch; Phase 23 section in plan                                                                                                                                      |
 | 2026-10-08 | **23.1:** board `remotePoseRegistry` + `BoardRegistryRemoteAvatar`; `useBoardPresence` `usePoseRegistry`; hub unchanged                                                                                                                                 |
 | 2026-10-08 | **23.2:** hub registry parity — `buildHubRemoteMetas`, welcome seed → registry, `peer-left` clears slot                                                                                                                                                 |
+| 2026-10-08 | **23.3:** `useRegistryPoseFrame` + segment-based registry interp; legacy `useInterpolatedBoardPose` for fallback only                                                                                                                                   |
+| 2026-10-08 | **23.3.1:** worklet-safe slot split (JS dedupe state vs SharedValue `RegistryPeerSlot`)                                                                                                                                                                   |
+| 2026-10-08 | **23.3.1:** `resizeSurfaceWorklet` clamp on JS; `useWorldCardSceneReady` drops InteractionManager                                                                                                                                                       |
+| 2026-10-08 | **23.4:** `BoardPresenceLayer` + `usePresencePlayerRevision`; hub `HubScene` memo + roster revision                                                                                                                                                       |
+| 2026-10-08 | **23.5:** `Cache-Control` on worlds/locations; `LocationIndexModels` named indexes + tests                                                                                                                                                                |
 | 2026-09-24 | **Mobile UX:** hide status bar app-wide; board panel extra top padding so ⋯ clears the top edge                                                                                                                                           |

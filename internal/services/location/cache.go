@@ -38,6 +38,12 @@ type CacheConfig struct {
 	RefreshBootIn time.Duration
 }
 
+// StaticContentCacheMaxAgeSec is HTTP Cache-Control max-age for worlds/locations (Phase 23.5).
+// Matches defaultCacheTTL and mobile WORLDS_AND_LOCATIONS_STALE_MS.
+func StaticContentCacheMaxAgeSec() int {
+	return int(defaultCacheTTL / time.Second)
+}
+
 func (c CacheConfig) withDefaults() CacheConfig {
 	if c.TTL <= 0 {
 		c.TTL = defaultCacheTTL
