@@ -1,0 +1,87 @@
+name: Deploy home essentials backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: go.sum
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build Linux binary
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o meetopoly-be .
+
+      - name: Install sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Deploy to Contabo
+        env:
+          HOST: ${{ secrets.CONTABO_HOST }}
+          SSH_PASSWORD: ${{ secrets.CONTABO_PASS }}
+          SSH_PORT: ${{ secrets.CONTABO_SSH_PORT }}
+        run: |
+          set -euo pipefail
+
+          REMOTE_DIR="/root/meetopoly-be"
+          SERVICE="meetopoly-be"
+          BIN="meetopoly-be"
+
+          SSH_OPTS="-p $SSH_PORT -o StrictHostKeyChecking=no"
+          SCP_OPTS="-P $SSH_PORT -o StrictHostKeyChecking=no"
+
+          sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS root@$HOST "mkdir -p $REMOTE_DIR/deploy"
+
+          sshpass -p "$SSH_PASSWORD" scp $SCP_OPTS deploy/meetopoly-be.service root@$HOST:$REMOTE_DIR/deploy/
+          sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS root@$HOST "
+            cp $REMOTE_DIR/deploy/meetopoly-be.service /etc/systemd/system/${SERVICE}.service &&
+            systemctl daemon-reload
+          "
+
+          sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS root@$HOST "systemctl stop ${SERVICE} || true"
+
+          sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS root@$HOST "
+            mv $REMOTE_DIR/${BIN} $REMOTE_DIR/${BIN}.bak 2>/dev/null || true
+          "
+
+          sshpass -p "$SSH_PASSWORD" scp $SCP_OPTS ${BIN} root@$HOST:$REMOTE_DIR/ || {
+            echo 'Binary upload failed. Restoring...'
+            sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS root@$HOST "
+              mv $REMOTE_DIR/${BIN}.bak $REMOTE_DIR/${BIN} 2>/dev/null || true
+              systemctl start ${SERVICE} || true
+            "
+            exit 1
+          }
+
+          sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS root@$HOST "
+            chmod +x $REMOTE_DIR/${BIN}
+            systemctl enable ${SERVICE}
+            systemctl restart ${SERVICE}
+            sleep 3
+            systemctl is-active ${SERVICE}
+            curl -sf http://127.0.0.1:8080/health
+          " || {
+            echo 'Deploy failed. Rolling back binary...'
+            sshpass -p "$SSH_PASSWORD" ssh $SSH_OPTS root@$HOST "
+              systemctl stop ${SERVICE} || true
+              mv $REMOTE_DIR/${BIN}.bak $REMOTE_DIR/${BIN}
+              systemctl start ${SERVICE}
+            "
+            exit 1
+          }

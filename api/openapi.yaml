@@ -807,7 +807,8 @@ paths:
         Presence WS / WebRTC drops do **not** resign.
         Board presence (Phase 7.0–7.4): `GET /ws/presence/board/{gameId}?token=` — WebRTC signaling +
         Pion SFU PeerConnection; room id `board:{gameId}`;
-        STUN `stun:stun.l.google.com:19302`.
+        ICE from env `ICE_URLS` / `TURN_USERNAME` / `TURN_PASSWORD` (default STUN
+        `stun:stun.l.google.com:19302`); `welcome.iceServers` may include `username`/`credential`.
         Hub presence (Phase 8.0): `GET /ws/presence/hub/{hubId}?token=` — same signaling/SFU/DC family;
         `hubId` is URL-encoded (e.g. `hub%3Aafrica-1%3Alagos`); room id from `HubRoomID` → `hub:{…}`.
         Auth: any logged-in user (not required to be seated in a game — cross-table meet).

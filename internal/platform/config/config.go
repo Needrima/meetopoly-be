@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -39,6 +40,11 @@ type Config struct {
 	SupabaseServiceRoleKey string
 	SupabaseAnonKey        string
 	SupabaseStorageBucket  string
+
+	// ICE / TURN for Pion SFU + presence welcome (empty ICEURLs → Google public STUN only).
+	ICEURLs      []string
+	TURNUsername string
+	TURNPassword string
 }
 
 // Load reads optional `.env` via godotenv, then environment variables.
@@ -73,7 +79,31 @@ func Load() Config {
 		SupabaseServiceRoleKey: getenv("SUPABASE_SERVICE_ROLE_KEY", ""),
 		SupabaseAnonKey:        getenv("SUPABASE_ANON_KEY", ""),
 		SupabaseStorageBucket:  getenv("SUPABASE_STORAGE_BUCKET", "meetopoly"),
+
+		ICEURLs:      getenvCSV("ICE_URLS"),
+		TURNUsername: getenv("TURN_USERNAME", ""),
+		TURNPassword: getenv("TURN_PASSWORD", ""),
 	}
+}
+
+// getenvCSV splits a comma-separated env value; empty → nil.
+func getenvCSV(key string) []string {
+	v := strings.TrimSpace(os.Getenv(key))
+	if v == "" {
+		return nil
+	}
+	parts := strings.Split(v, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 func getenv(key, fallback string) string {

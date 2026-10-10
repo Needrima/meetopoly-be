@@ -13,6 +13,7 @@ import (
 
 	httpadapter "meetopoly-be/internal/adapters/http"
 	"meetopoly-be/internal/adapters/storage/supabase"
+	rtcadapter "meetopoly-be/internal/adapters/webrtc"
 	wsadapter "meetopoly-be/internal/adapters/websocket"
 	"meetopoly-be/internal/platform/config"
 	mongoplatform "meetopoly-be/internal/platform/mongo"
@@ -134,7 +135,11 @@ func main() {
 	resolveUser := httpadapter.ResolveWSUser(authSvc)
 	tableWS := wsadapter.NewHub(tableSvc, resolveUser)
 	gameWS := wsadapter.NewGameHub(gameSvc, resolveUser)
-	presenceWS := wsadapter.NewPresenceHub(gameSvc, userSvc, resolveUser)
+	presenceWS := wsadapter.NewPresenceHub(gameSvc, userSvc, resolveUser, rtcadapter.ICEConfig{
+		URLs:       cfg.ICEURLs,
+		Username:   cfg.TURNUsername,
+		Credential: cfg.TURNPassword,
+	})
 	healthSvc := health.New(
 		health.NewMongoPinger(mongoClient),
 		health.NewRedisPinger(redisClient),

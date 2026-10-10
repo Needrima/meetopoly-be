@@ -23,7 +23,7 @@ func (m *memSignal) WriteJSON(v any) error {
 }
 
 func TestHubRoomFull(t *testing.T) {
-	sfu := NewSFU()
+	sfu := NewSFU(ICEConfig{})
 	room := HubRoomID("africa-1:lagos")
 	for i := range MaxHubPeers {
 		id := fmt.Sprintf("u%d", i)
@@ -50,7 +50,7 @@ func TestHubRoomID(t *testing.T) {
 }
 
 func TestAllowPoseRateLimit(t *testing.T) {
-	sfu := NewSFU()
+	sfu := NewSFU(ICEConfig{})
 	room := BoardRoomID("rate")
 	sig := &memSignal{}
 	if err := sfu.Attach(room, "u1", "Ada", "", "", sig); err != nil {
@@ -73,7 +73,7 @@ func TestAllowPoseRateLimit(t *testing.T) {
 }
 
 func TestAttachDetachRoster(t *testing.T) {
-	sfu := NewSFU()
+	sfu := NewSFU(ICEConfig{})
 	room := BoardRoomID("game-a")
 	a := &memSignal{}
 	b := &memSignal{}
@@ -104,7 +104,7 @@ func TestAttachDetachRoster(t *testing.T) {
 }
 
 func TestDetachIgnoresStaleSignal(t *testing.T) {
-	sfu := NewSFU()
+	sfu := NewSFU(ICEConfig{})
 	room := BoardRoomID("game-b")
 	oldSig := &memSignal{}
 	newSig := &memSignal{}
@@ -127,13 +127,34 @@ func TestDetachIgnoresStaleSignal(t *testing.T) {
 }
 
 func TestICEServersJSON(t *testing.T) {
-	sfu := NewSFU()
+	sfu := NewSFU(ICEConfig{})
 	servers := sfu.ICEServersJSON()
 	if len(servers) != 1 || len(servers[0].URLs) != 1 {
 		t.Fatalf("%v", servers)
 	}
 	if servers[0].URLs[0] != "stun:stun.l.google.com:19302" {
 		t.Fatalf("stun=%s", servers[0].URLs[0])
+	}
+	if servers[0].Username != "" || servers[0].Credential != "" {
+		t.Fatalf("default STUN must not set credentials: %+v", servers[0])
+	}
+}
+
+func TestICEServersJSONWithTURN(t *testing.T) {
+	sfu := NewSFU(ICEConfig{
+		URLs: []string{
+			"stun:stun.l.google.com:19302",
+			"turn:13.140.160.235:3478?transport=udp",
+		},
+		Username:   "meetopoly",
+		Credential: "secret",
+	})
+	servers := sfu.ICEServersJSON()
+	if len(servers) != 1 || len(servers[0].URLs) != 2 {
+		t.Fatalf("%v", servers)
+	}
+	if servers[0].Username != "meetopoly" || servers[0].Credential != "secret" {
+		t.Fatalf("creds=%+v", servers[0])
 	}
 }
 
@@ -165,7 +186,7 @@ func TestIsHubRoom(t *testing.T) {
 }
 
 func TestVoiceRoomsGetAudioPubsMap(t *testing.T) {
-	sfu := NewSFU()
+	sfu := NewSFU(ICEConfig{})
 	hub := HubRoomID("africa-1:cairo")
 	board := BoardRoomID("game-audio")
 	if err := sfu.Attach(hub, "u1", "Ada", "", "", &memSignal{}); err != nil {
@@ -205,7 +226,7 @@ func TestVoiceRoomsGetAudioPubsMap(t *testing.T) {
 }
 
 func TestDetachClearsBoardAudioPubSlot(t *testing.T) {
-	sfu := NewSFU()
+	sfu := NewSFU(ICEConfig{})
 	board := BoardRoomID("game-audio-detach")
 	sig := &memSignal{}
 	if err := sfu.Attach(board, "u1", "Ada", "", "", sig); err != nil {
@@ -233,7 +254,7 @@ func TestDetachClearsBoardAudioPubSlot(t *testing.T) {
 }
 
 func TestDetachClearsBoardVideoPubSlot(t *testing.T) {
-	sfu := NewSFU()
+	sfu := NewSFU(ICEConfig{})
 	board := BoardRoomID("game-video")
 	sig := &memSignal{}
 	if err := sfu.Attach(board, "u1", "Ada", "", "", sig); err != nil {
@@ -261,7 +282,7 @@ func TestDetachClearsBoardVideoPubSlot(t *testing.T) {
 }
 
 func TestAttachReconnectClearsBoardVideoPub(t *testing.T) {
-	sfu := NewSFU()
+	sfu := NewSFU(ICEConfig{})
 	board := BoardRoomID("game-video-re")
 	oldSig := &memSignal{}
 	newSig := &memSignal{}
@@ -287,7 +308,7 @@ func TestAttachReconnectClearsBoardVideoPub(t *testing.T) {
 }
 
 func TestNegotiateOfferQueuesWhileInFlight(t *testing.T) {
-	sfu := NewSFU()
+	sfu := NewSFU(ICEConfig{})
 	board := BoardRoomID("game-renego")
 	sig := &memSignal{}
 	if err := sfu.Attach(board, "u1", "Ada", "", "", sig); err != nil {

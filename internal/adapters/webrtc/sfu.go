@@ -44,7 +44,17 @@ type PeerInfo struct {
 
 // ICEServerJSON is exposed to clients in the welcome message.
 type ICEServerJSON struct {
-	URLs []string `json:"urls"`
+	URLs       []string `json:"urls"`
+	Username   string   `json:"username,omitempty"`
+	Credential string   `json:"credential,omitempty"`
+}
+
+// ICEConfig configures STUN/TURN for the SFU PeerConnection and welcome payload.
+// Empty URLs → Google public STUN only.
+type ICEConfig struct {
+	URLs       []string
+	Username   string
+	Credential string
 }
 
 // SFU holds in-memory board presence rooms (one PeerConnection per user).
@@ -52,6 +62,8 @@ type SFU struct {
 	mu         sync.Mutex
 	rooms      map[string]*room // roomID → room
 	iceServers []webrtc.ICEServer
+	// api: Opus + VP8 only (see presenceAPI) so iOS cannot publish H.264 to the board SFU.
+	api *webrtc.API
 }
 
 type room struct {
@@ -90,14 +102,27 @@ type peer struct {
 	renegotiateAgain bool
 	// handlingOffer: client join/rejoin HandleOffer in flight (reject concurrent offers).
 	handlingOffer bool
+	// recvCodecs: codecs from the peer's last client offer (what CreateAnswer may relay).
+	recvCodecs remoteCodecCaps
 }
 
-// NewSFU builds a memory SFU with Google public STUN (no TURN in Phase 7.0).
-func NewSFU() *SFU {
+// NewSFU builds a memory SFU. Empty cfg.URLs → Google public STUN.
+// When TURN_USERNAME / TURN_PASSWORD are set, the same credentials apply to all URLs
+// (coturn long-term credentials; STUN entries ignore them).
+func NewSFU(cfg ICEConfig) *SFU {
+	urls := append([]string(nil), cfg.URLs...)
+	if len(urls) == 0 {
+		urls = []string{"stun:stun.l.google.com:19302"}
+	}
 	return &SFU{
 		rooms: make(map[string]*room),
+		api:   mustPresenceAPI(),
 		iceServers: []webrtc.ICEServer{
-			{URLs: []string{"stun:stun.l.google.com:19302"}},
+			{
+				URLs:       urls,
+				Username:   cfg.Username,
+				Credential: cfg.Credential,
+			},
 		},
 	}
 }
@@ -148,11 +173,16 @@ func HubRoomID(hubID string) string {
 	return "hub:" + hubID
 }
 
-// ICEServersJSON returns STUN config for the welcome payload.
+// ICEServersJSON returns STUN/TURN config for the welcome payload.
 func (s *SFU) ICEServersJSON() []ICEServerJSON {
 	out := make([]ICEServerJSON, 0, len(s.iceServers))
 	for _, ice := range s.iceServers {
-		out = append(out, ICEServerJSON{URLs: append([]string(nil), ice.URLs...)})
+		cred, _ := ice.Credential.(string)
+		out = append(out, ICEServerJSON{
+			URLs:       append([]string(nil), ice.URLs...),
+			Username:   ice.Username,
+			Credential: cred,
+		})
 	}
 	return out
 }
@@ -298,7 +328,7 @@ func (s *SFU) HandleOffer(roomID, userID string, sdp string) error {
 	}()
 
 	cfg := webrtc.Configuration{ICEServers: s.iceServers}
-	pc, err := webrtc.NewPeerConnection(cfg)
+	pc, err := s.api.NewPeerConnection(cfg)
 	if err != nil {
 		return fmt.Errorf("new peer connection: %w", err)
 	}
@@ -380,13 +410,20 @@ func (s *SFU) HandleOffer(roomID, userID string, sdp string) error {
 		return fmt.Errorf("set remote description: %w", err)
 	}
 
+	caps := parseOfferCodecCaps(sdp)
+	s.mu.Lock()
+	if pe := s.peerLocked(roomID, userID); pe != nil && pe.signal == signal {
+		pe.recvCodecs = caps
+	}
+	s.mu.Unlock()
+
 	if voice {
-		if err := s.addExistingHubAudioToPC(roomID, userID, pc); err != nil {
+		if err := s.addExistingHubAudioToPC(roomID, userID, pc, caps); err != nil {
 			slog.Warn("voice add existing audio", "roomId", roomID, "userId", userID, "err", err)
 		}
 	}
 	if video {
-		if err := s.addExistingBoardVideoToPC(roomID, userID, pc); err != nil {
+		if err := s.addExistingBoardVideoToPC(roomID, userID, pc, caps); err != nil {
 			slog.Warn("board add existing video", "roomId", roomID, "userId", userID, "err", err)
 		}
 	}
@@ -549,10 +586,21 @@ func (s *SFU) onVoiceAudioTrack(roomID, fromUserID string, remote *webrtc.TrackR
 		"roomId", roomID,
 		"userId", fromUserID,
 		"receivers", len(recvs),
+		"codec", remote.Codec().MimeType,
 	)
 }
 
 func (s *SFU) onBoardVideoTrack(roomID, fromUserID string, remote *webrtc.TrackRemote) {
+	if !strings.EqualFold(remote.Codec().MimeType, webrtc.MimeTypeVP8) {
+		slog.Warn("board video rejecting non-VP8",
+			"roomId", roomID,
+			"userId", fromUserID,
+			"codec", remote.Codec().MimeType,
+			"fmtp", remote.Codec().SDPFmtpLine,
+		)
+		go drainRemoteTrack(remote)
+		return
+	}
 	local, err := webrtc.NewTrackLocalStaticRTP(
 		remote.Codec().RTPCodecCapability,
 		"video",
@@ -589,12 +637,15 @@ func (s *SFU) onBoardVideoTrack(roomID, fromUserID string, remote *webrtc.TrackR
 		"userId", fromUserID,
 		"streamId", BoardVideoStreamID(fromUserID),
 		"receivers", len(recvs),
+		"codec", remote.Codec().MimeType,
+		"fmtp", remote.Codec().SDPFmtpLine,
 	)
 }
 
 type mediaRecv struct {
 	userID string
 	pc     *webrtc.PeerConnection
+	caps   remoteCodecCaps
 }
 
 func (s *SFU) snapshotMediaReceiversLocked(r *room, fromUserID string) []mediaRecv {
@@ -606,13 +657,25 @@ func (s *SFU) snapshotMediaReceiversLocked(r *room, fromUserID string) []mediaRe
 		if id == fromUserID || p.pc == nil {
 			continue
 		}
-		recvs = append(recvs, mediaRecv{userID: id, pc: p.pc})
+		recvs = append(recvs, mediaRecv{userID: id, pc: p.pc, caps: p.recvCodecs})
 	}
 	return recvs
 }
 
 func (s *SFU) fanoutLocalTrack(roomID string, local *webrtc.TrackLocalStaticRTP, recvs []mediaRecv) {
+	codec := ""
+	if local != nil {
+		codec = local.Codec().MimeType
+	}
 	for _, rv := range recvs {
+		if !rv.caps.supportsTrack(local) {
+			slog.Info("presence skip fanout incompatible codec",
+				"roomId", roomID,
+				"toUserId", rv.userID,
+				"codec", codec,
+			)
+			continue
+		}
 		if _, err := rv.pc.AddTrack(local); err != nil {
 			slog.Debug("presence AddTrack", "toUserId", rv.userID, "err", err)
 			continue
@@ -654,7 +717,7 @@ func drainRemoteTrack(remote *webrtc.TrackRemote) {
 	}
 }
 
-func (s *SFU) addExistingHubAudioToPC(roomID, userID string, pc *webrtc.PeerConnection) error {
+func (s *SFU) addExistingHubAudioToPC(roomID, userID string, pc *webrtc.PeerConnection, caps remoteCodecCaps) error {
 	s.mu.Lock()
 	r := s.rooms[roomID]
 	if r == nil || r.audioPubs == nil {
@@ -671,6 +734,14 @@ func (s *SFU) addExistingHubAudioToPC(roomID, userID string, pc *webrtc.PeerConn
 	s.mu.Unlock()
 
 	for _, tr := range tracks {
+		if !caps.supportsTrack(tr) {
+			slog.Info("presence skip existing audio incompatible codec",
+				"roomId", roomID,
+				"userId", userID,
+				"codec", tr.Codec().MimeType,
+			)
+			continue
+		}
 		if _, err := pc.AddTrack(tr); err != nil {
 			return err
 		}
@@ -678,7 +749,7 @@ func (s *SFU) addExistingHubAudioToPC(roomID, userID string, pc *webrtc.PeerConn
 	return nil
 }
 
-func (s *SFU) addExistingBoardVideoToPC(roomID, userID string, pc *webrtc.PeerConnection) error {
+func (s *SFU) addExistingBoardVideoToPC(roomID, userID string, pc *webrtc.PeerConnection, caps remoteCodecCaps) error {
 	s.mu.Lock()
 	r := s.rooms[roomID]
 	if r == nil || r.videoPubs == nil {
@@ -695,6 +766,14 @@ func (s *SFU) addExistingBoardVideoToPC(roomID, userID string, pc *webrtc.PeerCo
 	s.mu.Unlock()
 
 	for _, tr := range tracks {
+		if !caps.supportsTrack(tr) {
+			slog.Info("presence skip existing video incompatible codec",
+				"roomId", roomID,
+				"userId", userID,
+				"codec", tr.Codec().MimeType,
+			)
+			continue
+		}
 		if _, err := pc.AddTrack(tr); err != nil {
 			return err
 		}

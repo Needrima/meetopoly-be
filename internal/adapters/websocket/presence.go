@@ -61,16 +61,18 @@ type PresenceHub struct {
 
 // NewPresenceHub builds the presence signaling hub.
 // users may be nil (username falls back to "Player" for hub joins).
+// ice configures STUN/TURN for the SFU and welcome.iceServers payload.
 func NewPresenceHub(
 	games gamesvc.Service,
 	users usersvc.Service,
 	authOK func(r *http.Request) (string, error),
+	ice rtcadapter.ICEConfig,
 ) *PresenceHub {
 	return &PresenceHub{
 		rooms:  make(map[string]map[*presenceClient]struct{}),
 		games:  games,
 		users:  users,
-		sfu:    rtcadapter.NewSFU(),
+		sfu:    rtcadapter.NewSFU(ice),
 		authOK: authOK,
 	}
 }

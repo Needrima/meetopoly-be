@@ -61,6 +61,9 @@ Server listens on `:8080` by default.
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key — **backend only**, never ship to mobile |
 | `SUPABASE_ANON_KEY` | Anon/publishable key (optional for be-only uploads) |
 | `SUPABASE_STORAGE_BUCKET` | `avatars` (public bucket for profile photos) |
+| `ICE_URLS` | _(empty → `stun:stun.l.google.com:19302`)_ comma-separated STUN/TURN URLs for presence SFU + welcome |
+| `TURN_USERNAME` | _(empty)_ long-term TURN username (coturn `user=…`) |
+| `TURN_PASSWORD` | _(empty)_ long-term TURN password |
 
 Logs go to **stdout and `app.log`** via `log/slog` at **info** level (configured from `.env` for file/format only). Tail the file while debugging:
 
