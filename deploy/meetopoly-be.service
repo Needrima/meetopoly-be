@@ -1,0 +1,15 @@
+[Unit]
+Description=meetopoly-be service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root//meetopoly-be
+EnvironmentFile=-/root/meetopoly-be/.env
+ExecStart=/root/meetopoly-be/meetopoly-be
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
